@@ -51,7 +51,7 @@ static void print_tree(const Node *expr, int level)
 			indent(level); printf("PRODUCT: {\n");
 			print_tree(expr->value.pair.left, level + 1);
 			print_tree(expr->value.pair.right, level + 1);
-			indent(level); printf("}");
+			indent(level); printf("}\n");
 	}
 }
 
