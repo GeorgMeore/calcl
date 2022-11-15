@@ -56,7 +56,7 @@ static Node *parse_term(Scanner *s)
 			return NULL;
 		}
 		if (Scanner_peek(s).type != RPAREN_TOKEN) {
-			error("unmatched parentheses");
+			error("expected )");
 			return NULL;
 		}
 		Scanner_next(s);
@@ -64,7 +64,7 @@ static Node *parse_term(Scanner *s)
 	} else if (Scanner_peek(s).type == NUMBER_TOKEN) {
 		return parse_number(s);
 	} else {
-		error("unexpected token");
+		error("expected '(' or a number");
 		return NULL;
 	}
 }
@@ -90,7 +90,7 @@ Node *parse(const Token *tokens)
 		return NULL;
 	}
 	if (Scanner_peek(&scanner).type != EOF_TOKEN) {
-		error("unexpected token");
+		error("expected EOF");
 		return NULL;
 	}
 	return expr;
