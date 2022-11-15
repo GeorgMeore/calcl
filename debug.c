@@ -43,14 +43,14 @@ static void print_tree(const Node *expr, int level)
 			break;
 		case SUM_NODE:
 			indent(level); printf("SUM: {\n");
-			print_tree(expr->value.left, level + 1);
-			print_tree(expr->value.right, level + 1);
+			print_tree(expr->value.pair.left, level + 1);
+			print_tree(expr->value.pair.right, level + 1);
 			indent(level); printf("}\n");
 			break;
 		case PRODUCT_NODE:
 			indent(level); printf("PRODUCT: {\n");
-			print_tree(expr->value.left, level + 1);
-			print_tree(expr->value.right, level + 1);
+			print_tree(expr->value.pair.left, level + 1);
+			print_tree(expr->value.pair.right, level + 1);
 			indent(level); printf("}");
 	}
 }

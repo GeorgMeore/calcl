@@ -2,24 +2,26 @@
 #define NODE_INCLUDED
 
 typedef struct Node Node;
-typedef union NodeValue NodeValue;
-typedef enum NodeType NodeType;
 
-enum NodeType {
+typedef enum {
 	NUMBER_NODE,
 	SUM_NODE,
 	PRODUCT_NODE,
-};
+} NodeType;
 
-union NodeValue {
-	/* NUMBER_NODE */
-	int number;
-	/* SUM_NODE | PRODUCT_NODE */
-	struct {
-		Node *left;
-		Node *right;
-	};
-};
+typedef int NumberValue;
+
+typedef struct {
+	Node *left;
+	Node *right;
+} PairValue;
+
+typedef union {
+	// NUMBER_NODE
+	NumberValue number;
+	// SUM_NODE | PRODUCT_NODE
+	PairValue pair;
+} NodeValue;
 
 struct Node {
 	NodeType type;

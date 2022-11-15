@@ -3,10 +3,10 @@
 static int sum(Node *expr, int *result)
 {
 	int left_value, right_value;
-	if (!evaluate(expr->value.left, &left_value)) {
+	if (!evaluate(expr->value.pair.left, &left_value)) {
 		return 0;
 	}
-	if (!evaluate(expr->value.right, &right_value)) {
+	if (!evaluate(expr->value.pair.right, &right_value)) {
 		return 0;
 	}
 	*result = left_value + right_value;
@@ -16,10 +16,10 @@ static int sum(Node *expr, int *result)
 static int product(Node *expr, int *result)
 {
 	int left_value, right_value;
-	if (!evaluate(expr->value.left, &left_value)) {
+	if (!evaluate(expr->value.pair.left, &left_value)) {
 		return 0;
 	}
-	if (!evaluate(expr->value.right, &right_value)) {
+	if (!evaluate(expr->value.pair.right, &right_value)) {
 		return 0;
 	}
 	*result = left_value * right_value;
