@@ -13,8 +13,8 @@ Node *SumNode_new(Node *left, Node *right)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = SUM_NODE;
-	node->value.left = left;
-	node->value.right = right;
+	node->value.pair.left = left;
+	node->value.pair.right = right;
 	return node;
 }
 
@@ -22,7 +22,7 @@ Node *ProductNode_new(Node *left, Node *right)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = PRODUCT_NODE;
-	node->value.left = left;
-	node->value.right = right;
+	node->value.pair.left = left;
+	node->value.pair.right = right;
 	return node;
 }
