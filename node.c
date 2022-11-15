@@ -1,11 +1,16 @@
 #include <stdlib.h>
 #include "node.h"
 
-Node *NumberNode_new(int value)
+Node *NumberNode_new(const char *string, int length)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = NUMBER_NODE;
-	node->value.number = value;
+	int number = 0;
+	for (int i = 0; i < length; i++) {
+		int digit = (string[i] - '0');
+		number = digit + number * 10;
+	}
+	node->value.number = number;
 	return node;
 }
 

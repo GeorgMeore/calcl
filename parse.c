@@ -8,19 +8,18 @@
 static Node *parse_sum(Scanner *s);
 static Node *parse_product(Scanner *s);
 static Node *parse_term(Scanner *s);
-static Node *parse_number(Scanner *s);
 
-// sum ::= product | product '+' sum
-static Node *parse_sum(Scanner *s)
+// SUM ::= PRODUCT | PRODUCT '+' SUM
+static Node *parse_sum(Scanner *scanner)
 {
-	Node *left = parse_product(s);
+	Node *left = parse_product(scanner);
 	if (!left) {
 		return NULL;
 	}
-	Token next = Scanner_peek(s);
+	Token next = Scanner_peek(scanner);
 	if (next.type == PLUS_TOKEN) {
-		Scanner_next(s);
-		Node *right = parse_sum(s);
+		Scanner_next(scanner);
+		Node *right = parse_sum(scanner);
 		if (!right) {
 			return NULL;
 		}
@@ -29,17 +28,17 @@ static Node *parse_sum(Scanner *s)
 	return left;
 }
 
-// product ::= term | term '*' product
-static Node *parse_product(Scanner *s)
+// PRODUCT ::= TERM | TERM '*' PRODUCT
+static Node *parse_product(Scanner *scanner)
 {
-	Node *left = parse_term(s);
+	Node *left = parse_term(scanner);
 	if (!left) {
 		return NULL;
 	}
-	Token next = Scanner_peek(s);
+	Token next = Scanner_peek(scanner);
 	if (next.type == ASTERISK_TOKEN) {
-		Scanner_next(s);
-		Node *right = parse_product(s);
+		Scanner_next(scanner);
+		Node *right = parse_product(scanner);
 		if (!right) {
 			return NULL;
 		}
@@ -48,12 +47,11 @@ static Node *parse_product(Scanner *s)
 	return left;
 }
 
-// term ::= '(' sum ')' | number
+// TERM ::= '(' SUM ')' | 'NUMBER'
 static Node *parse_term(Scanner *scanner)
 {
-	Token next = Scanner_peek(scanner);
+	Token next = Scanner_next(scanner);
 	if (next.type == LPAREN_TOKEN) {
-		Scanner_next(scanner);
 		Node *expr = parse_sum(scanner);
 		if (!expr) {
 			return NULL;
@@ -65,26 +63,14 @@ static Node *parse_term(Scanner *scanner)
 		}
 		return expr;
 	} else if (next.type == NUMBER_TOKEN) {
-		return parse_number(scanner);
+		return NumberNode_new(next.string, next.length);
 	} else {
 		error("expected '(' or a number");
 		return NULL;
 	}
 }
 
-// 'NUMBER'
-static Node *parse_number(Scanner *s)
-{
-	Token t = Scanner_next(s);
-	int number = 0;
-	for (int i = 0; i < t.length; i++) {
-		int digit = t.string[i] - '0';
-		number = digit + number * 10;
-	}
-	return NumberNode_new(number);
-}
-
-// expression ::= sum 'EOF'
+// EXPRESSION ::= SUM 'EOF'
 Node *parse(const Token *tokens)
 {
 	Scanner scanner = tokens;
@@ -94,7 +80,7 @@ Node *parse(const Token *tokens)
 	}
 	Token next = Scanner_peek(&scanner);
 	if (next.type != EOF_TOKEN) {
-		error("expected EOF");
+		error("unexpected token at the end");
 		return NULL;
 	}
 	return expr;

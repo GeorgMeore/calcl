@@ -28,7 +28,7 @@ struct Node {
 	NodeValue value;
 };
 
-Node *NumberNode_new(int value);
+Node *NumberNode_new(const char *string, int length);
 Node *SumNode_new(Node *left, Node *right);
 Node *ProductNode_new(Node *left, Node *right);
 
