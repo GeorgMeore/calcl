@@ -17,7 +17,8 @@ static Node *parse_sum(Scanner *s)
 	if (!left) {
 		return NULL;
 	}
-	if (Scanner_peek(s).type == PLUS_TOKEN) {
+	Token next = Scanner_peek(s);
+	if (next.type == PLUS_TOKEN) {
 		Scanner_next(s);
 		Node *right = parse_sum(s);
 		if (!right) {
@@ -35,7 +36,8 @@ static Node *parse_product(Scanner *s)
 	if (!left) {
 		return NULL;
 	}
-	if (Scanner_peek(s).type == ASTERISK_TOKEN) {
+	Token next = Scanner_peek(s);
+	if (next.type == ASTERISK_TOKEN) {
 		Scanner_next(s);
 		Node *right = parse_product(s);
 		if (!right) {
@@ -47,22 +49,23 @@ static Node *parse_product(Scanner *s)
 }
 
 // term ::= '(' sum ')' | number
-static Node *parse_term(Scanner *s)
+static Node *parse_term(Scanner *scanner)
 {
-	if (Scanner_peek(s).type == LPAREN_TOKEN) {
-		Scanner_next(s);
-		Node *expr = parse_sum(s);
+	Token next = Scanner_peek(scanner);
+	if (next.type == LPAREN_TOKEN) {
+		Scanner_next(scanner);
+		Node *expr = parse_sum(scanner);
 		if (!expr) {
 			return NULL;
 		}
-		if (Scanner_peek(s).type != RPAREN_TOKEN) {
+		next = Scanner_next(scanner);
+		if (next.type != RPAREN_TOKEN) {
 			error("expected )");
 			return NULL;
 		}
-		Scanner_next(s);
 		return expr;
-	} else if (Scanner_peek(s).type == NUMBER_TOKEN) {
-		return parse_number(s);
+	} else if (next.type == NUMBER_TOKEN) {
+		return parse_number(scanner);
 	} else {
 		error("expected '(' or a number");
 		return NULL;
@@ -89,7 +92,8 @@ Node *parse(const Token *tokens)
 	if (!expr) {
 		return NULL;
 	}
-	if (Scanner_peek(&scanner).type != EOF_TOKEN) {
+	Token next = Scanner_peek(&scanner);
+	if (next.type != EOF_TOKEN) {
 		error("expected EOF");
 		return NULL;
 	}
