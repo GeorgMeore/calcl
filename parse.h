@@ -1,9 +1,9 @@
 #ifndef PARSE_INCLUDED
 #define PARSE_INCLUDED
 
-#include "token.h"
+#include "scanner.h"
 #include "node.h"
 
-Node *parse(const Token *tokens);
+Node *parse(Scanner *scanner);
 
 #endif // PARSE_INCLUDED

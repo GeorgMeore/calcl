@@ -1,30 +1,30 @@
 #include <stdio.h>
-#include "token.h"
-#include "node.h"
+#include "debug.h"
 
-void print_tokens(const Token *tokens)
+void print_token(Token token)
 {
-	while (tokens++) {
-		switch (tokens->type) {
-			case LPAREN_TOKEN:
-				printf("LPAREN('%.*s')\n", tokens->length, tokens->string);
-				break;
-			case RPAREN_TOKEN:
-				printf("RPAREN('%.*s')\n", tokens->length, tokens->string);
-				break;
-			case ASTERISK_TOKEN:
-				printf("ASTERISK('%.*s')\n", tokens->length, tokens->string);
-				break;
-			case PLUS_TOKEN:
-				printf("PLUS('%.*s')\n", tokens->length, tokens->string);
-				break;
-			case NUMBER_TOKEN:
-				printf("NUMBER('%.*s')\n", tokens->length, tokens->string);
-				break;
-			case EOF_TOKEN:
-				printf("EOF\n");
-				return;
-		}
+	switch (token.type) {
+		case LPAREN_TOKEN:
+			printf("LPAREN('%.*s')\n", token.length, token.string);
+			break;
+		case RPAREN_TOKEN:
+			printf("RPAREN('%.*s')\n", token.length, token.string);
+			break;
+		case ASTERISK_TOKEN:
+			printf("ASTERISK('%.*s')\n", token.length, token.string);
+			break;
+		case PLUS_TOKEN:
+			printf("PLUS('%.*s')\n", token.length, token.string);
+			break;
+		case NUMBER_TOKEN:
+			printf("NUMBER('%.*s')\n", token.length, token.string);
+			break;
+		case ERROR_TOKEN:
+			printf("ERROR('%.*s')\n", token.length, token.string);
+			break;
+		case END_TOKEN:
+			printf("END\n");
+			return;
 	}
 }
 
