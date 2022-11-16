@@ -1,6 +1,20 @@
 #include <stdlib.h>
 #include "node.h"
 
+void Node_drop(Node *node)
+{
+	switch (node->type) {
+		case NUMBER_NODE:
+			free(node);
+			break;
+		case SUM_NODE:
+		case PRODUCT_NODE:
+			Node_drop(node->value.pair.left);
+			Node_drop(node->value.pair.right);
+			free(node);
+	}
+}
+
 Node *NumberNode_new(const char *string, int length)
 {
 	Node *node = malloc(sizeof(*node));

@@ -1,23 +1,26 @@
 #include <stdio.h>
+#include "input.h"
 #include "lex.h"
 #include "parse.h"
 #include "eval.h"
 
-int main(int argc, char **argv)
+int main()
 {
-	if (argc != 2) {
-		return 1;
+	for (;;) {
+		char *input = get_line();
+		if (!input) {
+			break;
+		}
+		CharIterator iter = input;
+		Scanner scanner = Scanner_make(&iter);
+		Node *expr = parse(&scanner);
+		if (!expr) {
+			continue;
+		}
+		int result;
+		evaluate(expr, &result);
+		printf("%d\n", result);
+		Node_drop(expr);
 	}
-	Token *tokens = tokenize(argv[1]);
-	if (!tokens) {
-		return 1;
-	}
-	Node *expr = parse(tokens);
-	if (!expr) {
-		return 1;
-	}
-	int result;
-	evaluate(expr, &result);
-	printf("%d\n", result);
 	return 0;
 }

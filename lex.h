@@ -2,7 +2,8 @@
 #define LEX_INCLUDED
 
 #include "token.h"
+#include "iter.h"
 
-Token *tokenize(const char *input);
+Token take_token(CharIterator *iterator);
 
 #endif // LEX_INCLUDED

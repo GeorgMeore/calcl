@@ -31,5 +31,6 @@ struct Node {
 Node *NumberNode_new(const char *string, int length);
 Node *SumNode_new(Node *left, Node *right);
 Node *ProductNode_new(Node *left, Node *right);
+void Node_drop(Node *node);
 
 #endif // NODE_INCLUDED

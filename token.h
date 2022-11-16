@@ -7,7 +7,8 @@ typedef enum {
 	ASTERISK_TOKEN,
 	PLUS_TOKEN,
 	NUMBER_TOKEN,
-	EOF_TOKEN,
+	END_TOKEN,
+	ERROR_TOKEN
 } TokenType;
 
 typedef struct {

@@ -70,17 +70,16 @@ static Node *parse_term(Scanner *scanner)
 	}
 }
 
-// EXPRESSION ::= SUM 'EOF'
-Node *parse(const Token *tokens)
+// EXPRESSION ::= SUM 'END'
+Node *parse(Scanner *scanner)
 {
-	Scanner scanner = tokens;
-	Node *expr = parse_sum(&scanner);
+	Node *expr = parse_sum(scanner);
 	if (!expr) {
 		return NULL;
 	}
-	Token next = Scanner_peek(&scanner);
-	if (next.type != EOF_TOKEN) {
-		error("unexpected token at the end");
+	Token next = Scanner_peek(scanner);
+	if (next.type != END_TOKEN) {
+		error("unexpected token after the sum");
 		return NULL;
 	}
 	return expr;
