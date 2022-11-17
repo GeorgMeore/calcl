@@ -33,6 +33,9 @@ static Token take_separator(CharIterator *iterator)
 			break;
 		case '*':
 			type = ASTERISK_TOKEN;
+			break;
+		case '^':
+			type = CARET_TOKEN;
 	}
 	Token separator = {type, CharIterator_cursor(iterator) - 1, 1};
 	return separator;
@@ -59,7 +62,7 @@ Token take_token(CharIterator *iterator)
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
 			return take_number(iterator);
-		case '(': case ')': case '+': case '*':
+		case '(': case ')': case '+': case '*': case '^':
 			return take_separator(iterator);
 		case '\0':
 			Token eof = {END_TOKEN, CharIterator_cursor(iterator), 0};

@@ -9,6 +9,7 @@ void Node_drop(Node *node)
 			break;
 		case SUM_NODE:
 		case PRODUCT_NODE:
+		case EXPT_NODE:
 			Node_drop(node->value.pair.left);
 			Node_drop(node->value.pair.right);
 			free(node);
@@ -43,5 +44,14 @@ Node *ProductNode_new(Node *left, Node *right)
 	node->type = PRODUCT_NODE;
 	node->value.pair.left = left;
 	node->value.pair.right = right;
+	return node;
+}
+
+Node *ExptNode_new(Node *base, Node *exponent)
+{
+	Node *node = malloc(sizeof(*node));
+	node->type = EXPT_NODE;
+	node->value.pair.left = base;
+	node->value.pair.right = exponent;
 	return node;
 }
