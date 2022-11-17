@@ -1,5 +1,7 @@
-#include <stdlib.h>
 #include "node.h"
+
+#include <stdlib.h>
+
 
 void Node_drop(Node *node)
 {

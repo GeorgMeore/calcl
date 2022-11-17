@@ -1,12 +1,15 @@
 #include "eval.h"
 
+#include "node.h"
+
+
 static int eval_sum(Node *expr, int *result)
 {
 	int left_value, right_value;
-	if (!evaluate(expr->value.pair.left, &left_value)) {
+	if (!eval(expr->value.pair.left, &left_value)) {
 		return 0;
 	}
-	if (!evaluate(expr->value.pair.right, &right_value)) {
+	if (!eval(expr->value.pair.right, &right_value)) {
 		return 0;
 	}
 	*result = left_value + right_value;
@@ -16,10 +19,10 @@ static int eval_sum(Node *expr, int *result)
 static int eval_product(Node *expr, int *result)
 {
 	int left_value, right_value;
-	if (!evaluate(expr->value.pair.left, &left_value)) {
+	if (!eval(expr->value.pair.left, &left_value)) {
 		return 0;
 	}
-	if (!evaluate(expr->value.pair.right, &right_value)) {
+	if (!eval(expr->value.pair.right, &right_value)) {
 		return 0;
 	}
 	*result = left_value * right_value;
@@ -29,10 +32,10 @@ static int eval_product(Node *expr, int *result)
 static int eval_expt(Node *expr, int *result)
 {
 	int left_value, right_value;
-	if (!evaluate(expr->value.pair.left, &left_value)) {
+	if (!eval(expr->value.pair.left, &left_value)) {
 		return 0;
 	}
-	if (!evaluate(expr->value.pair.right, &right_value)) {
+	if (!eval(expr->value.pair.right, &right_value)) {
 		return 0;
 	}
 	*result = 1;
@@ -43,7 +46,7 @@ static int eval_expt(Node *expr, int *result)
 	return 1;
 }
 
-int evaluate(Node *expr, int *result)
+int eval(Node *expr, int *result)
 {
 	switch (expr->type) {
 		case NUMBER_NODE:

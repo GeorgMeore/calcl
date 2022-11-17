@@ -1,10 +1,15 @@
 #include <stdio.h>
+
 #include "opts.h"
 #include "input.h"
+#include "iter.h"
 #include "lex.h"
+#include "scanner.h"
 #include "parse.h"
+#include "node.h"
 #include "eval.h"
 #include "debug.h"
+
 
 int main(int argc, char **argv)
 {
@@ -28,7 +33,7 @@ int main(int argc, char **argv)
 			print_expr(expr);
 		}
 		int result;
-		if (evaluate(expr, &result)) {
+		if (eval(expr, &result)) {
 			printf("%d\n", result);
 		}
 		Node_drop(expr);
