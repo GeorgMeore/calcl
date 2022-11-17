@@ -8,6 +8,7 @@
 static Node *parse_sum(Scanner *s);
 static Node *parse_product(Scanner *s);
 static Node *parse_term(Scanner *s);
+static Node *parse_expt(Scanner *s);
 
 // SUM ::= PRODUCT | PRODUCT '+' SUM
 static Node *parse_sum(Scanner *scanner)
@@ -21,6 +22,7 @@ static Node *parse_sum(Scanner *scanner)
 		Scanner_next(scanner);
 		Node *right = parse_sum(scanner);
 		if (!right) {
+			Node_drop(left);
 			return NULL;
 		}
 		return SumNode_new(left, right);
@@ -28,10 +30,10 @@ static Node *parse_sum(Scanner *scanner)
 	return left;
 }
 
-// PRODUCT ::= TERM | TERM '*' PRODUCT
+// PRODUCT ::= EXPT | EXPT '*' PRODUCT
 static Node *parse_product(Scanner *scanner)
 {
-	Node *left = parse_term(scanner);
+	Node *left = parse_expt(scanner);
 	if (!left) {
 		return NULL;
 	}
@@ -40,11 +42,32 @@ static Node *parse_product(Scanner *scanner)
 		Scanner_next(scanner);
 		Node *right = parse_product(scanner);
 		if (!right) {
+			Node_drop(left);
 			return NULL;
 		}
 		return ProductNode_new(left, right);
 	}
 	return left;
+}
+
+// EXPT ::= TERM | TERM '^' EXPT
+static Node *parse_expt(Scanner *scanner)
+{
+	Node *base = parse_term(scanner);
+	if (!base) {
+		return NULL;
+	}
+	Token next = Scanner_peek(scanner);
+	if (next.type == CARET_TOKEN) {
+		Scanner_next(scanner);
+		Node *exponent = parse_expt(scanner);
+		if (!exponent) {
+			Node_drop(base);
+			return NULL;
+		}
+		return ExptNode_new(base, exponent);
+	}
+	return base;
 }
 
 // TERM ::= '(' SUM ')' | 'NUMBER'
@@ -59,6 +82,7 @@ static Node *parse_term(Scanner *scanner)
 		next = Scanner_next(scanner);
 		if (next.type != RPAREN_TOKEN) {
 			error("expected )");
+			Node_drop(expr);
 			return NULL;
 		}
 		return expr;
@@ -73,14 +97,15 @@ static Node *parse_term(Scanner *scanner)
 // EXPRESSION ::= SUM 'END'
 Node *parse(Scanner *scanner)
 {
-	Node *expr = parse_sum(scanner);
-	if (!expr) {
+	Node *sum = parse_sum(scanner);
+	if (!sum) {
 		return NULL;
 	}
 	Token next = Scanner_peek(scanner);
 	if (next.type != END_TOKEN) {
 		error("unexpected token after the sum");
+		Node_drop(sum);
 		return NULL;
 	}
-	return expr;
+	return sum;
 }
