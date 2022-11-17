@@ -16,7 +16,7 @@ char *get_line()
 	}
 	for (int end = 0;; end++) {
 		int c = getchar();
-		// if found eof and the buffer is not empty
+		// if found eof while the buffer is not empty
 		// return the buffer first
 		if (c == '\n' || (c == EOF && end > 0)) {
 			buffer[end] = '\0';

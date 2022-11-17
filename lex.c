@@ -21,7 +21,7 @@ static Token take_number(CharIterator *iterator)
 	}
 }
 
-// [()+*]
+// [()+*^]
 static Token take_separator(CharIterator *iterator)
 {
 	TokenType type;
