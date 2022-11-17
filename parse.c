@@ -22,7 +22,7 @@ static Node *parse_sum(Scanner *scanner)
 			return left;
 		}
 		Scanner_next(scanner);
-		Node *right = parse_sum(scanner);
+		Node *right = parse_product(scanner);
 		if (!right) {
 			Node_drop(left);
 			return NULL;
@@ -44,7 +44,7 @@ static Node *parse_product(Scanner *scanner)
 			return left;
 		}
 		Scanner_next(scanner);
-		Node *right = parse_product(scanner);
+		Node *right = parse_expt(scanner);
 		if (!right) {
 			Node_drop(left);
 			return NULL;
