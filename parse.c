@@ -10,44 +10,48 @@ static Node *parse_product(Scanner *s);
 static Node *parse_term(Scanner *s);
 static Node *parse_expt(Scanner *s);
 
-// SUM ::= PRODUCT | PRODUCT '+' SUM
+// SUM ::= PRODUCT {'+' PRODUCT}
 static Node *parse_sum(Scanner *scanner)
 {
 	Node *left = parse_product(scanner);
 	if (!left) {
 		return NULL;
 	}
-	Token next = Scanner_peek(scanner);
-	if (next.type == PLUS_TOKEN) {
+	for (;;) {
+		Token next = Scanner_peek(scanner);
+		if (next.type != PLUS_TOKEN) {
+			return left;
+		}
 		Scanner_next(scanner);
 		Node *right = parse_sum(scanner);
 		if (!right) {
 			Node_drop(left);
 			return NULL;
 		}
-		return SumNode_new(left, right);
+		left = SumNode_new(left, right);
 	}
-	return left;
 }
 
-// PRODUCT ::= EXPT | EXPT '*' PRODUCT
+// PRODUCT ::= EXPT {'*' EXPT}
 static Node *parse_product(Scanner *scanner)
 {
 	Node *left = parse_expt(scanner);
 	if (!left) {
 		return NULL;
 	}
-	Token next = Scanner_peek(scanner);
-	if (next.type == ASTERISK_TOKEN) {
+	for (;;) {
+		Token next = Scanner_peek(scanner);
+		if (next.type != ASTERISK_TOKEN) {
+			return left;
+		}
 		Scanner_next(scanner);
 		Node *right = parse_product(scanner);
 		if (!right) {
 			Node_drop(left);
 			return NULL;
 		}
-		return ProductNode_new(left, right);
+		left = ProductNode_new(left, right);
 	}
-	return left;
 }
 
 // EXPT ::= TERM | TERM '^' EXPT
