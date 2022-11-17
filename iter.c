@@ -1,5 +1,6 @@
 #include "iter.h"
 
+
 const char *CharIterator_cursor(CharIterator *self)
 {
 	return *self;

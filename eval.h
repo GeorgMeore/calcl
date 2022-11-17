@@ -3,6 +3,6 @@
 
 #include "node.h"
 
-int evaluate(Node *expr, int *result);
+int eval(Node *expr, int *result);
 
 #endif // EVAL_INCLUDED

@@ -1,6 +1,12 @@
+#include "parse.h"
+
 #include <stdlib.h>
 #include <stdio.h>
-#include "parse.h"
+
+#include "scanner.h"
+#include "node.h"
+#include "token.h"
+
 
 #define error(s) fprintf(stderr, "parsing error: %s\n", s)
 

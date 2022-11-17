@@ -1,5 +1,10 @@
-#include <stdio.h>
 #include "debug.h"
+
+#include <stdio.h>
+
+#include "token.h"
+#include "node.h"
+
 
 void print_token(Token token)
 {

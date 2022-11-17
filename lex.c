@@ -1,5 +1,9 @@
 #include "lex.h"
 
+#include "token.h"
+#include "iter.h"
+
+
 // [0-9]+
 static Token take_number(CharIterator *iterator)
 {

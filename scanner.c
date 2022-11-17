@@ -1,5 +1,9 @@
-#include "scanner.h"
 #include "lex.h"
+
+#include "iter.h"
+#include "scanner.h"
+#include "token.h"
+
 
 Scanner Scanner_make(CharIterator *iterator)
 {
