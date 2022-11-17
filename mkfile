@@ -11,7 +11,9 @@ $prog: $OBJ
 	$CC $CFLAGS -o $target $prereq
 
 %.o: %.c
-	$CC $CFLAGS -c $prereq
+	$CC $CFLAGS -c $stem.c
+
+<|$CC -MM $SRC
 
 clean:V:
 	rm -f $OBJ $prog
