@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "parse.h"
-#include "scanner.h"
 
 #define error(s) fprintf(stderr, "parsing error: %s\n", s)
 

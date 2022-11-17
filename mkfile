@@ -1,7 +1,8 @@
 CC=gcc
 LD=ld
 CFLAGS=-g -Wall -Wextra
-SRC=lex.c main.c node.c iter.c parse.c scanner.c eval.c input.c debug.c
+SRC=debug.c eval.c input.c iter.c lex.c main.c node.c opts.c parse.c scanner.c
+
 prog=toycalc
 
 OBJ=${SRC:%.c=%.o}
