@@ -10,7 +10,7 @@ typedef enum {
 	EXPT_NODE
 } NodeType;
 
-typedef int NumberValue;
+typedef double NumberValue;
 
 typedef struct {
 	Node *left;

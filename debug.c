@@ -47,7 +47,7 @@ static void print_tree(const Node *expr, int level)
 {
 	switch (expr->type) {
 		case NUMBER_NODE:
-			indent(level); printf("NUMBER: %d\n", expr->value.number);
+			indent(level); printf("NUMBER: %lf\n", expr->value.number);
 			break;
 		case SUM_NODE:
 			indent(level); printf("SUM: {\n");

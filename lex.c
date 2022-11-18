@@ -1,28 +1,30 @@
 #include "lex.h"
 
+#include <ctype.h>
+
 #include "token.h"
 #include "iter.h"
 
 
-// [0-9]+
+// number <- digit+ ('.' digit*)?
 static Token take_number(CharIterator *iterator)
 {
 	const char *start = CharIterator_cursor(iterator);
-	for (;;) {
-		switch (CharIterator_peek(iterator)) {
-			case '0': case '1': case '2': case '3': case '4':
-			case '5': case '6': case '7': case '8': case '9':
-				CharIterator_next(iterator);
-				break;
-			default:
-				Token number = {NUMBER_TOKEN, start, CharIterator_cursor(iterator) - start};
-				return number;
-		}
+	while (isdigit(CharIterator_peek(iterator))) {
+		CharIterator_next(iterator);
 	}
+	if (CharIterator_peek(iterator) == '.') {
+		CharIterator_next(iterator);
+	}
+	while (isdigit(CharIterator_peek(iterator))) {
+		CharIterator_next(iterator);
+	}
+	Token number = {NUMBER_TOKEN, start, CharIterator_cursor(iterator) - start};
+	return number;
 }
 
 // [()+*^]
-static Token take_separator(CharIterator *iterator)
+static Token take_singlet(CharIterator *iterator)
 {
 	TokenType type;
 	switch (CharIterator_next(iterator)) {
@@ -45,7 +47,16 @@ static Token take_separator(CharIterator *iterator)
 	return separator;
 }
 
-// [ \t\n]+
+static int issinglet(char c)
+{
+	switch (c) {
+		case '(': case ')': case '+': case '*': case '^':
+			return 1;
+		default:
+			return 0;
+	}
+}
+
 static void take_spaces(CharIterator *iterator)
 {
 	for (;;) {
@@ -58,21 +69,21 @@ static void take_spaces(CharIterator *iterator)
 	}
 }
 
-// spaces? (separator | number)* '\0'
+// singlet | number | '\0'
 Token take_token(CharIterator *iterator)
 {
 	take_spaces(iterator);
-	switch (CharIterator_peek(iterator)) {
-		case '0': case '1': case '2': case '3': case '4':
-		case '5': case '6': case '7': case '8': case '9':
-			return take_number(iterator);
-		case '(': case ')': case '+': case '*': case '^':
-			return take_separator(iterator);
-		case '\0':
-			Token eof = {END_TOKEN, CharIterator_cursor(iterator), 0};
-			return eof;
-		default:
-			Token error = {ERROR_TOKEN, CharIterator_cursor(iterator), 1};
-			return error;
+	char next = CharIterator_peek(iterator);
+	if (isdigit(next)) {
+		return take_number(iterator);
 	}
+	if (issinglet(next)) {
+		return take_singlet(iterator);
+	}
+	if (next == '\0') {
+		Token eof = {END_TOKEN, CharIterator_cursor(iterator), 0};
+		return eof;
+	}
+	Token error = {ERROR_TOKEN, CharIterator_cursor(iterator), 1};
+	return error;
 }
