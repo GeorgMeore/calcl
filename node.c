@@ -1,6 +1,7 @@
 #include "node.h"
 
 #include <stdlib.h>
+#include <ctype.h>
 
 
 void Node_drop(Node *node)
@@ -18,16 +19,29 @@ void Node_drop(Node *node)
 	}
 }
 
+static NumberValue number_value(const char *string, int length)
+{
+	double number = 0;
+	int i;
+	// whole part
+	for (i = 0; i < length && isdigit(string[i]); i++) {
+		number = (string[i] - '0') + number * 10;
+	}
+	if (string[i] == '.') {
+		i++;
+	}
+	// fractional part
+	for (double factor = 0.1; i < length; i++, factor/=10) {
+		number += (string[i] - '0') * factor;
+	}
+	return number;
+}
+
 Node *NumberNode_new(const char *string, int length)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = NUMBER_NODE;
-	int number = 0;
-	for (int i = 0; i < length; i++) {
-		int digit = (string[i] - '0');
-		number = digit + number * 10;
-	}
-	node->value.number = number;
+	node->value.number = number_value(string, length);
 	return node;
 }
 

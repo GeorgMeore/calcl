@@ -1,52 +1,50 @@
 #include "eval.h"
 
+#include <math.h>
+
 #include "node.h"
 
 
-static int eval_sum(Node *expr, int *result)
+static int eval_sum(Node *expr, double *result)
 {
-	int left_value, right_value;
-	if (!eval(expr->value.pair.left, &left_value)) {
+	double left, right;
+	if (!eval(expr->value.pair.left, &left)) {
 		return 0;
 	}
-	if (!eval(expr->value.pair.right, &right_value)) {
+	if (!eval(expr->value.pair.right, &right)) {
 		return 0;
 	}
-	*result = left_value + right_value;
+	*result = left + right;
 	return 1;
 }
 
-static int eval_product(Node *expr, int *result)
+static int eval_product(Node *expr, double *result)
 {
-	int left_value, right_value;
-	if (!eval(expr->value.pair.left, &left_value)) {
+	double left, right;
+	if (!eval(expr->value.pair.left, &left)) {
 		return 0;
 	}
-	if (!eval(expr->value.pair.right, &right_value)) {
+	if (!eval(expr->value.pair.right, &right)) {
 		return 0;
 	}
-	*result = left_value * right_value;
+	*result = left * right;
 	return 1;
 }
 
-static int eval_expt(Node *expr, int *result)
+static int eval_expt(Node *expr, double *result)
 {
-	int left_value, right_value;
-	if (!eval(expr->value.pair.left, &left_value)) {
+	double left, right;
+	if (!eval(expr->value.pair.left, &left)) {
 		return 0;
 	}
-	if (!eval(expr->value.pair.right, &right_value)) {
+	if (!eval(expr->value.pair.right, &right)) {
 		return 0;
 	}
-	*result = 1;
-	while (right_value > 0) {
-		*result *= left_value;
-		right_value -= 1;
-	}
+	*result = pow(left, right);
 	return 1;
 }
 
-int eval(Node *expr, int *result)
+int eval(Node *expr, double *result)
 {
 	switch (expr->type) {
 		case NUMBER_NODE:

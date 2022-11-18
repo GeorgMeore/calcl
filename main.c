@@ -32,9 +32,9 @@ int main(int argc, char **argv)
 		if (debug) {
 			print_expr(expr);
 		}
-		int result;
+		double result;
 		if (eval(expr, &result)) {
-			printf("%d\n", result);
+			printf("%lf\n", result);
 		}
 		Node_drop(expr);
 	}
