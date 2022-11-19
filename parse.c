@@ -45,7 +45,7 @@ Node *parse(Scanner *scanner)
 	return expr;
 }
 
-// EXPRESSION ::= CONDIDIONAL | AND
+// EXPRESSION ::= IF | OR
 static Node *parse_expression(Scanner *scanner)
 {
 	Token next = Scanner_peek(scanner);
@@ -55,7 +55,7 @@ static Node *parse_expression(Scanner *scanner)
 	return parse_or(scanner);
 }
 
-// IF := 'IF' OR 'THEN' OR 'ELSE' OR
+// IF ::= 'IF' OR 'THEN' OR 'ELSE' OR
 static Node *parse_if(Scanner *scanner)
 {
 	Scanner_next(scanner);
@@ -84,7 +84,7 @@ static Node *parse_if(Scanner *scanner)
 	return IfNode_new(cond, true, false);
 }
 
-// OR := AND {'OR' AND}
+// OR ::= AND {'OR' AND}
 static Node *parse_or(Scanner *scanner)
 {
 	Node *left = parse_and(scanner);
@@ -106,7 +106,7 @@ static Node *parse_or(Scanner *scanner)
 	}
 }
 
-// AND := CMP {'AND' CMP}
+// AND ::= CMP {'AND' CMP}
 static Node *parse_and(Scanner *scanner)
 {
 	Node *left = parse_cmp(scanner);
@@ -128,7 +128,7 @@ static Node *parse_and(Scanner *scanner)
 	}
 }
 
-// CMP := SUM ['>' SUM]
+// CMP ::= SUM ['>' SUM]
 static Node *parse_cmp(Scanner *scanner)
 {
 	Node *left = parse_sum(scanner);
