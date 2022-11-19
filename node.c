@@ -13,9 +13,19 @@ void Node_drop(Node *node)
 		case SUM_NODE:
 		case PRODUCT_NODE:
 		case EXPT_NODE:
+		case CMP_NODE:
+		case AND_NODE:
+		case OR_NODE:
 			Node_drop(node->value.pair.left);
 			Node_drop(node->value.pair.right);
 			free(node);
+			break;
+		case IF_NODE:
+			Node_drop(node->value.ifelse.cond);
+			Node_drop(node->value.ifelse.true);
+			Node_drop(node->value.ifelse.false);
+			free(node);
+			break;
 	}
 }
 
@@ -45,29 +55,51 @@ Node *NumberNode_new(const char *string, int length)
 	return node;
 }
 
-Node *SumNode_new(Node *left, Node *right)
+static Node *pair_new(NodeType type, Node *left, Node *right)
 {
 	Node *node = malloc(sizeof(*node));
-	node->type = SUM_NODE;
+	node->type = type;
 	node->value.pair.left = left;
 	node->value.pair.right = right;
 	return node;
+}
+
+Node *SumNode_new(Node *left, Node *right)
+{
+	return pair_new(SUM_NODE, left, right);
 }
 
 Node *ProductNode_new(Node *left, Node *right)
 {
-	Node *node = malloc(sizeof(*node));
-	node->type = PRODUCT_NODE;
-	node->value.pair.left = left;
-	node->value.pair.right = right;
-	return node;
+	return pair_new(PRODUCT_NODE, left, right);
 }
 
 Node *ExptNode_new(Node *base, Node *exponent)
 {
+	return pair_new(EXPT_NODE, base, exponent);
+}
+
+Node *CmpNode_new(Node *left, Node *right)
+{
+	return pair_new(CMP_NODE, left, right);
+}
+
+Node *AndNode_new(Node *left, Node *right)
+{
+	return pair_new(AND_NODE, left, right);
+}
+
+Node *OrNode_new(Node *left, Node *right)
+{
+	return pair_new(OR_NODE, left, right);
+}
+
+Node *IfNode_new(Node *cond, Node *true, Node *false)
+{
 	Node *node = malloc(sizeof(*node));
-	node->type = EXPT_NODE;
-	node->value.pair.left = base;
-	node->value.pair.right = exponent;
+	node->type = IF_NODE;
+	node->value.ifelse.cond = cond;
+	node->value.ifelse.true = true;
+	node->value.ifelse.false = false;
 	return node;
 }

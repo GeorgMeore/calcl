@@ -8,13 +8,146 @@
 #include "token.h"
 
 
-#define error(s) fprintf(stderr, "parsing error: %s\n", s)
+static void error(const char *message, Token last)
+{
+	fprintf(stderr, "parsing error: %s ", message);
+	if (last.type == END_TOKEN) {
+		fprintf(stderr, "(while parsing 'EOF')\n");
+	} else {
+		fprintf(stderr, "(while parsing '%.*s')\n", last.length, last.string);
+	}
+}
 
+// subexpression parsers (from lowest to highest priority)
+static Node *parse_expression(Scanner *scanner);
+static Node *parse_if(Scanner *s);
+static Node *parse_or(Scanner *s);
+static Node *parse_and(Scanner *s);
+static Node *parse_cmp(Scanner *s);
 static Node *parse_sum(Scanner *s);
 static Node *parse_product(Scanner *s);
-static Node *parse_term(Scanner *s);
 static Node *parse_expt(Scanner *s);
+static Node *parse_term(Scanner *s);
 
+// VALID ::= EXPRESSION 'END'
+Node *parse(Scanner *scanner)
+{
+	Node *expr = parse_expression(scanner);
+	if (!expr) {
+		return NULL;
+	}
+	Token next = Scanner_peek(scanner);
+	if (next.type != END_TOKEN) {
+		error("unexpected token after the expression", next);
+		Node_drop(expr);
+		return NULL;
+	}
+	return expr;
+}
+
+// EXPRESSION ::= CONDIDIONAL | AND
+static Node *parse_expression(Scanner *scanner)
+{
+	Token next = Scanner_peek(scanner);
+	if (next.type == IF_TOKEN) {
+		return parse_if(scanner);
+	}
+	return parse_or(scanner);
+}
+
+// IF := 'IF' OR 'THEN' OR 'ELSE' OR
+static Node *parse_if(Scanner *scanner)
+{
+	Scanner_next(scanner);
+	Node *cond = parse_or(scanner);
+	if (!cond) {
+		return NULL;
+	}
+	Token next = Scanner_next(scanner);
+	if (next.type != THEN_TOKEN) {
+		error("expected 'then'", next);
+		return NULL;
+	}
+	Node *true = parse_or(scanner);
+	if (!true) {
+		return NULL;
+	}
+	next = Scanner_next(scanner);
+	if (next.type != ELSE_TOKEN) {
+		error("expected 'else'", next);
+		return NULL;
+	}
+	Node *false = parse_or(scanner);
+	if (!false) {
+		return NULL;
+	}
+	return IfNode_new(cond, true, false);
+}
+
+// OR := AND {'OR' AND}
+static Node *parse_or(Scanner *scanner)
+{
+	Node *left = parse_and(scanner);
+	if (!left) {
+		return NULL;
+	}
+	for (;;) {
+		Token next = Scanner_peek(scanner);
+		if (next.type != OR_TOKEN) {
+			return left;
+		}
+		Scanner_next(scanner);
+		Node *right = parse_and(scanner);
+		if (!right) {
+			Node_drop(left);
+			return NULL;
+		}
+		left = OrNode_new(left, right);
+	}
+}
+
+// AND := CMP {'AND' CMP}
+static Node *parse_and(Scanner *scanner)
+{
+	Node *left = parse_cmp(scanner);
+	if (!left) {
+		return NULL;
+	}
+	for (;;) {
+		Token next = Scanner_peek(scanner);
+		if (next.type != AND_TOKEN) {
+			return left;
+		}
+		Scanner_next(scanner);
+		Node *right = parse_cmp(scanner);
+		if (!right) {
+			Node_drop(left);
+			return NULL;
+		}
+		left = AndNode_new(left, right);
+	}
+}
+
+// CMP := SUM ['>' SUM]
+static Node *parse_cmp(Scanner *scanner)
+{
+	Node *left = parse_sum(scanner);
+	if (!left) {
+		return NULL;
+	}
+	Token next = Scanner_peek(scanner);
+	if (next.type == GT_TOKEN) {
+		Scanner_next(scanner);
+		Node *right = parse_sum(scanner);
+		if (!right) {
+			return NULL;
+		}
+		return CmpNode_new(left, right);
+	}
+	return left;
+}
+
+// TODO: implement subtraction
 // SUM ::= PRODUCT {'+' PRODUCT}
 static Node *parse_sum(Scanner *scanner)
 {
@@ -37,6 +170,7 @@ static Node *parse_sum(Scanner *scanner)
 	}
 }
 
+// TODO: implement division
 // PRODUCT ::= EXPT {'*' EXPT}
 static Node *parse_product(Scanner *scanner)
 {
@@ -79,18 +213,18 @@ static Node *parse_expt(Scanner *scanner)
 	return base;
 }
 
-// TERM ::= '(' SUM ')' | 'NUMBER'
+// TERM ::= '(' EXPRESSION ')' | 'NUMBER'
 static Node *parse_term(Scanner *scanner)
 {
 	Token next = Scanner_next(scanner);
 	if (next.type == LPAREN_TOKEN) {
-		Node *expr = parse_sum(scanner);
+		Node *expr = parse_expression(scanner);
 		if (!expr) {
 			return NULL;
 		}
 		next = Scanner_next(scanner);
 		if (next.type != RPAREN_TOKEN) {
-			error("expected )");
+			error("expected ')'", next);
 			Node_drop(expr);
 			return NULL;
 		}
@@ -98,23 +232,7 @@ static Node *parse_term(Scanner *scanner)
 	} else if (next.type == NUMBER_TOKEN) {
 		return NumberNode_new(next.string, next.length);
 	} else {
-		error("expected '(' or a number");
+		error("expected '(' or a number", next);
 		return NULL;
 	}
-}
-
-// EXPRESSION ::= SUM 'END'
-Node *parse(Scanner *scanner)
-{
-	Node *sum = parse_sum(scanner);
-	if (!sum) {
-		return NULL;
-	}
-	Token next = Scanner_peek(scanner);
-	if (next.type != END_TOKEN) {
-		error("unexpected token after the sum");
-		Node_drop(sum);
-		return NULL;
-	}
-	return sum;
 }

@@ -1,10 +1,43 @@
 #include "lex.h"
 
 #include <ctype.h>
+#include <string.h>
 
 #include "token.h"
 #include "iter.h"
 
+
+// 'if' | 'then' | 'else' | 'or' | 'and'
+static Token take_keyword(CharIterator *iterator)
+{
+	const char *start = CharIterator_cursor(iterator);
+	while (isalpha(CharIterator_peek(iterator))) {
+		CharIterator_next(iterator);
+	}
+	long unsigned length = CharIterator_cursor(iterator) - start;
+	if (!strncmp(start, "if", length)) {
+		Token ift = {IF_TOKEN, start, length};
+		return ift;
+	}
+	if (!strncmp(start, "then", length)) {
+		Token then = {THEN_TOKEN, start, length};
+		return then;
+	}
+	if (!strncmp(start, "else", length)) {
+		Token elset = {ELSE_TOKEN, start, length};
+		return elset;
+	}
+	if (!strncmp(start, "or", length)) {
+		Token or = {OR_TOKEN, start, length};
+		return or;
+	}
+	if (!strncmp(start, "and", length)) {
+		Token and = {AND_TOKEN, start, length};
+		return and;
+	}
+	Token error = {ERROR_TOKEN, CharIterator_cursor(iterator), 1};
+	return error;
+}
 
 // number <- digit+ ('.' digit*)?
 static Token take_number(CharIterator *iterator)
@@ -23,65 +56,53 @@ static Token take_number(CharIterator *iterator)
 	return number;
 }
 
-// [()+*^]
-static Token take_singlet(CharIterator *iterator)
-{
-	TokenType type;
-	switch (CharIterator_next(iterator)) {
-		case '(':
-			type = LPAREN_TOKEN;
-			break;
-		case ')':
-			type = RPAREN_TOKEN;
-			break;
-		case '+':
-			type = PLUS_TOKEN;
-			break;
-		case '*':
-			type = ASTERISK_TOKEN;
-			break;
-		case '^':
-			type = CARET_TOKEN;
-	}
-	Token separator = {type, CharIterator_cursor(iterator) - 1, 1};
-	return separator;
-}
-
-static int issinglet(char c)
-{
-	switch (c) {
-		case '(': case ')': case '+': case '*': case '^':
-			return 1;
-		default:
-			return 0;
-	}
-}
-
-static void take_spaces(CharIterator *iterator)
-{
-	for (;;) {
-		switch (CharIterator_peek(iterator)) {
-			case ' ': case '\t': case '\n':
-				CharIterator_next(iterator);
-			default:
-				return;
-		}
-	}
-}
-
-// singlet | number | '\0'
+// number | id | keyword | '(' | ')' | '+' | '*' | '^' | '>' | '\0'
 Token take_token(CharIterator *iterator)
 {
-	take_spaces(iterator);
+	// skip leading spaces
+	while (isspace(CharIterator_peek(iterator))) {
+		CharIterator_next(iterator);
+	}
 	char next = CharIterator_peek(iterator);
 	if (isdigit(next)) {
 		return take_number(iterator);
 	}
-	if (issinglet(next)) {
-		return take_singlet(iterator);
+	if (isalpha(next)) {
+		return take_keyword(iterator);
+	}
+	if (next == '(') {
+		Token lparen = {LPAREN_TOKEN, CharIterator_cursor(iterator), 1};
+		CharIterator_next(iterator);
+		return lparen;
+	}
+	if (next == ')') {
+		Token rparen = {RPAREN_TOKEN, CharIterator_cursor(iterator), 1};
+		CharIterator_next(iterator);
+		return rparen;
+	}
+	if (next == '+') {
+		Token plus = {PLUS_TOKEN, CharIterator_cursor(iterator), 1};
+		CharIterator_next(iterator);
+		return plus;
+	}
+	if (next == '*') {
+		Token asterisk = {ASTERISK_TOKEN, CharIterator_cursor(iterator), 1};
+		CharIterator_next(iterator);
+		return asterisk;
+	}
+	if (next == '^') {
+		Token caret = {CARET_TOKEN, CharIterator_cursor(iterator), 1};
+		CharIterator_next(iterator);
+		return caret;
+	}
+	if (next == '>') {
+		Token gt = {GT_TOKEN, CharIterator_cursor(iterator), 1};
+		CharIterator_next(iterator);
+		return gt;
 	}
 	if (next == '\0') {
 		Token eof = {END_TOKEN, CharIterator_cursor(iterator), 0};
+		CharIterator_next(iterator);
 		return eof;
 	}
 	Token error = {ERROR_TOKEN, CharIterator_cursor(iterator), 1};

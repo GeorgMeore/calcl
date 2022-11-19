@@ -8,8 +8,14 @@ typedef enum {
 	CARET_TOKEN,
 	ASTERISK_TOKEN,
 	PLUS_TOKEN,
-	END_TOKEN,
-	ERROR_TOKEN
+	GT_TOKEN,
+	AND_TOKEN,
+	OR_TOKEN,
+	IF_TOKEN,
+	THEN_TOKEN,
+	ELSE_TOKEN,
+	ERROR_TOKEN,
+	END_TOKEN
 } TokenType;
 
 typedef struct {
