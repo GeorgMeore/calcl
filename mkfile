@@ -13,6 +13,7 @@ $prog: $OBJ
 %.o: %.c
 	$CC $CFLAGS -c $stem.c
 
+# generate dependency list
 <|$CC -MM $SRC
 
 clean:V:

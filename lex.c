@@ -7,7 +7,7 @@
 #include "iter.h"
 
 
-// 'if' | 'then' | 'else' | 'or' | 'and'
+// keyword <- 'if' | 'then' | 'else' | 'or' | 'and'
 static Token take_keyword(CharIterator *iterator)
 {
 	const char *start = CharIterator_cursor(iterator);
@@ -56,7 +56,7 @@ static Token take_number(CharIterator *iterator)
 	return number;
 }
 
-// number | id | keyword | '(' | ')' | '+' | '*' | '^' | '>' | '\0'
+// token <- number | id | keyword | '(' | ')' | '+' | '*' | '^' | '>' | '\0'
 Token take_token(CharIterator *iterator)
 {
 	// skip leading spaces
