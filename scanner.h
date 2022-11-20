@@ -10,7 +10,7 @@ typedef struct {
 } Scanner;
 
 Scanner Scanner_make(CharIterator *iterator);
-Token Scanner_peek(Scanner *self);
-Token Scanner_next(Scanner *self);
+Token   Scanner_peek(Scanner *self);
+Token   Scanner_next(Scanner *self);
 
 #endif // SCANNER_INCLUDED
