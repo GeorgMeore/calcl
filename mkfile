@@ -1,5 +1,4 @@
 CC=gcc
-LD=ld
 CFLAGS=-g -Wall -Wextra
 LDFLAGS=-lm
 SRC=debug.c\
@@ -19,7 +18,7 @@ prog=toycalc
 OBJ=${SRC:%.c=%.o}
 
 $prog: $OBJ
-	$LD $LDFLAGS -o $target $prereq
+	$CC $LDFLAGS -o $target $prereq
 
 %.o: %.c
 	$CC $CFLAGS -c $stem.c
