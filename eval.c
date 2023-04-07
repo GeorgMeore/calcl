@@ -1,6 +1,7 @@
 #include "eval.h"
 
 #include <math.h>
+#include <stdio.h>
 
 #include "node.h"
 
@@ -115,6 +116,8 @@ int eval(Node *expr, double *result)
 			return eval_or(expr, result);
 		case IF_NODE:
 			return eval_if(expr, result);
+		default:
+			fprintf(stderr, "evaluation error: not implemented\n");
+			return 0;
 	}
-	return 0;
 }
