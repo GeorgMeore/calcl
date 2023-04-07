@@ -8,6 +8,7 @@
 #include "token.h"
 
 
+// report parsing errors
 static void error(const char *message, Token last)
 {
 	fprintf(stderr, "parsing error: %s ", message);
@@ -55,7 +56,7 @@ static Node *parse_expression(Scanner *scanner)
 	return parse_or(scanner);
 }
 
-// IF ::= 'IF' OR 'THEN' OR 'ELSE' OR
+// IF ::= 'IF' OR 'THEN' EXPRESSION 'ELSE' EXPRESSION
 static Node *parse_if(Scanner *scanner)
 {
 	Scanner_next(scanner);
@@ -68,7 +69,7 @@ static Node *parse_if(Scanner *scanner)
 		error("expected 'then'", next);
 		return NULL;
 	}
-	Node *true = parse_or(scanner);
+	Node *true = parse_expression(scanner);
 	if (!true) {
 		return NULL;
 	}
@@ -77,7 +78,7 @@ static Node *parse_if(Scanner *scanner)
 		error("expected 'else'", next);
 		return NULL;
 	}
-	Node *false = parse_or(scanner);
+	Node *false = parse_expression(scanner);
 	if (!false) {
 		return NULL;
 	}
