@@ -61,6 +61,13 @@ static void indent(int level)
 	}
 }
 
+#define print_pair(expr, type_string, level) do {\
+	indent(level); printf("%s: {\n", type_string);\
+	print_tree(expr->value.pair.left, level + 1);\
+	print_tree(expr->value.pair.right, level + 1);\
+	indent(level); printf("}\n");\
+} while (0)
+
 static void print_tree(const Node *expr, int level)
 {
 	switch (expr->type) {
@@ -68,40 +75,22 @@ static void print_tree(const Node *expr, int level)
 			indent(level); printf("NUMBER: %lf\n", expr->value.number);
 			break;
 		case EXPT_NODE:
-			indent(level); printf("EXPONENTIATION: {\n");
-			print_tree(expr->value.pair.left, level + 1);
-			print_tree(expr->value.pair.right, level + 1);
-			indent(level); printf("}\n");
+			print_pair(expr, "EXPONENTIATION", level);
 			break;
 		case PRODUCT_NODE:
-			indent(level); printf("PRODUCT: {\n");
-			print_tree(expr->value.pair.left, level + 1);
-			print_tree(expr->value.pair.right, level + 1);
-			indent(level); printf("}\n");
+			print_pair(expr, "PRODUCT", level);
 			break;
 		case SUM_NODE:
-			indent(level); printf("SUM: {\n");
-			print_tree(expr->value.pair.left, level + 1);
-			print_tree(expr->value.pair.right, level + 1);
-			indent(level); printf("}\n");
+			print_pair(expr, "SUM", level);
 			break;
 		case CMP_NODE:
-			indent(level); printf("COMPARISON: {\n");
-			print_tree(expr->value.pair.left, level + 1);
-			print_tree(expr->value.pair.right, level + 1);
-			indent(level); printf("}\n");
+			print_pair(expr, "COMPARISON", level);
 			break;
 		case AND_NODE:
-			indent(level); printf("AND: {\n");
-			print_tree(expr->value.pair.left, level + 1);
-			print_tree(expr->value.pair.right, level + 1);
-			indent(level); printf("}\n");
+			print_pair(expr, "AND", level);
 			break;
 		case OR_NODE:
-			indent(level); printf("OR: {\n");
-			print_tree(expr->value.pair.left, level + 1);
-			print_tree(expr->value.pair.right, level + 1);
-			indent(level); printf("}\n");
+			print_pair(expr, "OR", level);
 			break;
 		case IF_NODE:
 			indent(level); printf("IF: {\n");
