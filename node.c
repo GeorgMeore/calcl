@@ -1,6 +1,7 @@
 #include "node.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 
@@ -10,9 +11,14 @@ void Node_drop(Node *node)
 		case NUMBER_NODE:
 			free(node);
 			break;
-		case SUM_NODE:
-		case PRODUCT_NODE:
+		case ID_NODE:
+			free(node->value.id);
+			free(node);
+			break;
+		case APPLICATION_NODE:
 		case EXPT_NODE:
+		case PRODUCT_NODE:
+		case SUM_NODE:
 		case CMP_NODE:
 		case AND_NODE:
 		case OR_NODE:
@@ -55,6 +61,22 @@ Node *NumberNode_new(const char *string, int length)
 	return node;
 }
 
+static char *copy_string(const char *src, int length)
+{
+	char *copy = malloc(length + 1);
+	strncpy(copy, src, length);
+	copy[length] = '\0';
+	return copy;
+}
+
+Node *IdNode_new(const char *string, int length)
+{
+	Node *node = malloc(sizeof(*node));
+	node->type = ID_NODE;
+	node->value.id = copy_string(string, length);
+	return node;
+}
+
 static Node *pair_new(NodeType type, Node *left, Node *right)
 {
 	Node *node = malloc(sizeof(*node));
@@ -62,6 +84,11 @@ static Node *pair_new(NodeType type, Node *left, Node *right)
 	node->value.pair.left = left;
 	node->value.pair.right = right;
 	return node;
+}
+
+Node *ApplicationNode_new(Node *left, Node *right)
+{
+	return pair_new(APPLICATION_NODE, left, right);
 }
 
 Node *SumNode_new(Node *left, Node *right)

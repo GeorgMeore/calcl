@@ -3,6 +3,7 @@
 
 typedef enum {
 	NUMBER_TOKEN,
+	ID_TOKEN,
 	LPAREN_TOKEN,
 	RPAREN_TOKEN,
 	CARET_TOKEN,

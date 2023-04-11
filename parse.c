@@ -28,7 +28,11 @@ static Node *parse_cmp(Scanner *s);
 static Node *parse_sum(Scanner *s);
 static Node *parse_product(Scanner *s);
 static Node *parse_expt(Scanner *s);
+static Node *parse_application(Scanner *s);
 static Node *parse_term(Scanner *s);
+
+// auxiliary token predicates
+static int istermtoken(Token t);
 
 // VALID ::= EXPRESSION 'END'
 Node *parse(Scanner *scanner)
@@ -194,10 +198,10 @@ static Node *parse_product(Scanner *scanner)
 	}
 }
 
-// EXPT ::= TERM | TERM '^' EXPT
+// EXPT ::= APPLICATION | APPLICATION '^' EXPT
 static Node *parse_expt(Scanner *scanner)
 {
-	Node *base = parse_term(scanner);
+	Node *base = parse_application(scanner);
 	if (!base) {
 		return NULL;
 	}
@@ -214,7 +218,40 @@ static Node *parse_expt(Scanner *scanner)
 	return base;
 }
 
-// TERM ::= '(' EXPRESSION ')' | 'NUMBER'
+// APPLICATION ::= TERM {TERM}
+static Node *parse_application(Scanner *scanner)
+{
+	Node *operator = parse_term(scanner);
+	if (!operator) {
+		return NULL;
+	}
+	for (;;) {
+		Token next = Scanner_peek(scanner);
+		if (!istermtoken(next)) {
+			return operator;
+		}
+		Node *operand = parse_term(scanner);
+		if (!operand) {
+			Node_drop(operator);
+			return NULL;
+		}
+		operator = ApplicationNode_new(operator, operand);
+	}
+}
+
+// TERMTOKEN <- '(' | 'NUMBER' | 'ID'
+static int istermtoken(Token token) {
+	switch (token.type) {
+		case LPAREN_TOKEN:
+		case NUMBER_TOKEN:
+		case ID_TOKEN:
+			return 1;
+		default:
+			return 0;
+	}
+}
+
+// TERM ::= '(' EXPRESSION ')' | 'NUMBER' | 'ID'
 static Node *parse_term(Scanner *scanner)
 {
 	Token next = Scanner_next(scanner);
@@ -232,6 +269,8 @@ static Node *parse_term(Scanner *scanner)
 		return expr;
 	} else if (next.type == NUMBER_TOKEN) {
 		return NumberNode_new(next.string, next.length);
+	} else if (next.type == ID_TOKEN) {
+		return IdNode_new(next.string, next.length);
 	} else {
 		error("expected '(' or a number", next);
 		return NULL;
