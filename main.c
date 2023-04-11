@@ -25,18 +25,18 @@ int main(int argc, char **argv)
 		}
 		CharIterator iter = input;
 		Scanner scanner = Scanner_make(&iter);
-		Node *expr = parse(&scanner);
-		if (!expr) {
+		Node *ast = parse(&scanner);
+		if (!ast) {
 			continue;
 		}
 		if (debug) {
-			print_expr(expr);
+			print_expr(ast);
 		}
 		double result;
-		if (eval(expr, &result)) {
+		if (eval(ast, &result)) {
 			printf("%lf\n", result);
 		}
-		Node_drop(expr);
+		Node_drop(ast);
 	}
 	return 0;
 }

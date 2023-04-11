@@ -12,6 +12,9 @@ void print_token(Token token)
 		case NUMBER_TOKEN:
 			printf("NUMBER('%.*s')\n", token.length, token.string);
 			break;
+		case ID_TOKEN:
+			printf("ID('%.*s')\n", token.length, token.string);
+			break;
 		case LPAREN_TOKEN:
 			printf("LPAREN('%.*s')\n", token.length, token.string);
 			break;
@@ -61,18 +64,27 @@ static void indent(int level)
 	}
 }
 
-#define print_pair(expr, type_string, level) do {\
-	indent(level); printf("%s: {\n", type_string);\
-	print_tree(expr->value.pair.left, level + 1);\
-	print_tree(expr->value.pair.right, level + 1);\
-	indent(level); printf("}\n");\
-} while (0)
+static void print_tree(const Node *expr, int level);
+
+static void print_pair(const Node *expr, const char *type_string, int level)
+{
+	indent(level); printf("%s: {\n", type_string);
+	print_tree(expr->value.pair.left, level + 1);
+	print_tree(expr->value.pair.right, level + 1);
+	indent(level); printf("}\n");
+}
 
 static void print_tree(const Node *expr, int level)
 {
 	switch (expr->type) {
 		case NUMBER_NODE:
 			indent(level); printf("NUMBER: %lf\n", expr->value.number);
+			break;
+		case ID_NODE:
+			indent(level); printf("ID: %s\n", expr->value.id);
+			break;
+		case APPLICATION_NODE:
+			print_pair(expr, "APPLICATION", level);
 			break;
 		case EXPT_NODE:
 			print_pair(expr, "EXPONENTIATION", level);

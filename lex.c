@@ -8,7 +8,8 @@
 
 
 // keyword <- 'if' | 'then' | 'else' | 'or' | 'and'
-static Token take_keyword(CharIterator *iterator)
+// id <- alpha+
+static Token take_keyword_or_id(CharIterator *iterator)
 {
 	const char *start = CharIterator_cursor(iterator);
 	while (isalpha(CharIterator_peek(iterator))) {
@@ -34,9 +35,10 @@ static Token take_keyword(CharIterator *iterator)
 	if (!strncmp(start, "and", length)) {
 		Token and = {AND_TOKEN, start, length};
 		return and;
+	} else {
+		Token id = {ID_TOKEN, start, length};
+		return id;
 	}
-	Token error = {ERROR_TOKEN, CharIterator_cursor(iterator), 1};
-	return error;
 }
 
 // number <- digit+ ('.' digit*)?
@@ -68,7 +70,7 @@ Token take_token(CharIterator *iterator)
 		return take_number(iterator);
 	}
 	if (isalpha(next)) {
-		return take_keyword(iterator);
+		return take_keyword_or_id(iterator);
 	}
 	if (next == '(') {
 		Token lparen = {LPAREN_TOKEN, CharIterator_cursor(iterator), 1};
