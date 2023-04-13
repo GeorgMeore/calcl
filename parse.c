@@ -75,15 +75,20 @@ static Node *parse_if(Scanner *scanner)
 	}
 	Node *true = parse_expression(scanner);
 	if (!true) {
+		Node_drop(cond);
 		return NULL;
 	}
 	next = Scanner_next(scanner);
 	if (next.type != ELSE_TOKEN) {
 		error("expected 'else'", next);
+		Node_drop(cond);
+		Node_drop(true);
 		return NULL;
 	}
 	Node *false = parse_expression(scanner);
 	if (!false) {
+		Node_drop(cond);
+		Node_drop(true);
 		return NULL;
 	}
 	return IfNode_new(cond, true, false);
