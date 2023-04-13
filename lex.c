@@ -104,7 +104,6 @@ Token take_token(CharIterator *iterator)
 	}
 	if (next == '\0') {
 		Token eof = {END_TOKEN, CharIterator_cursor(iterator), 0};
-		CharIterator_next(iterator);
 		return eof;
 	}
 	Token error = {ERROR_TOKEN, CharIterator_cursor(iterator), 1};
