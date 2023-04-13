@@ -7,7 +7,7 @@
 #include "iter.h"
 
 
-// keyword <- 'if' | 'then' | 'else' | 'or' | 'and'
+// keyword <- 'if' | 'then' | 'else' | 'or' | 'and' | 'fn' | 'to'
 // id <- alpha+
 static Token take_keyword_or_id(CharIterator *iterator)
 {
@@ -35,6 +35,14 @@ static Token take_keyword_or_id(CharIterator *iterator)
 	if (!strncmp(start, "and", length)) {
 		Token and = {AND_TOKEN, start, length};
 		return and;
+	}
+	if (!strncmp(start, "fn", length)) {
+		Token fn = {FN_TOKEN, start, length};
+		return fn;
+	}
+	if (!strncmp(start, "to", length)) {
+		Token to = {TO_TOKEN, start, length};
+		return to;
 	} else {
 		Token id = {ID_TOKEN, start, length};
 		return id;
