@@ -32,6 +32,11 @@ void Node_drop(Node *node)
 			Node_drop(node->value.ifelse.false);
 			free(node);
 			break;
+		case FN_NODE:
+			Node_drop(node->value.fn.param);
+			Node_drop(node->value.fn.body);
+			free(node);
+			break;
 	}
 }
 
@@ -128,5 +133,14 @@ Node *IfNode_new(Node *cond, Node *true, Node *false)
 	node->value.ifelse.cond = cond;
 	node->value.ifelse.true = true;
 	node->value.ifelse.false = false;
+	return node;
+}
+
+Node *FnNode_new(Node *param, Node *body)
+{
+	Node *node = malloc(sizeof(*node));
+	node->type = FN_NODE;
+	node->value.fn.param = param;
+	node->value.fn.body = body;
 	return node;
 }

@@ -22,6 +22,7 @@ static void error(const char *message, Token last)
 // subexpression parsers (from lowest to highest priority)
 static Node *parse_expression(Scanner *scanner);
 static Node *parse_if(Scanner *s);
+static Node *parse_fn(Scanner *s);
 static Node *parse_or(Scanner *s);
 static Node *parse_and(Scanner *s);
 static Node *parse_cmp(Scanner *s);
@@ -50,14 +51,41 @@ Node *parse(Scanner *scanner)
 	return expr;
 }
 
-// EXPRESSION ::= IF | OR
+// EXPRESSION ::= IF | FN | OR
 static Node *parse_expression(Scanner *scanner)
 {
 	Token next = Scanner_peek(scanner);
 	if (next.type == IF_TOKEN) {
 		return parse_if(scanner);
 	}
+	if (next.type == FN_TOKEN) {
+		return parse_fn(scanner);
+	}
 	return parse_or(scanner);
+}
+
+// FN ::= 'FN' 'ID' 'TO' EXPRESSION
+static Node *parse_fn(Scanner *scanner)
+{
+	Scanner_next(scanner);
+	Token next = Scanner_next(scanner);
+	if (next.type != ID_TOKEN) {
+		error("expected identifier", next);
+		return NULL;
+	}
+	Node *param = IdNode_new(next.string, next.length);
+	next = Scanner_next(scanner);
+	if (next.type != TO_TOKEN) {
+		error("expected 'to'", next);
+		Node_drop(param);
+		return NULL;
+	}
+	Node *body = parse_expression(scanner);
+	if (!body) {
+		Node_drop(param);
+		return NULL;
+	}
+	return FnNode_new(param, body);
 }
 
 // IF ::= 'IF' OR 'THEN' EXPRESSION 'ELSE' EXPRESSION
