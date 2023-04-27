@@ -12,7 +12,7 @@ void Node_drop(Node *node)
 			free(node);
 			break;
 		case ID_NODE:
-			free(node->value.id);
+			free(node->as.id);
 			free(node);
 			break;
 		case APPLICATION_NODE:
@@ -22,19 +22,19 @@ void Node_drop(Node *node)
 		case CMP_NODE:
 		case AND_NODE:
 		case OR_NODE:
-			Node_drop(node->value.pair.left);
-			Node_drop(node->value.pair.right);
+			Node_drop(node->as.pair.left);
+			Node_drop(node->as.pair.right);
 			free(node);
 			break;
 		case IF_NODE:
-			Node_drop(node->value.ifelse.cond);
-			Node_drop(node->value.ifelse.true);
-			Node_drop(node->value.ifelse.false);
+			Node_drop(node->as.ifelse.cond);
+			Node_drop(node->as.ifelse.true);
+			Node_drop(node->as.ifelse.false);
 			free(node);
 			break;
 		case FN_NODE:
-			Node_drop(node->value.fn.param);
-			Node_drop(node->value.fn.body);
+			Node_drop(node->as.fn.param);
+			Node_drop(node->as.fn.body);
 			free(node);
 			break;
 	}
@@ -62,7 +62,7 @@ Node *NumberNode_new(const char *string, int length)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = NUMBER_NODE;
-	node->value.number = number_value(string, length);
+	node->as.number = number_value(string, length);
 	return node;
 }
 
@@ -78,7 +78,7 @@ Node *IdNode_new(const char *string, int length)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = ID_NODE;
-	node->value.id = copy_string(string, length);
+	node->as.id = copy_string(string, length);
 	return node;
 }
 
@@ -86,8 +86,8 @@ static Node *pair_new(NodeType type, Node *left, Node *right)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = type;
-	node->value.pair.left = left;
-	node->value.pair.right = right;
+	node->as.pair.left = left;
+	node->as.pair.right = right;
 	return node;
 }
 
@@ -130,9 +130,9 @@ Node *IfNode_new(Node *cond, Node *true, Node *false)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = IF_NODE;
-	node->value.ifelse.cond = cond;
-	node->value.ifelse.true = true;
-	node->value.ifelse.false = false;
+	node->as.ifelse.cond = cond;
+	node->as.ifelse.true = true;
+	node->as.ifelse.false = false;
 	return node;
 }
 
@@ -140,7 +140,7 @@ Node *FnNode_new(Node *param, Node *body)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = FN_NODE;
-	node->value.fn.param = param;
-	node->value.fn.body = body;
+	node->as.fn.param = param;
+	node->as.fn.body = body;
 	return node;
 }
