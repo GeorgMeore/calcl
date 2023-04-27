@@ -69,8 +69,8 @@ static void print_tree(const Node *expr, int level);
 static void print_pair(const Node *expr, const char *type_string, int level)
 {
 	indent(level); printf("%s: {\n", type_string);
-	print_tree(expr->value.pair.left, level + 1);
-	print_tree(expr->value.pair.right, level + 1);
+	print_tree(expr->as.pair.left, level + 1);
+	print_tree(expr->as.pair.right, level + 1);
 	indent(level); printf("}\n");
 }
 
@@ -78,11 +78,11 @@ static void print_if(const Node *ifelse, int level)
 {
 	indent(level); printf("IF: {\n");
 	indent(level + 1); printf("CONDITION:\n");
-	print_tree(ifelse->value.ifelse.cond, level + 2);
+	print_tree(ifelse->as.ifelse.cond, level + 2);
 	indent(level + 1); printf("THEN:\n");
-	print_tree(ifelse->value.ifelse.true, level + 2);
+	print_tree(ifelse->as.ifelse.true, level + 2);
 	indent(level + 1); printf("ELSE:\n");
-	print_tree(ifelse->value.ifelse.false, level + 2);
+	print_tree(ifelse->as.ifelse.false, level + 2);
 	indent(level); printf("}\n");
 }
 
@@ -90,9 +90,9 @@ static void print_fn(const Node *fn, int level)
 {
 	indent(level); printf("FN: {\n");
 	indent(level + 1); printf("PARAM:\n");
-	print_tree(fn->value.fn.param, level + 2);
+	print_tree(fn->as.fn.param, level + 2);
 	indent(level + 1); printf("BODY:\n");
-	print_tree(fn->value.fn.body, level + 2);
+	print_tree(fn->as.fn.body, level + 2);
 	indent(level); printf("}\n");
 }
 
@@ -100,10 +100,10 @@ static void print_tree(const Node *expr, int level)
 {
 	switch (expr->type) {
 		case NUMBER_NODE:
-			indent(level); printf("NUMBER: %lf\n", expr->value.number);
+			indent(level); printf("NUMBER: %lf\n", expr->as.number);
 			break;
 		case ID_NODE:
-			indent(level); printf("ID: %s\n", expr->value.id);
+			indent(level); printf("ID: %s\n", expr->as.id);
 			break;
 		case APPLICATION_NODE:
 			print_pair(expr, "APPLICATION", level);

@@ -47,7 +47,7 @@ typedef union {
 
 struct Node {
 	NodeType type;
-	NodeValue value;
+	NodeValue as;
 };
 
 Node *NumberNode_new(const char *string, int length);
