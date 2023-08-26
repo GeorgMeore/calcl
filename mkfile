@@ -12,9 +12,10 @@ SRC=debug.c\
 	parse.c\
 	scanner.c\
 	gc.c\
+	object.c\
 	env.c
 
-prog=toycalc
+prog=calcl
 
 OBJ=${SRC:%.c=%.o}
 

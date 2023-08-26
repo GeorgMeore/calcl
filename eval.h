@@ -2,7 +2,9 @@
 #define EVAL_INCLUDED
 
 #include "node.h"
+#include "object.h"
+#include "gc.h"
 
-int eval(Node *expr, double *result);
+Object *eval(Node *expr, GC *gc, Object *env);
 
 #endif // EVAL_INCLUDED
