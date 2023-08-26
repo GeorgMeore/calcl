@@ -112,6 +112,21 @@ static Object *eval_if(Node *cond, Node *true, Node *false, GC *gc, Object *env)
 	}
 }
 
+static Object *eval_application(Node *fn, Node *arg, GC *gc, Object *env)
+{
+	Object *fnv = eval_expect(fn, gc, env, FN_OBJECT);
+	if (!fn) {
+		return NULL;
+	}
+	Object *argv = eval(arg, gc, env);
+	if (!arg) {
+		return NULL;
+	}
+	Object *extended = GC_alloc_env(gc, fnv->as.fn.env);
+	Env_add(extended->as.env, fnv->as.fn.arg, argv);
+	return eval(fnv->as.fn.body, gc, extended);
+}
+
 Object *eval(Node *expr, GC *gc, Object *env)
 {
 	switch (expr->type) {
@@ -136,7 +151,7 @@ Object *eval(Node *expr, GC *gc, Object *env)
 		case FN_NODE:
 			return GC_alloc_fn(gc, env, Node_copy(expr->as.fn.body), strdup(expr->as.fn.param->as.id));
 		case APPLICATION_NODE:
-			fprintf(stderr, "evaluation error: not implemented\n");
+			return eval_application(expr->as.pair.left, expr->as.pair.right, gc, env);
 	}
 	return NULL;
 }

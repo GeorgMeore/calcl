@@ -6,7 +6,22 @@
 
 typedef struct Object Object;
 
-typedef struct Env Env; // implemented in env.c
+typedef struct Binding Binding;
+
+struct Binding {
+	Object *obj;
+	char *key;
+	Binding *next;
+};
+
+typedef struct Env Env;
+
+struct Env {
+	Binding **entries;
+	int size;
+	int taken;
+	Object *prev;
+};
 
 typedef enum {
 	FN_OBJECT,

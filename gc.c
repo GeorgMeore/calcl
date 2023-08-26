@@ -25,6 +25,9 @@ static void GC_mark(GC *self, Object *obj);
 static void GC_mark_env(GC *self, Env *env)
 {
 	Env_for_each(env, (void (*)(void *, Object*))GC_mark, self);
+	if (env->prev) {
+		GC_mark_env(self, env->prev->as.env);
+	}
 }
 
 static void GC_mark(GC *self, Object *obj)
@@ -90,11 +93,11 @@ static Object *GC_alloc_empty_object(GC *self)
 	return obj;
 }
 
-Object *GC_alloc_env(GC *self)
+Object *GC_alloc_env(GC *self, Object *prev)
 {
 	Object *obj = GC_alloc_empty_object(self);
 	obj->type = ENV_OBJECT;
-	obj->as.env = Env_new();
+	obj->as.env = Env_new(prev);
 	return obj;
 }
 

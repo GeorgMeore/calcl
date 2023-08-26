@@ -3,22 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "object.h"
+
 
 #define INITIAL_TABLE_SIZE 512
-
-typedef struct Binding Binding;
-
-struct Binding {
-	Object *obj;
-	char *key;
-	Binding *next;
-};
-
-struct Env {
-	Binding **entries;
-	int size;
-	int taken;
-};
 
 static Binding *Binding_new(const char *key, Object *obj)
 {
@@ -45,13 +33,14 @@ static unsigned long dbj2_hash(const char *str)
 	return hash;
 }
 
-Env *Env_new()
+Env *Env_new(Object *prev)
 {
-	Env *table = malloc(sizeof(*table));
-	table->entries = calloc(INITIAL_TABLE_SIZE, sizeof(Binding));
-	table->size = INITIAL_TABLE_SIZE;
-	table->taken = 0;
-	return table;
+	Env *self = malloc(sizeof(*self));
+	self->entries = calloc(INITIAL_TABLE_SIZE, sizeof(Binding));
+	self->size = INITIAL_TABLE_SIZE;
+	self->taken = 0;
+	self->prev = prev;
+	return self;
 }
 
 void Env_drop(Env *self)
@@ -138,6 +127,9 @@ Object *Env_get(Env *self, const char *key)
 	Binding *entry = *find_entry(self, key);
 	if (entry) {
 		return entry->obj;
+	}
+	if (self->prev) {
+		return Env_get(self->prev->as.env, key);
 	}
 	return NULL;
 }
