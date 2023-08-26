@@ -62,5 +62,6 @@ Node *OrNode_new(Node *left, Node *right);
 Node *IfNode_new(Node *cond, Node *true, Node *false);
 Node *FnNode_new(Node *param, Node *body);
 void Node_drop(Node *node);
+Node *Node_copy(const Node *node);
 
 #endif // NODE_INCLUDED
