@@ -15,6 +15,11 @@ GC *GC_new()
 	return self;
 }
 
+void GC_drop(GC *self)
+{
+	free(self);
+}
+
 static void GC_mark(GC *self, Object *obj);
 
 static void GC_mark_env(GC *self, Env *env)
@@ -37,6 +42,7 @@ static void GC_mark(GC *self, Object *obj)
 
 static void GC_append_object(GC *self, Object *obj)
 {
+	obj->next = NULL;
 	if (!self->first) {
 		self->first = obj;
 		self->last = obj;
@@ -67,17 +73,18 @@ static void GC_sweep(GC *self)
 	}
 }
 
-void GC_collect(GC *self, Env *root)
+void GC_collect(GC *self, Object *root)
 {
 	self->curr = !self->curr;
-	GC_mark_env(self, root);
+	if (root) {
+		GC_mark(self, root);
+	}
 	GC_sweep(self);
 }
 
 static Object *GC_alloc_empty_object(GC *self)
 {
 	Object *obj = malloc(sizeof(*obj));
-	obj->next = NULL;
 	obj->mark = self->curr;
 	GC_append_object(self, obj);
 	return obj;

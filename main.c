@@ -9,6 +9,7 @@
 #include "node.h"
 #include "eval.h"
 #include "env.h"
+#include "gc.h"
 #include "debug.h"
 
 
@@ -19,8 +20,10 @@ int main(int argc, char **argv)
 		fprintf(stderr, "usage: %s [-d]", argv[0]);
 		return 1;
 	}
-	Env *root = Env_new();
+	GC *gc = GC_new();
+	Object *root = GC_alloc_env(gc);
 	for (;;) {
+		GC_collect(gc, root);
 		char *input = get_line();
 		if (!input) {
 			break;
@@ -34,11 +37,13 @@ int main(int argc, char **argv)
 		if (debug) {
 			print_expr(ast);
 		}
-		double result;
-		if (eval(ast, &result)) {
-			printf("%lf\n", result);
+		Object *result = eval(ast, gc, root);
+		if (result) {
+			Object_println(result);
 		}
 		Node_drop(ast);
 	}
+	GC_collect(gc, NULL);
+	GC_drop(gc);
 	return 0;
 }
