@@ -48,6 +48,12 @@ void print_token(Token token)
 		case ELSE_TOKEN:
 			printf("ELSE('%.*s')\n", token.length, token.string);
 			break;
+		case FN_TOKEN:
+			printf("FN('%.*s')\n", token.length, token.string);
+			break;
+		case TO_TOKEN:
+			printf("TO('%.*s')\n", token.length, token.string);
+			break;
 		case ERROR_TOKEN:
 			printf("ERROR('%.*s')\n", token.length, token.string);
 			break;
