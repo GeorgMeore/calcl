@@ -8,6 +8,7 @@
 #include "parse.h"
 #include "node.h"
 #include "eval.h"
+#include "env.h"
 #include "debug.h"
 
 
@@ -18,6 +19,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "usage: %s [-d]", argv[0]);
 		return 1;
 	}
+	Env *root = Env_new();
 	for (;;) {
 		char *input = get_line();
 		if (!input) {

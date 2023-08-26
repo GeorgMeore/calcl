@@ -6,31 +6,31 @@
 
 #define INITIAL_TABLE_SIZE 512
 
-typedef struct TableEntry TableEntry;
+typedef struct Binding Binding;
 
-struct TableEntry {
-	void *data;
+struct Binding {
+	Object *obj;
 	char *key;
-	TableEntry *next;
+	Binding *next;
 };
 
 struct Env {
-	TableEntry **entries;
+	Binding **entries;
 	int size;
 	int taken;
 };
 
-static TableEntry *TableEntry_new(const char *key, void *data)
+static Binding *Binding_new(const char *key, Object *obj)
 {
-	TableEntry *entry = malloc(sizeof(*entry));
+	Binding *entry = malloc(sizeof(*entry));
 	entry->key = malloc(strlen(key) + 1);
 	strcpy(entry->key, key);
-	entry->data = data;
+	entry->obj = obj;
 	entry->next = NULL;
 	return entry;
 }
 
-static void TableEntry_delete(TableEntry *self)
+static void Binding_drop(Binding *self)
 {
 	free(self->key);
 	free(self);
@@ -48,19 +48,19 @@ static unsigned long dbj2_hash(const char *str)
 Env *Env_new()
 {
 	Env *table = malloc(sizeof(*table));
-	table->entries = calloc(INITIAL_TABLE_SIZE, sizeof(TableEntry));
+	table->entries = calloc(INITIAL_TABLE_SIZE, sizeof(Binding));
 	table->size = INITIAL_TABLE_SIZE;
 	table->taken = 0;
 	return table;
 }
 
-void Env_delete(Env *self)
+void Env_drop(Env *self)
 {
 	for (int i = 0; i < self->size; i++) {
-		TableEntry *head = self->entries[i];
+		Binding *head = self->entries[i];
 		while (head) {
-			TableEntry *next = head->next;
-			TableEntry_delete(head);
+			Binding *next = head->next;
+			Binding_drop(head);
 			head = next;
 		}
 	}
@@ -70,29 +70,29 @@ void Env_delete(Env *self)
 
 static void Env_resize(Env *self, int new_size)
 {
-	TableEntry **old_entries = self->entries;
+	Binding **old_entries = self->entries;
 	int old_size = self->size;
-	self->entries = calloc(new_size, sizeof(TableEntry));
+	self->entries = calloc(new_size, sizeof(Binding));
 	self->size = new_size;
 	self->taken = 0;
 	for (int i = 0; i < old_size; i++) {
-		TableEntry *head = old_entries[i];
+		Binding *head = old_entries[i];
 		while (head) {
-			TableEntry *next = head->next;
-			Env_add(self, head->key, head->data);
-			TableEntry_delete(head);
+			Binding *next = head->next;
+			Env_add(self, head->key, head->obj);
+			Binding_drop(head);
 			head = next;
 		}
 	}
 	free(old_entries);
 }
 
-static TableEntry **find_entry(Env *self, const char *key)
+static Binding **find_entry(Env *self, const char *key)
 {
 	int index = dbj2_hash(key) % self->size;
-	TableEntry **indirect = &(self->entries[index]);
+	Binding **indirect = &(self->entries[index]);
 	while (*indirect) {
-		TableEntry *watched = *indirect;
+		Binding *watched = *indirect;
 		if (!strcmp(watched->key, key)) {
 			break;
 		}
@@ -101,13 +101,13 @@ static TableEntry **find_entry(Env *self, const char *key)
 	return indirect;
 }
 
-void Env_add(Env *self, const char *key, void *data)
+void Env_add(Env *self, const char *key, Object *obj)
 {
-	TableEntry **indirect = find_entry(self, key);
+	Binding **indirect = find_entry(self, key);
 	if (*indirect) {
-		(*indirect)->data = data;
+		(*indirect)->obj = obj;
 	} else {
-		*indirect = TableEntry_new(key, data);
+		*indirect = Binding_new(key, obj);
 		self->taken += 1;
 	}
 	if (self->taken > self->size / 2) {
@@ -115,15 +115,15 @@ void Env_add(Env *self, const char *key, void *data)
 	}
 }
 
-void *Env_remove(Env *self, const char *key)
+Object *Env_remove(Env *self, const char *key)
 {
-	TableEntry **indirect = find_entry(self, key);
+	Binding **indirect = find_entry(self, key);
 	if (*indirect) {
-		TableEntry *target = *indirect;
+		Binding *target = *indirect;
 		(*indirect) = target->next;
-		void *data = target->data;
-		TableEntry_delete(target);
-		return data;
+		Object *obj = target->obj;
+		Binding_drop(target);
+		return obj;
 	}
 	return NULL;
 }
@@ -133,11 +133,20 @@ int Env_has(Env *self, const char *key)
 	return *find_entry(self, key) == NULL;
 }
 
-void *Env_get(Env *self, const char *key)
+Object *Env_get(Env *self, const char *key)
 {
-	TableEntry *entry = *find_entry(self, key);
+	Binding *entry = *find_entry(self, key);
 	if (entry) {
-		return entry->data;
+		return entry->obj;
 	}
 	return NULL;
+}
+
+void Env_for_each(Env *self, void (*fn)(void *, Object *), void *param)
+{
+	for (int i = 0; i < self->size; i++) {
+		for (Binding *entry = self->entries[i]; entry != NULL; entry = entry->next) {
+			fn(param, entry->obj);
+		}
+	}
 }
