@@ -33,4 +33,6 @@ struct Object {
 	int mark;
 };
 
+void Object_println(Object *obj);
+
 #endif // OBJECT_INCLUDED
