@@ -11,7 +11,8 @@ SRC=debug.c\
 	opts.c\
 	parse.c\
 	scanner.c\
-	table.c
+	gc.c\
+	env.c
 
 prog=toycalc
 
