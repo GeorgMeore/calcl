@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	GC *gc = GC_new();
-	Object *root = GC_alloc_env(gc);
+	Object *root = GC_alloc_env(gc, NULL);
 	for (;;) {
 		GC_collect(gc, root);
 		char *input = get_line();

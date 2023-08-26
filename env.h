@@ -4,7 +4,7 @@
 #include "object.h"
 
 // NOTE: Env_add overwrites the existing value!
-Env     *Env_new();
+Env     *Env_new(Object *prev);
 void    Env_drop(Env *self);
 void    Env_add(Env *self, const char *key, Object *obj);
 Object  *Env_remove(Env *self, const char *key);
