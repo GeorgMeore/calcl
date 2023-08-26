@@ -7,6 +7,10 @@
 #include "iter.h"
 
 
+#define kweq(s, keyword, length) \
+	(length == sizeof(keyword) - 1 && !strncmp(s, keyword, length))
+
+
 // keyword <- 'if' | 'then' | 'else' | 'or' | 'and' | 'fn' | 'to'
 // id <- alpha+
 static Token take_keyword_or_id(CharIterator *iterator)
@@ -16,37 +20,36 @@ static Token take_keyword_or_id(CharIterator *iterator)
 		CharIterator_next(iterator);
 	}
 	long unsigned length = CharIterator_cursor(iterator) - start;
-	if (!strncmp(start, "if", length)) {
+	if (kweq(start, "if", length)) {
 		Token ift = {IF_TOKEN, start, length};
 		return ift;
 	}
-	if (!strncmp(start, "then", length)) {
+	if (kweq(start, "then", length)) {
 		Token then = {THEN_TOKEN, start, length};
 		return then;
 	}
-	if (!strncmp(start, "else", length)) {
+	if (kweq(start, "else", length)) {
 		Token elset = {ELSE_TOKEN, start, length};
 		return elset;
 	}
-	if (!strncmp(start, "or", length)) {
+	if (kweq(start, "or", length)) {
 		Token or = {OR_TOKEN, start, length};
 		return or;
 	}
-	if (!strncmp(start, "and", length)) {
+	if (kweq(start, "and", length)) {
 		Token and = {AND_TOKEN, start, length};
 		return and;
 	}
-	if (!strncmp(start, "fn", length)) {
+	if (kweq(start, "fn", length)) {
 		Token fn = {FN_TOKEN, start, length};
 		return fn;
 	}
-	if (!strncmp(start, "to", length)) {
+	if (kweq(start, "to", length)) {
 		Token to = {TO_TOKEN, start, length};
 		return to;
-	} else {
-		Token id = {ID_TOKEN, start, length};
-		return id;
 	}
+	Token id = {ID_TOKEN, start, length};
+	return id;
 }
 
 // number <- digit+ ('.' digit*)?
