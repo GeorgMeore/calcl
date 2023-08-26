@@ -1,4 +1,4 @@
-#include "table.h"
+#include "env.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +14,7 @@ struct TableEntry {
 	TableEntry *next;
 };
 
-struct HashTable {
+struct Env {
 	TableEntry **entries;
 	int size;
 	int taken;
@@ -45,16 +45,16 @@ static unsigned long dbj2_hash(const char *str)
 	return hash;
 }
 
-HashTable *HashTable_new()
+Env *Env_new()
 {
-	HashTable *table = malloc(sizeof(*table));
+	Env *table = malloc(sizeof(*table));
 	table->entries = calloc(INITIAL_TABLE_SIZE, sizeof(TableEntry));
 	table->size = INITIAL_TABLE_SIZE;
 	table->taken = 0;
 	return table;
 }
 
-void HashTable_delete(HashTable *self)
+void Env_delete(Env *self)
 {
 	for (int i = 0; i < self->size; i++) {
 		TableEntry *head = self->entries[i];
@@ -68,7 +68,7 @@ void HashTable_delete(HashTable *self)
 	free(self);
 }
 
-static void HashTable_resize(HashTable *self, int new_size)
+static void Env_resize(Env *self, int new_size)
 {
 	TableEntry **old_entries = self->entries;
 	int old_size = self->size;
@@ -79,7 +79,7 @@ static void HashTable_resize(HashTable *self, int new_size)
 		TableEntry *head = old_entries[i];
 		while (head) {
 			TableEntry *next = head->next;
-			HashTable_add(self, head->key, head->data);
+			Env_add(self, head->key, head->data);
 			TableEntry_delete(head);
 			head = next;
 		}
@@ -87,7 +87,7 @@ static void HashTable_resize(HashTable *self, int new_size)
 	free(old_entries);
 }
 
-static TableEntry **find_entry(HashTable *self, const char *key)
+static TableEntry **find_entry(Env *self, const char *key)
 {
 	int index = dbj2_hash(key) % self->size;
 	TableEntry **indirect = &(self->entries[index]);
@@ -101,7 +101,7 @@ static TableEntry **find_entry(HashTable *self, const char *key)
 	return indirect;
 }
 
-void HashTable_add(HashTable *self, const char *key, void *data)
+void Env_add(Env *self, const char *key, void *data)
 {
 	TableEntry **indirect = find_entry(self, key);
 	if (*indirect) {
@@ -111,11 +111,11 @@ void HashTable_add(HashTable *self, const char *key, void *data)
 		self->taken += 1;
 	}
 	if (self->taken > self->size / 2) {
-		HashTable_resize(self, self->size * 2);
+		Env_resize(self, self->size * 2);
 	}
 }
 
-void *HashTable_remove(HashTable *self, const char *key)
+void *Env_remove(Env *self, const char *key)
 {
 	TableEntry **indirect = find_entry(self, key);
 	if (*indirect) {
@@ -128,12 +128,12 @@ void *HashTable_remove(HashTable *self, const char *key)
 	return NULL;
 }
 
-int HashTable_has(HashTable *self, const char *key)
+int Env_has(Env *self, const char *key)
 {
 	return *find_entry(self, key) == NULL;
 }
 
-void *HashTable_get(HashTable *self, const char *key)
+void *Env_get(Env *self, const char *key)
 {
 	TableEntry *entry = *find_entry(self, key);
 	if (entry) {
