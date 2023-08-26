@@ -274,14 +274,11 @@ static Node *parse_application(Scanner *scanner)
 
 // TERMTOKEN <- '(' | 'NUMBER' | 'ID'
 static int istermtoken(Token token) {
-	switch (token.type) {
-		case LPAREN_TOKEN:
-		case NUMBER_TOKEN:
-		case ID_TOKEN:
-			return 1;
-		default:
-			return 0;
-	}
+	return (
+		token.type == LPAREN_TOKEN ||
+		token.type == NUMBER_TOKEN ||
+		token.type == ID_TOKEN
+	);
 }
 
 // TERM ::= '(' EXPRESSION ')' | 'NUMBER' | 'ID'
