@@ -66,19 +66,36 @@ Node *NumberNode_new(const char *string, int length)
 	return node;
 }
 
-static char *copy_string(const char *src, int length)
+static Node *NumberNode_copy(const Node *src)
 {
-	char *copy = malloc(length + 1);
-	strncpy(copy, src, length);
-	copy[length] = '\0';
-	return copy;
+	Node *node = malloc(sizeof(*node));
+	node->type = NUMBER_NODE;
+	node->as.number = src->as.number;
+	return node;
 }
 
 Node *IdNode_new(const char *string, int length)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = ID_NODE;
-	node->as.id = copy_string(string, length);
+	node->as.id = strndup(string, length);
+	return node;
+}
+
+static Node *IdNode_copy(const Node *src)
+{
+	Node *node = malloc(sizeof(*node));
+	node->type = ID_NODE;
+	node->as.id = strdup(src->as.id);
+	return node;
+}
+
+static Node *pair_copy(const Node *src)
+{
+	Node *node = malloc(sizeof(*node));
+	node->type = src->type;
+	node->as.pair.left = src->as.pair.left;
+	node->as.pair.right = src->as.pair.right;
 	return node;
 }
 
@@ -136,6 +153,15 @@ Node *IfNode_new(Node *cond, Node *true, Node *false)
 	return node;
 }
 
+static Node *IfNode_copy(const Node *src)
+{
+	return IfNode_new(
+		Node_copy(src->as.ifelse.cond),
+		Node_copy(src->as.ifelse.true),
+		Node_copy(src->as.ifelse.false)
+	);
+}
+
 Node *FnNode_new(Node *param, Node *body)
 {
 	Node *node = malloc(sizeof(*node));
@@ -143,4 +169,35 @@ Node *FnNode_new(Node *param, Node *body)
 	node->as.fn.param = param;
 	node->as.fn.body = body;
 	return node;
+}
+
+static Node *FnNode_copy(const Node *src)
+{
+	return FnNode_new(
+		Node_copy(src->as.fn.param),
+		Node_copy(src->as.fn.body)
+	);
+}
+
+Node *Node_copy(const Node *node)
+{
+	switch (node->type) {
+		case NUMBER_NODE:
+			return NumberNode_copy(node);
+		case ID_NODE:
+			return IdNode_copy(node);
+		case APPLICATION_NODE:
+		case EXPT_NODE:
+		case PRODUCT_NODE:
+		case SUM_NODE:
+		case CMP_NODE:
+		case AND_NODE:
+		case OR_NODE:
+			return pair_copy(node);
+		case IF_NODE:
+			return IfNode_copy(node);
+		case FN_NODE:
+			return FnNode_copy(node);
+	}
+	return NULL;
 }
