@@ -90,21 +90,21 @@ static Node *IdNode_copy(const Node *src)
 	return node;
 }
 
-static Node *pair_copy(const Node *src)
-{
-	Node *node = malloc(sizeof(*node));
-	node->type = src->type;
-	node->as.pair.left = src->as.pair.left;
-	node->as.pair.right = src->as.pair.right;
-	return node;
-}
-
 static Node *pair_new(NodeType type, Node *left, Node *right)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = type;
 	node->as.pair.left = left;
 	node->as.pair.right = right;
+	return node;
+}
+
+static Node *pair_copy(const Node *src)
+{
+	Node *node = malloc(sizeof(*node));
+	node->type = src->type;
+	node->as.pair.left = Node_copy(src->as.pair.left);
+	node->as.pair.right = Node_copy(src->as.pair.right);
 	return node;
 }
 
