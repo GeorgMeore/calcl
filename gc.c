@@ -22,14 +22,6 @@ void GC_drop(GC *self)
 
 static void GC_mark(GC *self, Object *obj);
 
-static void GC_mark_env(GC *self, Env *env)
-{
-	Env_for_each(env, (void (*)(void *, Object*))GC_mark, self);
-	if (env->prev) {
-		GC_mark_env(self, env->prev->as.env);
-	}
-}
-
 static void GC_mark(GC *self, Object *obj)
 {
 	if (obj->mark == self->curr) {
@@ -39,7 +31,10 @@ static void GC_mark(GC *self, Object *obj)
 	if (obj->type == FN_OBJECT) {
 		GC_mark(self, obj->as.fn.env);
 	} else if (obj->type == ENV_OBJECT) {
-		GC_mark_env(self, obj->as.env);
+		Env_for_each(obj->as.env, (void (*)(void *, Object*))GC_mark, self);
+		if (obj->as.env->prev) {
+			GC_mark(self, obj->as.env->prev);
+		}
 	}
 }
 
