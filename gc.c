@@ -37,7 +37,7 @@ static void GC_mark(GC *self, Object *obj)
 	}
 	obj->mark = self->curr;
 	if (obj->type == FN_OBJECT) {
-		GC_mark_env(self, obj->as.fn.env->as.env);
+		GC_mark(self, obj->as.fn.env);
 	} else if (obj->type == ENV_OBJECT) {
 		GC_mark_env(self, obj->as.env);
 	}
