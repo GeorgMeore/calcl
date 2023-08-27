@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 
 #include "opts.h"
 #include "input.h"
@@ -20,10 +21,14 @@ int main(int argc, char **argv)
 		fprintf(stderr, "usage: %s [-d]", argv[0]);
 		return 1;
 	}
+	int tty = isatty(0);
 	GC *gc = GC_new();
 	Object *root = GC_alloc_env(gc, NULL);
 	for (;;) {
 		GC_collect(gc, root);
+		if (tty) {
+			fprintf(stderr, "> ");
+		}
 		char *input = get_line();
 		if (!input) {
 			break;
