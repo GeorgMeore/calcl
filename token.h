@@ -16,7 +16,9 @@ typedef enum {
 	THEN_TOKEN,
 	ELSE_TOKEN,
 	FN_TOKEN,
-	TO_TOKEN,
+	COLON_TOKEN,
+	LET_TOKEN,
+	EQ_TOKEN,
 	ERROR_TOKEN,
 	END_TOKEN
 } TokenType;

@@ -15,6 +15,7 @@ typedef enum {
 	OR_NODE,
 	IF_NODE,
 	FN_NODE,
+	LET_NODE,
 } NodeType;
 
 typedef double NumberValue;
@@ -37,11 +38,17 @@ typedef struct {
 	Node *body;
 } FnValue;
 
+typedef struct {
+	Node *name;
+	Node *value;
+} LetValue;
+
 typedef union {
 	NumberValue number; // NUMBER_NODE
 	IdValue id;         // ID_NODE
 	IfValue ifelse;     // IF_NODE
 	FnValue fn;         // FN_NODE
+	LetValue let;       // LET_NODE
 	PairValue pair;     // others
 } NodeValue;
 
@@ -61,6 +68,7 @@ Node *AndNode_new(Node *left, Node *right);
 Node *OrNode_new(Node *left, Node *right);
 Node *IfNode_new(Node *cond, Node *true, Node *false);
 Node *FnNode_new(Node *param, Node *body);
+Node *LetNode_new(Node *name, Node *value);
 void Node_drop(Node *node);
 Node *Node_copy(const Node *node);
 
