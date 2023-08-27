@@ -9,8 +9,8 @@ typedef struct Object Object;
 typedef struct Binding Binding;
 
 struct Binding {
-	Object *obj;
-	char *key;
+	Object  *obj;
+	char    *key;
 	Binding *next;
 };
 
@@ -18,9 +18,9 @@ typedef struct Env Env;
 
 struct Env {
 	Binding **entries;
-	int size;
-	int taken;
-	Object *prev;
+	int     size;
+	int     taken;
+	Object  *prev;
 };
 
 typedef enum {
@@ -31,21 +31,21 @@ typedef enum {
 
 typedef struct {
 	Object *env;
-	Node *body;
-	char *arg;
+	Node   *body;
+	char   *arg;
 } FnObject;
 
 typedef union {
 	FnObject fn;
-	Env *env;
-	double num;
+	Env      *env;
+	double   num;
 } ObjectValue;
 
 struct Object {
 	ObjectValue as;
-	ObjectType type;
-	Object *next;
-	int mark;
+	ObjectType  type;
+	Object      *next;
+	int         mark;
 };
 
 void Object_println(Object *obj);

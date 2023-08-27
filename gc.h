@@ -6,7 +6,7 @@
 typedef struct {
 	Object *first;
 	Object *last;
-	int curr;
+	int    curr;
 } GC;
 
 GC     *GC_new();

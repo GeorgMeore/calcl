@@ -25,7 +25,7 @@ typedef char *IdValue;
 typedef struct {
 	Node *left;
 	Node *right;
-	int op; // used by SUM_NODE, PRODUCT_NODE and CMP_NODE to store the operation
+	int  op; // used by SUM_NODE, PRODUCT_NODE and CMP_NODE to store the operation
 } PairValue;
 
 typedef struct {
@@ -46,11 +46,11 @@ typedef struct {
 
 typedef union {
 	NumberValue number; // NUMBER_NODE
-	IdValue id;         // ID_NODE
-	IfValue ifelse;     // IF_NODE
-	FnValue fn;         // FN_NODE
-	LetValue let;       // LET_NODE
-	PairValue pair;     // others
+	IdValue     id;     // ID_NODE
+	IfValue     ifelse; // IF_NODE
+	FnValue     fn;     // FN_NODE
+	LetValue    let;    // LET_NODE
+	PairValue   pair;   // others
 } NodeValue;
 
 struct Node {

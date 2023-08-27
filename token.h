@@ -27,9 +27,9 @@ typedef enum {
 } TokenType;
 
 typedef struct {
-	TokenType type;
+	TokenType  type;
 	const char *string;
-	int length;
+	int        length;
 } Token;
 
 #endif // TOKEN_INCLUDED

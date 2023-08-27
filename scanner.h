@@ -6,7 +6,7 @@
 
 typedef struct {
 	CharIterator *iterator;
-	Token next;
+	Token        next;
 } Scanner;
 
 Scanner Scanner_make(CharIterator *iterator);
