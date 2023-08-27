@@ -20,8 +20,6 @@ void GC_drop(GC *self)
 	free(self);
 }
 
-static void GC_mark(GC *self, Object *obj);
-
 static void GC_mark(GC *self, Object *obj)
 {
 	if (obj->mark == self->curr) {
