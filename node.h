@@ -54,7 +54,7 @@ typedef union {
 } NodeValue;
 
 struct Node {
-	NodeType type;
+	NodeType  type;
 	NodeValue as;
 };
 
