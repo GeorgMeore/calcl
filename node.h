@@ -25,6 +25,7 @@ typedef char *IdValue;
 typedef struct {
 	Node *left;
 	Node *right;
+	int op; // used by SUM_NODE, PRODUCT_NODE and CMP_NODE to store the operation
 } PairValue;
 
 typedef struct {
@@ -60,10 +61,10 @@ struct Node {
 Node *NumberNode_new(const char *string, int length);
 Node *IdNode_new(const char *string, int length);
 Node *ApplicationNode_new(Node *left, Node *right);
-Node *SumNode_new(Node *left, Node *right);
-Node *ProductNode_new(Node *left, Node *right);
+Node *SumNode_new(Node *left, Node *right, int op);
+Node *ProductNode_new(Node *left, Node *right, int op);
 Node *ExptNode_new(Node *base, Node *exponent);
-Node *CmpNode_new(Node *left, Node *right);
+Node *CmpNode_new(Node *left, Node *right, int op);
 Node *AndNode_new(Node *left, Node *right);
 Node *OrNode_new(Node *left, Node *right);
 Node *IfNode_new(Node *cond, Node *true, Node *false);

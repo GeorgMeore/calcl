@@ -95,12 +95,13 @@ static Node *IdNode_copy(const Node *src)
 	return node;
 }
 
-static Node *pair_new(NodeType type, Node *left, Node *right)
+static Node *pair_new(NodeType type, Node *left, Node *right, int op)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = type;
 	node->as.pair.left = left;
 	node->as.pair.right = right;
+	node->as.pair.op = op;
 	return node;
 }
 
@@ -110,42 +111,43 @@ static Node *pair_copy(const Node *src)
 	node->type = src->type;
 	node->as.pair.left = Node_copy(src->as.pair.left);
 	node->as.pair.right = Node_copy(src->as.pair.right);
+	node->as.pair.op = src->as.pair.op;
 	return node;
 }
 
 Node *ApplicationNode_new(Node *left, Node *right)
 {
-	return pair_new(APPLICATION_NODE, left, right);
+	return pair_new(APPLICATION_NODE, left, right, 0);
 }
 
-Node *SumNode_new(Node *left, Node *right)
+Node *SumNode_new(Node *left, Node *right, int op)
 {
-	return pair_new(SUM_NODE, left, right);
+	return pair_new(SUM_NODE, left, right, op);
 }
 
-Node *ProductNode_new(Node *left, Node *right)
+Node *ProductNode_new(Node *left, Node *right, int op)
 {
-	return pair_new(PRODUCT_NODE, left, right);
+	return pair_new(PRODUCT_NODE, left, right, op);
 }
 
 Node *ExptNode_new(Node *base, Node *exponent)
 {
-	return pair_new(EXPT_NODE, base, exponent);
+	return pair_new(EXPT_NODE, base, exponent, 0);
 }
 
-Node *CmpNode_new(Node *left, Node *right)
+Node *CmpNode_new(Node *left, Node *right, int op)
 {
-	return pair_new(CMP_NODE, left, right);
+	return pair_new(CMP_NODE, left, right, op);
 }
 
 Node *AndNode_new(Node *left, Node *right)
 {
-	return pair_new(AND_NODE, left, right);
+	return pair_new(AND_NODE, left, right, 0);
 }
 
 Node *OrNode_new(Node *left, Node *right)
 {
-	return pair_new(OR_NODE, left, right);
+	return pair_new(OR_NODE, left, right, 0);
 }
 
 Node *IfNode_new(Node *cond, Node *true, Node *false)

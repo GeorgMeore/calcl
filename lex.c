@@ -60,46 +60,40 @@ static Token take_number(CharIterator *iterator)
 	return (Token){NUMBER_TOKEN, start, CharIterator_cursor(iterator) - start};
 }
 
-// token <- number | id | keyword | '(' | ')' | '+' | '*' | '^' | '>' | ':' '\0'
+TokenType singlet_token_type(char c)
+{
+	switch (c) {
+	case '(':  return LPAREN_TOKEN;
+	case ')':  return RPAREN_TOKEN;
+	case '+':  return PLUS_TOKEN;
+	case '-':  return MINUS_TOKEN;
+	case '*':  return ASTERISK_TOKEN;
+	case '/':  return SLASH_TOKEN;
+	case '^':  return CARET_TOKEN;
+	case '>':  return GT_TOKEN;
+	case '<':  return LT_TOKEN;
+	case '=':  return EQ_TOKEN;
+	case ':':  return COLON_TOKEN;
+	case '\0': return END_TOKEN;
+	default:   return ERROR_TOKEN;
+	}
+}
+
+// token <- number | id | keyword | '(' | ')' | '+' | '*' | '/' | '^' | '>' | '<' | '=' | ':' | '\0'
 Token take_token(CharIterator *iterator)
 {
 	// skip leading spaces
 	while (isspace(CharIterator_peek(iterator))) {
 		CharIterator_next(iterator);
 	}
-	if (isdigit(CharIterator_peek(iterator))) {
+	char next = CharIterator_peek(iterator);
+	if (isdigit(next)) {
 		return take_number(iterator);
 	}
-	if (isalpha(CharIterator_peek(iterator))) {
+	if (isalpha(next)) {
 		return take_keyword_or_id(iterator);
 	}
-	char next = CharIterator_next(iterator);
-	if (next == '(') {
-		return (Token){LPAREN_TOKEN, CharIterator_cursor(iterator), 1};
-	}
-	if (next == ')') {
-		return (Token){RPAREN_TOKEN, CharIterator_cursor(iterator), 1};
-	}
-	if (next == '+') {
-		return (Token){PLUS_TOKEN, CharIterator_cursor(iterator), 1};
-	}
-	if (next == '*') {
-		return (Token){ASTERISK_TOKEN, CharIterator_cursor(iterator), 1};
-	}
-	if (next == '^') {
-		return (Token){CARET_TOKEN, CharIterator_cursor(iterator), 1};
-	}
-	if (next == '>') {
-		return (Token){GT_TOKEN, CharIterator_cursor(iterator), 1};
-	}
-	if (next == ':') {
-		return (Token){COLON_TOKEN, CharIterator_cursor(iterator), 1};
-	}
-	if (next == '=') {
-		return (Token){EQ_TOKEN, CharIterator_cursor(iterator), 1};
-	}
-	if (next == '\0') {
-		return (Token){END_TOKEN, CharIterator_cursor(iterator), 0};
-	}
-	return (Token){ERROR_TOKEN, CharIterator_cursor(iterator), 1};
+	Token token = {singlet_token_type(next), CharIterator_cursor(iterator), 1};
+	CharIterator_next(iterator);
+	return token;
 }

@@ -31,7 +31,33 @@ static Node *parse_expt(Scanner *s);
 static Node *parse_application(Scanner *s);
 static Node *parse_term(Scanner *s);
 
-static int istermtoken(Token t);
+// TERMTOKEN <- '(' | 'NUMBER' | 'ID'
+static int is_term_token(Token token) {
+	return (
+		token.type == LPAREN_TOKEN ||
+		token.type == NUMBER_TOKEN ||
+		token.type == ID_TOKEN
+	);
+}
+
+// CMPTOKEN <- '>' | '<' | '='
+static int is_cmp_token(Token token) {
+	return (
+		token.type == GT_TOKEN ||
+		token.type == LT_TOKEN ||
+		token.type == EQ_TOKEN
+	);
+}
+
+// SUMTOKEN <- '+' | '-'
+static int is_sum_token(Token token) {
+	return (token.type == PLUS_TOKEN || token.type == MINUS_TOKEN);
+}
+
+// PRODTOKEN <- '*' | '/'
+static int is_prod_token(Token token) {
+	return (token.type == ASTERISK_TOKEN || token.type == SLASH_TOKEN);
+}
 
 // VALID ::= (EXPRESSION | LET) 'END'
 Node *parse(Scanner *scanner)
@@ -194,7 +220,7 @@ static Node *parse_and(Scanner *scanner)
 	}
 }
 
-// CMP ::= SUM ['>' SUM]
+// CMP ::= SUM {CMPTOKEN SUM}
 static Node *parse_cmp(Scanner *scanner)
 {
 	Node *left = parse_sum(scanner);
@@ -202,19 +228,18 @@ static Node *parse_cmp(Scanner *scanner)
 		return NULL;
 	}
 	Token next = Scanner_peek(scanner);
-	if (next.type == GT_TOKEN) {
+	if (is_cmp_token(next)) {
 		Scanner_next(scanner);
 		Node *right = parse_sum(scanner);
 		if (!right) {
 			return NULL;
 		}
-		return CmpNode_new(left, right);
+		return CmpNode_new(left, right, next.string[0]);
 	}
 	return left;
 }
 
-// TODO: implement subtraction
-// SUM ::= PRODUCT {'+' PRODUCT}
+// SUM ::= PRODUCT {SUMTOKEN PRODUCT}
 static Node *parse_sum(Scanner *scanner)
 {
 	Node *left = parse_product(scanner);
@@ -223,7 +248,7 @@ static Node *parse_sum(Scanner *scanner)
 	}
 	for (;;) {
 		Token next = Scanner_peek(scanner);
-		if (next.type != PLUS_TOKEN) {
+		if (!is_sum_token(next)) {
 			return left;
 		}
 		Scanner_next(scanner);
@@ -232,12 +257,11 @@ static Node *parse_sum(Scanner *scanner)
 			Node_drop(left);
 			return NULL;
 		}
-		left = SumNode_new(left, right);
+		left = SumNode_new(left, right, next.string[0]);
 	}
 }
 
-// TODO: implement division
-// PRODUCT ::= EXPT {'*' EXPT}
+// PRODUCT ::= EXPT {PRODTOKEN EXPT}
 static Node *parse_product(Scanner *scanner)
 {
 	Node *left = parse_expt(scanner);
@@ -246,7 +270,7 @@ static Node *parse_product(Scanner *scanner)
 	}
 	for (;;) {
 		Token next = Scanner_peek(scanner);
-		if (next.type != ASTERISK_TOKEN) {
+		if (!is_prod_token(next)) {
 			return left;
 		}
 		Scanner_next(scanner);
@@ -255,7 +279,7 @@ static Node *parse_product(Scanner *scanner)
 			Node_drop(left);
 			return NULL;
 		}
-		left = ProductNode_new(left, right);
+		left = ProductNode_new(left, right, next.string[0]);
 	}
 }
 
@@ -288,7 +312,7 @@ static Node *parse_application(Scanner *scanner)
 	}
 	for (;;) {
 		Token next = Scanner_peek(scanner);
-		if (!istermtoken(next)) {
+		if (!is_term_token(next)) {
 			return operator;
 		}
 		Node *operand = parse_term(scanner);
@@ -298,15 +322,6 @@ static Node *parse_application(Scanner *scanner)
 		}
 		operator = ApplicationNode_new(operator, operand);
 	}
-}
-
-// TERMTOKEN <- '(' | 'NUMBER' | 'ID'
-static int istermtoken(Token token) {
-	return (
-		token.type == LPAREN_TOKEN ||
-		token.type == NUMBER_TOKEN ||
-		token.type == ID_TOKEN
-	);
 }
 
 // TERM ::= '(' EXPRESSION ')' | 'NUMBER' | 'ID'
