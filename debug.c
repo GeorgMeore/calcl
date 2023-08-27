@@ -5,67 +5,34 @@
 #include "token.h"
 #include "node.h"
 
+#define do_print_token(name, token) \
+	(printf(name "('%.*s')\n", token.length, token.string))
 
 void print_token(Token token)
 {
 	switch (token.type) {
-		case NUMBER_TOKEN:
-			printf("NUMBER('%.*s')\n", token.length, token.string);
-			break;
-		case ID_TOKEN:
-			printf("ID('%.*s')\n", token.length, token.string);
-			break;
-		case LPAREN_TOKEN:
-			printf("LPAREN('%.*s')\n", token.length, token.string);
-			break;
-		case RPAREN_TOKEN:
-			printf("RPAREN('%.*s')\n", token.length, token.string);
-			break;
-		case CARET_TOKEN:
-			printf("CARET('%.*s')\n", token.length, token.string);
-			break;
-		case ASTERISK_TOKEN:
-			printf("ASTERISK('%.*s')\n", token.length, token.string);
-			break;
-		case PLUS_TOKEN:
-			printf("PLUS('%.*s')\n", token.length, token.string);
-			break;
-		case GT_TOKEN:
-			printf("GT('%.*s')\n", token.length, token.string);
-			break;
-		case AND_TOKEN:
-			printf("AND('%.*s')\n", token.length, token.string);
-			break;
-		case OR_TOKEN:
-			printf("OR('%.*s')\n", token.length, token.string);
-			break;
-		case IF_TOKEN:
-			printf("IF('%.*s')\n", token.length, token.string);
-			break;
-		case THEN_TOKEN:
-			printf("THEN('%.*s')\n", token.length, token.string);
-			break;
-		case ELSE_TOKEN:
-			printf("ELSE('%.*s')\n", token.length, token.string);
-			break;
-		case FN_TOKEN:
-			printf("FN('%.*s')\n", token.length, token.string);
-			break;
-		case COLON_TOKEN:
-			printf("COLON('%.*s')\n", token.length, token.string);
-			break;
-		case LET_TOKEN:
-			printf("LET('%.*s')\n", token.length, token.string);
-			break;
-		case EQ_TOKEN:
-			printf("EQ('%.*s')\n", token.length, token.string);
-			break;
-		case ERROR_TOKEN:
-			printf("ERROR('%.*s')\n", token.length, token.string);
-			break;
-		case END_TOKEN:
-			printf("END\n");
-			return;
+		case NUMBER_TOKEN:   do_print_token("NUMBER", token);   break;
+		case ID_TOKEN:       do_print_token("ID", token);       break;
+		case LPAREN_TOKEN:   do_print_token("LPAREN", token);   break;
+		case RPAREN_TOKEN:   do_print_token("RPAREN", token);   break;
+		case CARET_TOKEN:    do_print_token("CARET", token);    break;
+		case ASTERISK_TOKEN: do_print_token("ASTERISK", token); break;
+		case SLASH_TOKEN:    do_print_token("SLASH", token); break;
+		case PLUS_TOKEN:     do_print_token("PLUS", token);     break;
+		case MINUS_TOKEN:    do_print_token("MINUS", token);     break;
+		case GT_TOKEN:       do_print_token("GT", token);       break;
+		case LT_TOKEN:       do_print_token("LT", token);       break;
+		case EQ_TOKEN:       do_print_token("EQ", token);       break;
+		case AND_TOKEN:      do_print_token("AND", token);      break;
+		case OR_TOKEN:       do_print_token("OR", token);       break;
+		case IF_TOKEN:       do_print_token("IF", token);       break;
+		case THEN_TOKEN:     do_print_token("THEN", token);     break;
+		case ELSE_TOKEN:     do_print_token("ELSE", token);     break;
+		case FN_TOKEN:       do_print_token("FN", token);       break;
+		case COLON_TOKEN:    do_print_token("COLON", token);    break;
+		case LET_TOKEN:      do_print_token("LET", token);      break;
+		case ERROR_TOKEN:    do_print_token("ERROR", token);    break;
+		case END_TOKEN:      printf("END\n");
 	}
 }
 
@@ -80,7 +47,7 @@ static void print_tree(const Node *expr, int level);
 
 static void print_pair(const Node *expr, const char *type_string, int level)
 {
-	indent(level); printf("%s: {\n", type_string);
+	indent(level); printf("%s(%c): {\n", type_string, expr->as.pair.op);
 	print_tree(expr->as.pair.left, level + 1);
 	print_tree(expr->as.pair.right, level + 1);
 	indent(level); printf("}\n");

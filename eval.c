@@ -27,26 +27,6 @@ static inline Object *eval_expect(Node *expr, GC *gc, Object *env, ObjectType ty
 	return obj;
 }
 
-static Object *eval_sum(Node *left, Node *right, GC *gc, Object *env)
-{
-	Object *leftv = eval_expect(left, gc, env, NUM_OBJECT);
-	Object *rightv = eval_expect(right, gc, env, NUM_OBJECT);
-	if (!leftv || !rightv) {
-		return NULL;
-	}
-	return GC_alloc_number(gc, leftv->as.num + rightv->as.num);
-}
-
-static Object *eval_product(Node *left, Node *right, GC *gc, Object *env)
-{
-	Object *leftv = eval_expect(left, gc, env, NUM_OBJECT);
-	Object *rightv = eval_expect(right, gc, env, NUM_OBJECT);
-	if (!leftv || !rightv) {
-		return NULL;
-	}
-	return GC_alloc_number(gc, leftv->as.num * rightv->as.num);
-}
-
 static Object *eval_expt(Node *left, Node *right, GC *gc, Object *env)
 {
 	Object *leftv = eval_expect(left, gc, env, NUM_OBJECT);
@@ -57,14 +37,45 @@ static Object *eval_expt(Node *left, Node *right, GC *gc, Object *env)
 	return GC_alloc_number(gc, pow(leftv->as.num, rightv->as.num));
 }
 
-static Object *eval_cmp(Node *left, Node *right, GC *gc, Object *env)
+static Object *eval_product(Node *left, Node *right, int op, GC *gc, Object *env)
 {
 	Object *leftv = eval_expect(left, gc, env, NUM_OBJECT);
 	Object *rightv = eval_expect(right, gc, env, NUM_OBJECT);
 	if (!leftv || !rightv) {
 		return NULL;
 	}
-	return GC_alloc_number(gc, leftv->as.num > rightv->as.num);
+	if (op == '*') {
+		return GC_alloc_number(gc, leftv->as.num * rightv->as.num);
+	}
+	return GC_alloc_number(gc, leftv->as.num / rightv->as.num);
+}
+
+static Object *eval_sum(Node *left, Node *right, int op, GC *gc, Object *env)
+{
+	Object *leftv = eval_expect(left, gc, env, NUM_OBJECT);
+	Object *rightv = eval_expect(right, gc, env, NUM_OBJECT);
+	if (!leftv || !rightv) {
+		return NULL;
+	}
+	if (op == '+') {
+		return GC_alloc_number(gc, leftv->as.num + rightv->as.num);
+	}
+	return GC_alloc_number(gc, leftv->as.num - rightv->as.num);
+}
+
+static Object *eval_cmp(Node *left, Node *right, int op, GC *gc, Object *env)
+{
+	Object *leftv = eval_expect(left, gc, env, NUM_OBJECT);
+	Object *rightv = eval_expect(right, gc, env, NUM_OBJECT);
+	if (!leftv || !rightv) {
+		return NULL;
+	}
+	if (op == '>') {
+		return GC_alloc_number(gc, leftv->as.num > rightv->as.num);
+	} else if (op == '<') {
+		return GC_alloc_number(gc, leftv->as.num < rightv->as.num);
+	}
+	return GC_alloc_number(gc, leftv->as.num == rightv->as.num);
 }
 
 static Object *eval_or(Node *left, Node *right, GC *gc, Object *env)
@@ -144,14 +155,14 @@ Object *eval(Node *expr, GC *gc, Object *env)
 			return GC_alloc_number(gc, expr->as.number);
 		case ID_NODE:
 			return Env_get(env->as.env, expr->as.id);
-		case SUM_NODE:
-			return eval_sum(expr->as.pair.left, expr->as.pair.right, gc, env);
-		case PRODUCT_NODE:
-			return eval_product(expr->as.pair.left, expr->as.pair.right, gc, env);
 		case EXPT_NODE:
 			return eval_expt(expr->as.pair.left, expr->as.pair.right, gc, env);
+		case PRODUCT_NODE:
+			return eval_product(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
+		case SUM_NODE:
+			return eval_sum(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
 		case CMP_NODE:
-			return eval_cmp(expr->as.pair.left, expr->as.pair.right, gc, env);
+			return eval_cmp(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
 		case AND_NODE:
 			return eval_and(expr->as.pair.left, expr->as.pair.right, gc, env);
 		case OR_NODE:
