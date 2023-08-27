@@ -10,7 +10,7 @@ void Object_println(Object *obj)
 		printf("%lf\n", obj->as.num);
 		return;
 	case FN_OBJECT:
-		printf("<fn>\n");
+		printf("<fn %s>\n", obj->as.fn.arg);
 		return;
 	case ENV_OBJECT:
 		printf("<env>\n");
