@@ -127,6 +127,16 @@ static Object *eval_application(Node *fn, Node *arg, GC *gc, Object *env)
 	return eval(fnv->as.fn.body, gc, extended);
 }
 
+static Object *eval_let(Node *name, Node *value, GC *gc, Object *env)
+{
+	Object *valuev = eval(value, gc, env);
+	if (!valuev) {
+		return NULL;
+	}
+	Env_add(env->as.env, name->as.id, valuev);
+	return NULL;
+}
+
 Object *eval(Node *expr, GC *gc, Object *env)
 {
 	switch (expr->type) {
@@ -152,6 +162,8 @@ Object *eval(Node *expr, GC *gc, Object *env)
 			return GC_alloc_fn(gc, env, Node_copy(expr->as.fn.body), strdup(expr->as.fn.param->as.id));
 		case APPLICATION_NODE:
 			return eval_application(expr->as.pair.left, expr->as.pair.right, gc, env);
+		case LET_NODE:
+			return eval_let(expr->as.let.name, expr->as.let.value, gc, env);
 	}
 	return NULL;
 }

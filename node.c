@@ -37,6 +37,11 @@ void Node_drop(Node *node)
 			Node_drop(node->as.fn.body);
 			free(node);
 			break;
+		case LET_NODE:
+			Node_drop(node->as.let.name);
+			Node_drop(node->as.let.value);
+			free(node);
+			break;
 	}
 }
 
@@ -179,6 +184,23 @@ static Node *FnNode_copy(const Node *src)
 	);
 }
 
+Node *LetNode_new(Node *name, Node *value)
+{
+	Node *node = malloc(sizeof(*node));
+	node->type = LET_NODE;
+	node->as.let.name = name;
+	node->as.let.value = value;
+	return node;
+}
+
+static Node *LetNode_copy(const Node *src)
+{
+	return LetNode_new(
+		Node_copy(src->as.let.name),
+		Node_copy(src->as.let.value)
+	);
+}
+
 Node *Node_copy(const Node *node)
 {
 	switch (node->type) {
@@ -198,6 +220,8 @@ Node *Node_copy(const Node *node)
 			return IfNode_copy(node);
 		case FN_NODE:
 			return FnNode_copy(node);
+		case LET_NODE:
+			return LetNode_copy(node);
 	}
 	return NULL;
 }

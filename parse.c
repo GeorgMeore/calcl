@@ -8,7 +8,6 @@
 #include "token.h"
 
 
-// report parsing errors
 static void error(const char *message, Token last)
 {
 	fprintf(stderr, "parsing error: %s ", message);
@@ -19,7 +18,7 @@ static void error(const char *message, Token last)
 	}
 }
 
-// subexpression parsers (from lowest to highest priority)
+static Node *parse_let(Scanner *scanner);
 static Node *parse_expression(Scanner *scanner);
 static Node *parse_if(Scanner *s);
 static Node *parse_fn(Scanner *s);
@@ -32,23 +31,52 @@ static Node *parse_expt(Scanner *s);
 static Node *parse_application(Scanner *s);
 static Node *parse_term(Scanner *s);
 
-// auxiliary token predicates
 static int istermtoken(Token t);
 
-// VALID ::= EXPRESSION 'END'
+// VALID ::= (EXPRESSION | LET) 'END'
 Node *parse(Scanner *scanner)
 {
-	Node *expr = parse_expression(scanner);
+	Token next = Scanner_peek(scanner);
+	Node *expr = NULL;
+	if (next.type == LET_TOKEN) {
+		expr = parse_let(scanner);
+	} else {
+		expr = parse_expression(scanner);
+	}
 	if (!expr) {
 		return NULL;
 	}
-	Token next = Scanner_peek(scanner);
+	next = Scanner_peek(scanner);
 	if (next.type != END_TOKEN) {
 		error("unexpected token after the expression", next);
 		Node_drop(expr);
 		return NULL;
 	}
 	return expr;
+}
+
+// LET ::= 'LET' 'ID' '=' EXPRESSION
+static Node *parse_let(Scanner *scanner)
+{
+	Scanner_next(scanner);
+	Token next = Scanner_next(scanner);
+	if (next.type != ID_TOKEN) {
+		error("expected identifier", next);
+		return NULL;
+	}
+	Node *name = IdNode_new(next.string, next.length);
+	next = Scanner_next(scanner);
+	if (next.type != EQ_TOKEN) {
+		error("expected '='", next);
+		Node_drop(name);
+		return NULL;
+	}
+	Node *value = parse_expression(scanner);
+	if (!value) {
+		Node_drop(name);
+		return NULL;
+	}
+	return LetNode_new(name, value);
 }
 
 // EXPRESSION ::= IF | FN | OR
@@ -75,8 +103,8 @@ static Node *parse_fn(Scanner *scanner)
 	}
 	Node *param = IdNode_new(next.string, next.length);
 	next = Scanner_next(scanner);
-	if (next.type != TO_TOKEN) {
-		error("expected 'to'", next);
+	if (next.type != COLON_TOKEN) {
+		error("expected ':'", next);
 		Node_drop(param);
 		return NULL;
 	}

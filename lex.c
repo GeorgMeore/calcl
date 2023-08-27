@@ -21,35 +21,27 @@ static Token take_keyword_or_id(CharIterator *iterator)
 	}
 	long unsigned length = CharIterator_cursor(iterator) - start;
 	if (kweq(start, "if", length)) {
-		Token ift = {IF_TOKEN, start, length};
-		return ift;
+		return (Token){IF_TOKEN, start, length};
 	}
 	if (kweq(start, "then", length)) {
-		Token then = {THEN_TOKEN, start, length};
-		return then;
+		return (Token){THEN_TOKEN, start, length};
 	}
 	if (kweq(start, "else", length)) {
-		Token elset = {ELSE_TOKEN, start, length};
-		return elset;
+		return (Token){ELSE_TOKEN, start, length};
 	}
 	if (kweq(start, "or", length)) {
-		Token or = {OR_TOKEN, start, length};
-		return or;
+		return (Token){OR_TOKEN, start, length};
 	}
 	if (kweq(start, "and", length)) {
-		Token and = {AND_TOKEN, start, length};
-		return and;
+		return (Token){AND_TOKEN, start, length};
 	}
 	if (kweq(start, "fn", length)) {
-		Token fn = {FN_TOKEN, start, length};
-		return fn;
+		return (Token){FN_TOKEN, start, length};
 	}
-	if (kweq(start, "to", length)) {
-		Token to = {TO_TOKEN, start, length};
-		return to;
+	if (kweq(start, "let", length)) {
+		return (Token){LET_TOKEN, start, length};
 	}
-	Token id = {ID_TOKEN, start, length};
-	return id;
+	return (Token){ID_TOKEN, start, length};
 }
 
 // number <- digit+ ('.' digit*)?
@@ -65,58 +57,49 @@ static Token take_number(CharIterator *iterator)
 	while (isdigit(CharIterator_peek(iterator))) {
 		CharIterator_next(iterator);
 	}
-	Token number = {NUMBER_TOKEN, start, CharIterator_cursor(iterator) - start};
-	return number;
+	return (Token){NUMBER_TOKEN, start, CharIterator_cursor(iterator) - start};
 }
 
-// token <- number | id | keyword | '(' | ')' | '+' | '*' | '^' | '>' | '\0'
+// token <- number | id | keyword | '(' | ')' | '+' | '*' | '^' | '>' | ':' '\0'
 Token take_token(CharIterator *iterator)
 {
 	// skip leading spaces
 	while (isspace(CharIterator_peek(iterator))) {
 		CharIterator_next(iterator);
 	}
-	char next = CharIterator_peek(iterator);
-	if (isdigit(next)) {
+	if (isdigit(CharIterator_peek(iterator))) {
 		return take_number(iterator);
 	}
-	if (isalpha(next)) {
+	if (isalpha(CharIterator_peek(iterator))) {
 		return take_keyword_or_id(iterator);
 	}
+	char next = CharIterator_next(iterator);
 	if (next == '(') {
-		Token lparen = {LPAREN_TOKEN, CharIterator_cursor(iterator), 1};
-		CharIterator_next(iterator);
-		return lparen;
+		return (Token){LPAREN_TOKEN, CharIterator_cursor(iterator), 1};
 	}
 	if (next == ')') {
-		Token rparen = {RPAREN_TOKEN, CharIterator_cursor(iterator), 1};
-		CharIterator_next(iterator);
-		return rparen;
+		return (Token){RPAREN_TOKEN, CharIterator_cursor(iterator), 1};
 	}
 	if (next == '+') {
-		Token plus = {PLUS_TOKEN, CharIterator_cursor(iterator), 1};
-		CharIterator_next(iterator);
-		return plus;
+		return (Token){PLUS_TOKEN, CharIterator_cursor(iterator), 1};
 	}
 	if (next == '*') {
-		Token asterisk = {ASTERISK_TOKEN, CharIterator_cursor(iterator), 1};
-		CharIterator_next(iterator);
-		return asterisk;
+		return (Token){ASTERISK_TOKEN, CharIterator_cursor(iterator), 1};
 	}
 	if (next == '^') {
-		Token caret = {CARET_TOKEN, CharIterator_cursor(iterator), 1};
-		CharIterator_next(iterator);
-		return caret;
+		return (Token){CARET_TOKEN, CharIterator_cursor(iterator), 1};
 	}
 	if (next == '>') {
-		Token gt = {GT_TOKEN, CharIterator_cursor(iterator), 1};
-		CharIterator_next(iterator);
-		return gt;
+		return (Token){GT_TOKEN, CharIterator_cursor(iterator), 1};
+	}
+	if (next == ':') {
+		return (Token){COLON_TOKEN, CharIterator_cursor(iterator), 1};
+	}
+	if (next == '=') {
+		return (Token){EQ_TOKEN, CharIterator_cursor(iterator), 1};
 	}
 	if (next == '\0') {
-		Token eof = {END_TOKEN, CharIterator_cursor(iterator), 0};
-		return eof;
+		return (Token){END_TOKEN, CharIterator_cursor(iterator), 0};
 	}
-	Token error = {ERROR_TOKEN, CharIterator_cursor(iterator), 1};
-	return error;
+	return (Token){ERROR_TOKEN, CharIterator_cursor(iterator), 1};
 }

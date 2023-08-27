@@ -51,8 +51,14 @@ void print_token(Token token)
 		case FN_TOKEN:
 			printf("FN('%.*s')\n", token.length, token.string);
 			break;
-		case TO_TOKEN:
-			printf("TO('%.*s')\n", token.length, token.string);
+		case COLON_TOKEN:
+			printf("COLON('%.*s')\n", token.length, token.string);
+			break;
+		case LET_TOKEN:
+			printf("LET('%.*s')\n", token.length, token.string);
+			break;
+		case EQ_TOKEN:
+			printf("EQ('%.*s')\n", token.length, token.string);
 			break;
 		case ERROR_TOKEN:
 			printf("ERROR('%.*s')\n", token.length, token.string);
@@ -102,6 +108,16 @@ static void print_fn(const Node *fn, int level)
 	indent(level); printf("}\n");
 }
 
+static void print_let(const Node *let, int level)
+{
+	indent(level); printf("LET: {\n");
+	indent(level + 1); printf("NAME:\n");
+	print_tree(let->as.let.name, level + 2);
+	indent(level + 1); printf("VALUE:\n");
+	print_tree(let->as.let.value, level + 2);
+	indent(level); printf("}\n");
+}
+
 static void print_tree(const Node *expr, int level)
 {
 	switch (expr->type) {
@@ -137,6 +153,9 @@ static void print_tree(const Node *expr, int level)
 			break;
 		case FN_NODE:
 			print_fn(expr, level);
+			break;
+		case LET_NODE:
+			print_let(expr, level);
 			break;
 	}
 }
