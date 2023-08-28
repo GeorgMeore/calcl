@@ -9,10 +9,11 @@
 #include "gc.h"
 
 
-static void error(const char *message)
-{
-	fprintf(stderr, "evaluation error: %s\n", message);
-}
+#define error(message) \
+	(fprintf(stderr, "evaluation error: " message "\n"))
+
+#define errorf(fmt, args...) \
+	(fprintf(stderr, "evaluation error: " fmt "\n", args))
 
 static inline Object *eval_expect(Node *expr, GC *gc, Object *env, ObjectType type)
 {
@@ -162,7 +163,7 @@ static Object *eval_lookup(Node *id, Object *env)
 {
 	Object *value = Env_get(env->as.env, id->as.id);
 	if (!value) {
-		error("unbound variable");
+		errorf("unbound variable: %s", id->as.id);
 		return NULL;
 	}
 	return value;
