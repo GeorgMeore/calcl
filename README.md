@@ -43,4 +43,11 @@ $ mk
 1.000000
 > cdr (cons 2 3)
 3.000000
+> let z f = (fn h: fn x: f x (h h)) (fn h: fn x: f x (h h))
+> let fac x f = if x < 1 then 1 else x * f (x - 1)
+> let f = z fac
+> f 3
+6.000000
+> f 5
+120.000000
 ```
