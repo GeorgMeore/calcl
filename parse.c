@@ -248,7 +248,7 @@ static Node *parse_and(Scanner *scanner)
 	}
 }
 
-// CMP ::= SUM {CMP_TOKEN SUM}
+// CMP ::= SUM (CMP_TOKEN SUM)?
 static Node *parse_cmp(Scanner *scanner)
 {
 	Node *left = parse_sum(scanner);
