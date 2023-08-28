@@ -15,6 +15,10 @@ void Node_drop(Node *node)
 			free(node->as.id);
 			free(node);
 			break;
+		case NEG_NODE:
+			Node_drop(node->as.neg);
+			free(node);
+			break;
 		case APPLICATION_NODE:
 		case EXPT_NODE:
 		case PRODUCT_NODE:
@@ -92,6 +96,22 @@ static Node *IdNode_copy(const Node *src)
 	Node *node = malloc(sizeof(*node));
 	node->type = ID_NODE;
 	node->as.id = strdup(src->as.id);
+	return node;
+}
+
+Node *NegNode_new(Node *value)
+{
+	Node *node = malloc(sizeof(*node));
+	node->type = NEG_NODE;
+	node->as.neg = value;
+	return node;
+}
+
+Node *NegNode_copy(const Node *src)
+{
+	Node *node = malloc(sizeof(*node));
+	node->type = NEG_NODE;
+	node->as.neg = Node_copy(src->as.neg);
 	return node;
 }
 
@@ -210,6 +230,8 @@ Node *Node_copy(const Node *node)
 			return NumberNode_copy(node);
 		case ID_NODE:
 			return IdNode_copy(node);
+		case NEG_NODE:
+			return NegNode_copy(node);
 		case APPLICATION_NODE:
 		case EXPT_NODE:
 		case PRODUCT_NODE:

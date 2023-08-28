@@ -5,6 +5,7 @@
 #include "token.h"
 #include "node.h"
 
+
 #define do_print_token(name, token) \
 	(printf(name "('%.*s')\n", token.length, token.string))
 
@@ -17,9 +18,9 @@ void print_token(Token token)
 		case RPAREN_TOKEN:   do_print_token("RPAREN", token);   break;
 		case CARET_TOKEN:    do_print_token("CARET", token);    break;
 		case ASTERISK_TOKEN: do_print_token("ASTERISK", token); break;
-		case SLASH_TOKEN:    do_print_token("SLASH", token); break;
+		case SLASH_TOKEN:    do_print_token("SLASH", token);    break;
 		case PLUS_TOKEN:     do_print_token("PLUS", token);     break;
-		case MINUS_TOKEN:    do_print_token("MINUS", token);     break;
+		case MINUS_TOKEN:    do_print_token("MINUS", token);    break;
 		case GT_TOKEN:       do_print_token("GT", token);       break;
 		case LT_TOKEN:       do_print_token("LT", token);       break;
 		case EQ_TOKEN:       do_print_token("EQ", token);       break;
@@ -85,6 +86,13 @@ static void print_let(const Node *let, int level)
 	indent(level); printf("}\n");
 }
 
+static void print_neg(const Node *neg, int level)
+{
+	indent(level); printf("NEG: {\n");
+	print_tree(neg->as.neg, level + 1);
+	indent(level); printf("}\n");
+}
+
 static void print_tree(const Node *expr, int level)
 {
 	switch (expr->type) {
@@ -93,6 +101,9 @@ static void print_tree(const Node *expr, int level)
 			break;
 		case ID_NODE:
 			indent(level); printf("ID: %s\n", expr->as.id);
+			break;
+		case NEG_NODE:
+			print_neg(expr, level);
 			break;
 		case APPLICATION_NODE:
 			print_pair(expr, "APPLICATION", level);

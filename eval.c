@@ -27,6 +27,16 @@ static inline Object *eval_expect(Node *expr, GC *gc, Object *env, ObjectType ty
 	return obj;
 }
 
+static Object *eval_neg(Node *value, GC *gc, Object *env)
+{
+	Object *valuev = eval_expect(value, gc, env, NUM_OBJECT);
+	if (!valuev) {
+		return NULL;
+	}
+	valuev->as.num *= -1;
+	return valuev;
+}
+
 static Object *eval_expt(Node *left, Node *right, GC *gc, Object *env)
 {
 	Object *leftv = eval_expect(left, gc, env, NUM_OBJECT);
@@ -155,6 +165,8 @@ Object *eval(Node *expr, GC *gc, Object *env)
 			return GC_alloc_number(gc, expr->as.number);
 		case ID_NODE:
 			return Env_get(env->as.env, expr->as.id);
+		case NEG_NODE:
+			return eval_neg(expr->as.neg, gc, env);
 		case EXPT_NODE:
 			return eval_expt(expr->as.pair.left, expr->as.pair.right, gc, env);
 		case PRODUCT_NODE:
