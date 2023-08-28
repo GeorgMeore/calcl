@@ -81,7 +81,27 @@ Node *parse(Scanner *scanner)
 	return expr;
 }
 
-// LET ::= 'LET' 'ID' '=' EXPRESSION
+// LET_VALUE ::= '=' EXPRESSION | 'ID' LET_VALUE
+static Node *parse_let_value(Scanner *scanner)
+{
+	Token next = Scanner_next(scanner);
+	if (next.type == EQ_TOKEN) {
+		return parse_expression(scanner);
+	} else if (next.type == ID_TOKEN) {
+		Node *param = IdNode_new(next.string, next.length);
+		Node *body = parse_let_value(scanner);
+		if (!body) {
+			Node_drop(param);
+			return NULL;
+		}
+		return FnNode_new(param, body);
+	} else {
+		error("expected '=' or and identifier", next);
+		return NULL;
+	}
+}
+
+// LET ::= 'LET' LET_VALUE
 static Node *parse_let(Scanner *scanner)
 {
 	Scanner_next(scanner);
@@ -91,13 +111,7 @@ static Node *parse_let(Scanner *scanner)
 		return NULL;
 	}
 	Node *name = IdNode_new(next.string, next.length);
-	next = Scanner_next(scanner);
-	if (next.type != EQ_TOKEN) {
-		error("expected '='", next);
-		Node_drop(name);
-		return NULL;
-	}
-	Node *value = parse_expression(scanner);
+	Node *value = parse_let_value(scanner);
 	if (!value) {
 		Node_drop(name);
 		return NULL;
@@ -118,39 +132,42 @@ static Node *parse_expression(Scanner *scanner)
 	return parse_or(scanner);
 }
 
-// FN_ARGS_AND_BODY ::= 'ID' ':' EXPRESSION | 'ID' FN_ARGS_AND_BODY
-static Node *parse_fn_args_and_body(Scanner *scanner)
+// FN_BODY ::= ':' EXPRESSION | 'ID' FN_BODY
+static Node *parse_fn_body(Scanner *scanner)
 {
 	Token next = Scanner_next(scanner);
+	if (next.type == COLON_TOKEN) {
+		return parse_expression(scanner);
+	} else if (next.type == ID_TOKEN) {
+		Node *param = IdNode_new(next.string, next.length);
+		Node *body = parse_fn_body(scanner);
+		if (!body) {
+			Node_drop(param);
+			return NULL;
+		}
+		return FnNode_new(param, body);
+	} else {
+		error("expected ':' or and identifier", next);
+		return NULL;
+	}
+}
+
+// FN ::= 'FN' FN_BODY
+static Node *parse_fn(Scanner *scanner)
+{
+	Scanner_next(scanner);
+	Token next = Scanner_next(scanner);
 	if (next.type != ID_TOKEN) {
-		error("expected an identifier", next);
+		error("expected identifier", next);
 		return NULL;
 	}
 	Node *param = IdNode_new(next.string, next.length);
-	next = Scanner_peek(scanner);
-	Node *body = NULL;
-	if (next.type == COLON_TOKEN) {
-		Scanner_next(scanner);
-		body = parse_expression(scanner);
-	} else if (next.type == ID_TOKEN) {
-		body = parse_fn_args_and_body(scanner);
-	} else {
-		error("expected ':' or an identifier", next);
-		Node_drop(param);
-		return NULL;
-	}
+	Node *body = parse_fn_body(scanner);
 	if (!body) {
 		Node_drop(param);
 		return NULL;
 	}
 	return FnNode_new(param, body);
-}
-
-// FN ::= 'FN' FN_ARGS_AND_BODY
-static Node *parse_fn(Scanner *scanner)
-{
-	Scanner_next(scanner);
-	return parse_fn_args_and_body(scanner);
 }
 
 // IF ::= 'IF' OR 'THEN' EXPRESSION 'ELSE' EXPRESSION
