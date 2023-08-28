@@ -27,6 +27,7 @@ typedef enum {
 	FN_OBJECT,
 	ENV_OBJECT,
 	NUM_OBJECT,
+	THUNK_OBJECT,
 } ObjectType;
 
 typedef struct {
@@ -35,10 +36,17 @@ typedef struct {
 	char   *arg;
 } FnObject;
 
+typedef struct {
+	Object *env;
+	Node   *body;
+	Object *value;
+} ThunkObject;
+
 typedef union {
-	FnObject fn;
-	Env      *env;
-	double   num;
+	FnObject    fn;
+	Env         *env;
+	double      num;
+	ThunkObject thunk;
 } ObjectValue;
 
 struct Object {

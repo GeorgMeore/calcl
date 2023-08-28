@@ -42,7 +42,12 @@ int main(int argc, char **argv)
 		if (debug) {
 			print_expr(ast);
 		}
-		Object *result = eval(ast, gc, root);
+		Object *result = NULL;
+		if (lazy) {
+			result = leval(ast, gc, root);
+		} else {
+			result = seval(ast, gc, root);
+		}
 		if (result) {
 			Object_println(result);
 		}
