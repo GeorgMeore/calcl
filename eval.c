@@ -11,7 +11,7 @@
 
 static void error(const char *message)
 {
-	fprintf(stderr, "evaluation error: %s", message);
+	fprintf(stderr, "evaluation error: %s\n", message);
 }
 
 static inline Object *eval_expect(Node *expr, GC *gc, Object *env, ObjectType type)
@@ -126,11 +126,11 @@ static Object *eval_if(Node *cond, Node *true, Node *false, GC *gc, Object *env)
 static Object *eval_application(Node *fn, Node *arg, GC *gc, Object *env)
 {
 	Object *fnv = eval_expect(fn, gc, env, FN_OBJECT);
-	if (!fn) {
+	if (!fnv) {
 		return NULL;
 	}
 	Object *argv = eval(arg, gc, env);
-	if (!arg) {
+	if (!argv) {
 		return NULL;
 	}
 	Object *extended = GC_alloc_env(gc, fnv->as.fn.env);
