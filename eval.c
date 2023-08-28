@@ -158,13 +158,23 @@ static Object *eval_let(Node *name, Node *value, GC *gc, Object *env)
 	return NULL;
 }
 
+static Object *eval_lookup(Node *id, Object *env)
+{
+	Object *value = Env_get(env->as.env, id->as.id);
+	if (!value) {
+		error("Unbound variable");
+		return NULL;
+	}
+	return value;
+}
+
 Object *eval(Node *expr, GC *gc, Object *env)
 {
 	switch (expr->type) {
 		case NUMBER_NODE:
 			return GC_alloc_number(gc, expr->as.number);
 		case ID_NODE:
-			return Env_get(env->as.env, expr->as.id);
+			return eval_lookup(expr, env);
 		case NEG_NODE:
 			return eval_neg(expr->as.neg, gc, env);
 		case EXPT_NODE:
