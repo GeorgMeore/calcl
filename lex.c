@@ -16,7 +16,7 @@
 static Token take_keyword_or_id(CharIterator *iterator)
 {
 	const char *start = CharIterator_cursor(iterator);
-	while (isalpha(CharIterator_peek(iterator))) {
+	while (isalnum(CharIterator_peek(iterator))) {
 		CharIterator_next(iterator);
 	}
 	long unsigned length = CharIterator_cursor(iterator) - start;
