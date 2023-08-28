@@ -28,6 +28,12 @@ static void GC_mark(GC *self, Object *obj)
 	obj->mark = self->curr;
 	if (obj->type == FN_OBJECT) {
 		GC_mark(self, obj->as.fn.env);
+	} else if (obj->type == THUNK_OBJECT) {
+		if (obj->as.thunk.value) {
+			GC_mark(self, obj->as.thunk.value);
+		} else {
+			GC_mark(self, obj->as.thunk.env);
+		}
 	} else if (obj->type == ENV_OBJECT) {
 		Env_for_each(obj->as.env, (void (*)(void *, Object*))GC_mark, self);
 		if (obj->as.env->prev) {
@@ -58,7 +64,11 @@ static void GC_sweep(GC *self)
 			if (obj->type == FN_OBJECT) {
 				Node_drop(obj->as.fn.body);
 				free(obj->as.fn.arg);
-			} else if (obj->type == ENV_OBJECT) {
+			} else if (obj->type == THUNK_OBJECT) {
+				if (!obj->as.thunk.value) {
+					Node_drop(obj->as.thunk.body);
+				}
+			}else if (obj->type == ENV_OBJECT) {
 				Env_drop(obj->as.env);
 			}
 			free(obj);
@@ -109,5 +119,15 @@ Object *GC_alloc_number(GC *self, double num)
 	Object *obj = GC_alloc_empty_object(self);
 	obj->type = NUM_OBJECT;
 	obj->as.num = num;
+	return obj;
+}
+
+Object *GC_alloc_thunk(GC *self, Object *env, Node *body)
+{
+	Object *obj = GC_alloc_empty_object(self);
+	obj->type = THUNK_OBJECT;
+	obj->as.thunk.env = env;
+	obj->as.thunk.body = body;
+	obj->as.thunk.value = NULL;
 	return obj;
 }

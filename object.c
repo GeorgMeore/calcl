@@ -15,5 +15,8 @@ void Object_println(Object *obj)
 	case ENV_OBJECT:
 		printf("<env>\n");
 		return;
+	case THUNK_OBJECT:
+		printf("<thunk>\n");
+		return;
 	}
 }

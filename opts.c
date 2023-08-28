@@ -2,6 +2,7 @@
 
 
 int debug = 0;
+int lazy = 0;
 
 int setopts(int argc, char **argv)
 {
@@ -15,6 +16,9 @@ int setopts(int argc, char **argv)
 			switch (*arg) {
 				case 'd':
 					debug = 1;
+					break;
+				case 'l':
+					lazy = 1;
 					break;
 				default:
 					return -1;

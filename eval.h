@@ -5,6 +5,10 @@
 #include "object.h"
 #include "gc.h"
 
-Object *eval(Node *expr, GC *gc, Object *env);
+// strict evaluation
+Object *seval(Node *expr, GC *gc, Object *env);
+
+// lazy evaluation
+Object *leval(Node *expr, GC *gc, Object *env);
 
 #endif // EVAL_INCLUDED
