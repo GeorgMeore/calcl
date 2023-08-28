@@ -352,7 +352,7 @@ static Node *parse_term(Scanner *scanner)
 	} else if (next.type == ID_TOKEN) {
 		return IdNode_new(next.string, next.length);
 	} else {
-		error("expected '(' or a number", next);
+		error("expected '(', '-' or a number", next);
 		return NULL;
 	}
 }
