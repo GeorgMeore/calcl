@@ -356,32 +356,32 @@ static Object *force_let(Node *name, Node *expr, GC *gc, Object *env)
 static Object *force_dispatch(Node *expr, GC *gc, Object *env)
 {
 	switch (expr->type) {
-	case NUMBER_NODE:
-		return GC_alloc_number(gc, expr->as.number);
-	case ID_NODE:
-		return force_lookup(expr, env);
-	case NEG_NODE:
-		return force_neg(expr->as.neg, gc, env);
-	case EXPT_NODE:
-		return force_expt(expr->as.pair.left, expr->as.pair.right, gc, env);
-	case PRODUCT_NODE:
-		return force_product(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
-	case SUM_NODE:
-		return force_sum(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
-	case CMP_NODE:
-		return force_cmp(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
-	case AND_NODE:
-		return force_and(expr->as.pair.left, expr->as.pair.right, gc, env);
-	case OR_NODE:
-		return force_or(expr->as.pair.left, expr->as.pair.right, gc, env);
-	case IF_NODE:
-		return force_if(expr->as.ifelse.cond, expr->as.ifelse.true, expr->as.ifelse.false, gc, env);
-	case FN_NODE:
-		return GC_alloc_fn(gc, env, Node_copy(expr->as.fn.body), strdup(expr->as.fn.param->as.id));
-	case APPLICATION_NODE:
-		return force_application(expr->as.pair.left, expr->as.pair.right, gc, env);
-	case LET_NODE:
-		return force_let(expr->as.let.name, expr->as.let.value, gc, env);
+		case NUMBER_NODE:
+			return GC_alloc_number(gc, expr->as.number);
+		case ID_NODE:
+			return force_lookup(expr, env);
+		case NEG_NODE:
+			return force_neg(expr->as.neg, gc, env);
+		case EXPT_NODE:
+			return force_expt(expr->as.pair.left, expr->as.pair.right, gc, env);
+		case PRODUCT_NODE:
+			return force_product(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
+		case SUM_NODE:
+			return force_sum(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
+		case CMP_NODE:
+			return force_cmp(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
+		case AND_NODE:
+			return force_and(expr->as.pair.left, expr->as.pair.right, gc, env);
+		case OR_NODE:
+			return force_or(expr->as.pair.left, expr->as.pair.right, gc, env);
+		case IF_NODE:
+			return force_if(expr->as.ifelse.cond, expr->as.ifelse.true, expr->as.ifelse.false, gc, env);
+		case FN_NODE:
+			return GC_alloc_fn(gc, env, Node_copy(expr->as.fn.body), strdup(expr->as.fn.param->as.id));
+		case APPLICATION_NODE:
+			return force_application(expr->as.pair.left, expr->as.pair.right, gc, env);
+		case LET_NODE:
+			return force_let(expr->as.let.name, expr->as.let.value, gc, env);
 	}
 	return NULL;
 }

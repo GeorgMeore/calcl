@@ -63,19 +63,19 @@ static Token take_number(CharIterator *iterator)
 TokenType singlet_token_type(char c)
 {
 	switch (c) {
-	case '(':  return LPAREN_TOKEN;
-	case ')':  return RPAREN_TOKEN;
-	case '+':  return PLUS_TOKEN;
-	case '-':  return MINUS_TOKEN;
-	case '*':  return ASTERISK_TOKEN;
-	case '/':  return SLASH_TOKEN;
-	case '^':  return CARET_TOKEN;
-	case '>':  return GT_TOKEN;
-	case '<':  return LT_TOKEN;
-	case '=':  return EQ_TOKEN;
-	case ':':  return COLON_TOKEN;
-	case '\0': return END_TOKEN;
-	default:   return ERROR_TOKEN;
+		case '(':  return LPAREN_TOKEN;
+		case ')':  return RPAREN_TOKEN;
+		case '+':  return PLUS_TOKEN;
+		case '-':  return MINUS_TOKEN;
+		case '*':  return ASTERISK_TOKEN;
+		case '/':  return SLASH_TOKEN;
+		case '^':  return CARET_TOKEN;
+		case '>':  return GT_TOKEN;
+		case '<':  return LT_TOKEN;
+		case '=':  return EQ_TOKEN;
+		case ':':  return COLON_TOKEN;
+		case '\0': return END_TOKEN;
+		default:   return ERROR_TOKEN;
 	}
 }
 
