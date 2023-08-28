@@ -31,7 +31,7 @@ static Node *parse_expt(Scanner *s);
 static Node *parse_application(Scanner *s);
 static Node *parse_term(Scanner *s);
 
-// TERMTOKEN <- '(' | 'NUMBER' | 'ID'
+// TERM_TOKEN <- '(' | 'NUMBER' | 'ID'
 static int is_term_token(Token token) {
 	return (
 		token.type == LPAREN_TOKEN ||
@@ -40,7 +40,7 @@ static int is_term_token(Token token) {
 	);
 }
 
-// CMPTOKEN <- '>' | '<' | '='
+// CMP_TOKEN <- '>' | '<' | '='
 static int is_cmp_token(Token token) {
 	return (
 		token.type == GT_TOKEN ||
@@ -49,12 +49,12 @@ static int is_cmp_token(Token token) {
 	);
 }
 
-// SUMTOKEN <- '+' | '-'
+// SUM_TOKEN <- '+' | '-'
 static int is_sum_token(Token token) {
 	return (token.type == PLUS_TOKEN || token.type == MINUS_TOKEN);
 }
 
-// PRODTOKEN <- '*' | '/'
+// PROD_TOKEN <- '*' | '/'
 static int is_prod_token(Token token) {
 	return (token.type == ASTERISK_TOKEN || token.type == SLASH_TOKEN);
 }
@@ -118,28 +118,39 @@ static Node *parse_expression(Scanner *scanner)
 	return parse_or(scanner);
 }
 
-// FN ::= 'FN' 'ID' 'TO' EXPRESSION
-static Node *parse_fn(Scanner *scanner)
+// FN_ARGS_AND_BODY ::= 'ID' ':' EXPRESSION | 'ID' FN_ARGS_AND_BODY
+static Node *parse_fn_args_and_body(Scanner *scanner)
 {
-	Scanner_next(scanner);
 	Token next = Scanner_next(scanner);
 	if (next.type != ID_TOKEN) {
-		error("expected identifier", next);
+		error("expected an identifier", next);
 		return NULL;
 	}
 	Node *param = IdNode_new(next.string, next.length);
-	next = Scanner_next(scanner);
-	if (next.type != COLON_TOKEN) {
-		error("expected ':'", next);
+	next = Scanner_peek(scanner);
+	Node *body = NULL;
+	if (next.type == COLON_TOKEN) {
+		Scanner_next(scanner);
+		body = parse_expression(scanner);
+	} else if (next.type == ID_TOKEN) {
+		body = parse_fn_args_and_body(scanner);
+	} else {
+		error("expected ':' or an identifier", next);
 		Node_drop(param);
 		return NULL;
 	}
-	Node *body = parse_expression(scanner);
 	if (!body) {
 		Node_drop(param);
 		return NULL;
 	}
 	return FnNode_new(param, body);
+}
+
+// FN ::= 'FN' FN_ARGS_AND_BODY
+static Node *parse_fn(Scanner *scanner)
+{
+	Scanner_next(scanner);
+	return parse_fn_args_and_body(scanner);
 }
 
 // IF ::= 'IF' OR 'THEN' EXPRESSION 'ELSE' EXPRESSION
@@ -220,7 +231,7 @@ static Node *parse_and(Scanner *scanner)
 	}
 }
 
-// CMP ::= SUM {CMPTOKEN SUM}
+// CMP ::= SUM {CMP_TOKEN SUM}
 static Node *parse_cmp(Scanner *scanner)
 {
 	Node *left = parse_sum(scanner);
@@ -239,7 +250,7 @@ static Node *parse_cmp(Scanner *scanner)
 	return left;
 }
 
-// SUM ::= PRODUCT {SUMTOKEN PRODUCT}
+// SUM ::= PRODUCT {SUM_TOKEN PRODUCT}
 static Node *parse_sum(Scanner *scanner)
 {
 	Node *left = parse_product(scanner);
@@ -261,7 +272,7 @@ static Node *parse_sum(Scanner *scanner)
 	}
 }
 
-// PRODUCT ::= EXPT {PRODTOKEN EXPT}
+// PRODUCT ::= EXPT {PROD_TOKEN EXPT}
 static Node *parse_product(Scanner *scanner)
 {
 	Node *left = parse_expt(scanner);
