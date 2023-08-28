@@ -54,87 +54,71 @@ static void print_pair(const Node *expr, const char *type_string, int level)
 	indent(level); printf("}\n");
 }
 
-static void print_if(const Node *ifelse, int level)
+static void print_if(const Node *expr, int level)
 {
 	indent(level); printf("IF: {\n");
 	indent(level + 1); printf("CONDITION:\n");
-	print_tree(ifelse->as.ifelse.cond, level + 2);
+	print_tree(expr->as.ifelse.cond, level + 2);
 	indent(level + 1); printf("THEN:\n");
-	print_tree(ifelse->as.ifelse.true, level + 2);
+	print_tree(expr->as.ifelse.true, level + 2);
 	indent(level + 1); printf("ELSE:\n");
-	print_tree(ifelse->as.ifelse.false, level + 2);
+	print_tree(expr->as.ifelse.false, level + 2);
 	indent(level); printf("}\n");
 }
 
-static void print_fn(const Node *fn, int level)
+static void print_fn(const Node *expr, int level)
 {
 	indent(level); printf("FN: {\n");
 	indent(level + 1); printf("PARAM:\n");
-	print_tree(fn->as.fn.param, level + 2);
+	print_tree(expr->as.fn.param, level + 2);
 	indent(level + 1); printf("BODY:\n");
-	print_tree(fn->as.fn.body, level + 2);
+	print_tree(expr->as.fn.body, level + 2);
 	indent(level); printf("}\n");
 }
 
-static void print_let(const Node *let, int level)
+static void print_let(const Node *expr, int level)
 {
 	indent(level); printf("LET: {\n");
 	indent(level + 1); printf("NAME:\n");
-	print_tree(let->as.let.name, level + 2);
+	print_tree(expr->as.let.name, level + 2);
 	indent(level + 1); printf("VALUE:\n");
-	print_tree(let->as.let.value, level + 2);
+	print_tree(expr->as.let.value, level + 2);
 	indent(level); printf("}\n");
 }
 
-static void print_neg(const Node *neg, int level)
+static void print_neg(const Node *expr, int level)
 {
 	indent(level); printf("NEG: {\n");
-	print_tree(neg->as.neg, level + 1);
+	print_tree(expr->as.neg, level + 1);
 	indent(level); printf("}\n");
+}
+
+static void print_number(const Node *expr, int level)
+{
+	indent(level); printf("NUMBER: %lf\n", expr->as.number);
+}
+
+static void print_id(const Node *expr, int level)
+{
+	indent(level); printf("ID: %s\n", expr->as.id);
 }
 
 static void print_tree(const Node *expr, int level)
 {
 	switch (expr->type) {
-		case NUMBER_NODE:
-			indent(level); printf("NUMBER: %lf\n", expr->as.number);
-			break;
-		case ID_NODE:
-			indent(level); printf("ID: %s\n", expr->as.id);
-			break;
-		case NEG_NODE:
-			print_neg(expr, level);
-			break;
-		case APPLICATION_NODE:
-			print_pair(expr, "APPLICATION", level);
-			break;
-		case EXPT_NODE:
-			print_pair(expr, "EXPONENTIATION", level);
-			break;
-		case PRODUCT_NODE:
-			print_pair(expr, "PRODUCT", level);
-			break;
-		case SUM_NODE:
-			print_pair(expr, "SUM", level);
-			break;
-		case CMP_NODE:
-			print_pair(expr, "COMPARISON", level);
-			break;
-		case AND_NODE:
-			print_pair(expr, "AND", level);
-			break;
-		case OR_NODE:
-			print_pair(expr, "OR", level);
-			break;
-		case IF_NODE:
-			print_if(expr, level);
-			break;
-		case FN_NODE:
-			print_fn(expr, level);
-			break;
-		case LET_NODE:
-			print_let(expr, level);
-			break;
+		case NUMBER_NODE:      print_number(expr, level);                 break;
+		case ID_NODE:          print_id(expr, level);                     break;
+		case NEG_NODE:         print_neg(expr, level);                    break;
+		case APPLICATION_NODE: print_pair(expr, "APPLICATION", level);    break;
+		case EXPT_NODE:        print_pair(expr, "EXPONENTIATION", level); break;
+		case PRODUCT_NODE:     print_pair(expr, "PRODUCT", level);        break;
+		case SUM_NODE:         print_pair(expr, "SUM", level);            break;
+		case CMP_NODE:         print_pair(expr, "COMPARISON", level);     break;
+		case AND_NODE:         print_pair(expr, "AND", level);            break;
+		case OR_NODE:          print_pair(expr, "OR", level);             break;
+		case IF_NODE:          print_if(expr, level);                     break;
+		case FN_NODE:          print_fn(expr, level);                     break;
+		case LET_NODE:         print_let(expr, level);                    break;
 	}
 }
 
