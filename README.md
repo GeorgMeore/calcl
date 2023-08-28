@@ -36,4 +36,12 @@ $ mk
 > let fact = fn x: if x < 1 then 1 else x * fact (x - 1)
 > fact 5
 120.000000
+> let pair = fn x y f: f x y
+> let cons = pair
+> let car = fn p: p (fn x y: x)
+> let cdr = fn p: p (fn x y: y)
+> car (cons 1 2)
+1.000000
+> cdr (cons 2 3)
+3.000000
 ```
