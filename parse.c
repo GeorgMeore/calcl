@@ -324,10 +324,17 @@ static Node *parse_application(Scanner *scanner)
 	}
 }
 
-// TERM ::= '(' EXPRESSION ')' | 'NUMBER' | 'ID'
+// TERM ::= '(' EXPRESSION ')' | 'NUMBER' | 'ID' | '-' TERM
 static Node *parse_term(Scanner *scanner)
 {
 	Token next = Scanner_next(scanner);
+	if (next.type == MINUS_TOKEN) {
+		Node *term = parse_term(scanner);
+		if (!term) {
+			return NULL;
+		}
+		return NegNode_new(term);
+	}
 	if (next.type == LPAREN_TOKEN) {
 		Node *expr = parse_expression(scanner);
 		if (!expr) {
