@@ -48,7 +48,11 @@ static void print_tree(const Node *expr, int level);
 
 static void print_pair(const Node *expr, const char *type_string, int level)
 {
-	indent(level); printf("%s(%c): {\n", type_string, expr->as.pair.op);
+	if (expr->as.pair.op) {
+		indent(level); printf("%s(%c): {\n", type_string, expr->as.pair.op);
+	} else {
+		indent(level); printf("%s: {\n", type_string);
+	}
 	print_tree(expr->as.pair.left, level + 1);
 	print_tree(expr->as.pair.right, level + 1);
 	indent(level); printf("}\n");

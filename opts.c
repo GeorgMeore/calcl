@@ -1,8 +1,8 @@
 #include "opts.h"
 
 
-int debug = 0;
-int lazy = 0;
+int debug = DEBUG_DEFAULT;
+int lazy = LAZY_DEFAULT;
 
 int setopts(int argc, char **argv)
 {
@@ -14,12 +14,8 @@ int setopts(int argc, char **argv)
 		}
 		for (arg++; *arg; arg++) {
 			switch (*arg) {
-				case 'd':
-					debug = 1;
-					break;
-				case 'l':
-					lazy = 1;
-					break;
+				case 'd': debug = 1; break;
+				case 'l': lazy = 1;  break;
 				default:
 					return -1;
 			}

@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 {
 	int optind = setopts(argc, argv);
 	if (optind < 0) {
-		fprintf(stderr, "usage: %s [-d]", argv[0]);
+		fprintf(stderr, "usage: %s [-dl]\n", argv[0]);
 		return 1;
 	}
 	int tty = isatty(0);
