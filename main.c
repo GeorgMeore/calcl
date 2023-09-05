@@ -9,8 +9,6 @@
 #include "parse.h"
 #include "node.h"
 #include "eval.h"
-#include "env.h"
-#include "gc.h"
 #include "debug.h"
 
 
@@ -22,19 +20,16 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	int tty = isatty(0);
-	GC *gc = GC_new();
-	Object *root = GC_alloc_env(gc, NULL);
+	Context ctx = Context_make();
 	for (;;) {
-		GC_collect(gc, root);
 		if (tty) {
 			fprintf(stderr, "> ");
 		}
-		char *input = get_line();
+		const char *input = get_line();
 		if (!input) {
 			break;
 		}
-		CharIterator iter = input;
-		Scanner scanner = Scanner_make(&iter);
+		Scanner scanner = Scanner_make(&input);
 		Node *ast = parse(&scanner);
 		if (!ast) {
 			continue;
@@ -44,16 +39,16 @@ int main(int argc, char **argv)
 		}
 		Object *result = NULL;
 		if (lazy) {
-			result = leval(ast, gc, root);
+			GC_collect(ctx.gc, ctx.root, NULL);
+			result = leval(ast, ctx.gc, ctx.root);
 		} else {
-			result = seval(ast, gc, root);
+			result = seval(ast, &ctx);
 		}
 		if (result) {
 			Object_println(result);
 		}
 		Node_drop(ast);
 	}
-	GC_collect(gc, NULL);
-	GC_drop(gc);
+	Context_destroy(ctx);
 	return 0;
 }
