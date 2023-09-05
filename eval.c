@@ -10,6 +10,10 @@
 #include "gc.h"
 #include "context.h"
 
+
+#define EVAL_OK 1
+#define EVAL_FAIL 0
+
 #define error(message) \
 	(fprintf(stderr, "evaluation error: " message "\n"))
 
@@ -43,16 +47,18 @@ static Object *seval_neg(Node *expr, Context *ctx, Object *env)
 
 static Object *seval_pair(Node *left, Node *right, Context *ctx, Object *env, int op)
 {
+	Context_stack_push(ctx, env);
 	Object *leftv = seval_expect(left, ctx, env, NUM_OBJECT);
 	if (!leftv) {
 		return NULL;
 	}
-	Stack_push(Context_stack(ctx), leftv);
+	Context_stack_pop(ctx);
+	Context_stack_push(ctx, leftv);
 	Object *rightv = seval_expect(right, ctx, env, NUM_OBJECT);
-	Stack_pop(Context_stack(ctx));
 	if (!rightv) {
 		return NULL;
 	}
+	Context_stack_pop(ctx);
 	switch (op) {
 		case '^':
 			return GC_alloc_number(ctx->gc, pow(leftv->as.num, rightv->as.num));
@@ -71,7 +77,7 @@ static Object *seval_pair(Node *left, Node *right, Context *ctx, Object *env, in
 		case '=':
 			return GC_alloc_number(ctx->gc, leftv->as.num = rightv->as.num);
 		default:
-			errorf("Unknown binary operation: '%c'", op);
+			errorf("unknown binary operation: '%c'", op);
 			Stack_clear(Context_stack(ctx));
 			return NULL;
 	}
@@ -130,6 +136,42 @@ static Object *seval_lookup(Node *id, Context *ctx, Object *env)
 	return value;
 }
 
+static int seval_if(Context *ctx, Object **env, Node **expr)
+{
+	Object *condv = seval_expect((*expr)->as.ifelse.cond, ctx, *env, NUM_OBJECT);
+	if (!condv) {
+		return EVAL_FAIL;
+	}
+	if (condv->as.num) {
+		*expr = (*expr)->as.ifelse.true;
+	} else {
+		*expr = (*expr)->as.ifelse.false;
+	}
+	return EVAL_OK;
+}
+
+static int seval_application(Context *ctx, Object **env, Node **expr)
+{
+	Context_stack_push(ctx, *env);
+	Object *fnv = seval_expect((*expr)->as.pair.left, ctx, *env, FN_OBJECT);
+	if (!fnv) {
+		return EVAL_FAIL;
+	}
+	Context_stack_pop(ctx);
+	Context_stack_push(ctx, *env);
+	Context_stack_push(ctx, fnv);
+	Object *argv = seval_dispatch((*expr)->as.pair.right, ctx, *env);
+	if (!argv) {
+		return EVAL_FAIL;
+	}
+	Context_stack_pop(ctx);
+	Context_stack_pop(ctx);
+	*env = GC_alloc_env(ctx->gc, fnv->as.fn.env);
+	Env_add((*env)->as.env, fnv->as.fn.arg, argv);
+	*expr = fnv->as.fn.body;
+	return EVAL_OK;
+}
+
 Object *seval_dispatch(Node *expr, Context *ctx, Object *env)
 {
 	for (;;) {
@@ -154,30 +196,14 @@ Object *seval_dispatch(Node *expr, Context *ctx, Object *env)
 			case OR_NODE:
 				return seval_or(expr->as.pair.left, expr->as.pair.right, ctx, env);
 			case IF_NODE:
-				Object *condv = seval_expect(expr->as.ifelse.cond, ctx, env, NUM_OBJECT);
-				if (!condv) {
+				if (seval_if(ctx, &env, &expr) != EVAL_OK) {
 					return NULL;
-				}
-				if (condv->as.num) {
-					expr = expr->as.ifelse.true;
-				} else {
-					expr = expr->as.ifelse.false;
 				}
 				break;
 			case APPLICATION_NODE:
-				Object *fnv = seval_expect(expr->as.pair.left, ctx, env, FN_OBJECT);
-				if (!fnv) {
+				if (seval_application(ctx, &env, &expr) != EVAL_OK) {
 					return NULL;
 				}
-				Stack_push(Context_stack(ctx), fnv);
-				Object *argv = seval_dispatch(expr->as.pair.right, ctx, env);
-				Stack_pop(Context_stack(ctx));
-				if (!argv) {
-					return NULL;
-				}
-				env = GC_alloc_env(ctx->gc, fnv->as.fn.env);
-				Env_add(env->as.env, fnv->as.fn.arg, argv);
-				expr = fnv->as.fn.body;
 				break;
 			case LET_NODE:
 				return seval_let(expr->as.let.name, expr->as.let.value, ctx, env);
@@ -256,7 +282,7 @@ static Object *leval_pair(Node *left, Node *right, GC *gc, Object *env, int op)
 		case '=':
 			return GC_alloc_number(gc, leftv->as.num = rightv->as.num);
 		default:
-			errorf("Unknown binary operation: '%c'", op);
+			errorf("unknown binary operation: '%c'", op);
 			return NULL;
 	}
 }

@@ -13,13 +13,13 @@ void Object_println(Object *obj)
 			printf("<fn %s>\n", obj->as.fn.arg);
 			return;
 		case ENV_OBJECT:
-			printf("<env>\n");
+			printf("<env-%p>\n", obj);
 			return;
 		case THUNK_OBJECT:
-			printf("<thunk>\n");
+			printf("<thunk-%p>\n", obj);
 			return;
 		case STACK_OBJECT:
-			printf("<stack>\n");
+			printf("<stack-%p>\n", obj);
 			return;
 	}
 }

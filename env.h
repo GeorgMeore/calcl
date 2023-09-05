@@ -11,5 +11,6 @@ Object  *Env_remove(Env *self, const char *key);
 int     Env_has(Env *self, const char *key);
 Object  *Env_get(Env *self, const char *key);
 void    Env_for_each(Env *self, void (*fn)(void *, Object *), void *param);
+void    Env_dump_objects(Env *self);
 
 #endif // HASH_INCLUDED

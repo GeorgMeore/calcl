@@ -17,5 +17,6 @@ Object *GC_alloc_fn(GC *self, Object *env, Node *body, char *arg);
 Object *GC_alloc_number(GC *self, double num);
 Object *GC_alloc_thunk(GC *self, Object *env, Node *body);
 Object *GC_alloc_stack(GC *self);
+void   GC_dump_objects(GC *self);
 
 #endif // GC_INCLUDED
