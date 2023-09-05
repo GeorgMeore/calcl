@@ -121,15 +121,15 @@ static Object *seval_let(Node *name, Node *expr, Context *ctx, Object *env)
 	if (!value) {
 		return NULL;
 	}
-	Env_add(env->as.env, name->as.id, value);
+	Env_add(env->as.env, IdNode_value(name), value);
 	return NULL;
 }
 
 static Object *seval_lookup(Node *id, Context *ctx, Object *env)
 {
-	Object *value = Env_get(env->as.env, id->as.id);
+	Object *value = Env_get(env->as.env, IdNode_value(id));
 	if (!value) {
-		errorf("unbound variable: %s", id->as.id);
+		errorf("unbound variable: %s", IdNode_value(id));
 		Stack_clear(Context_stack(ctx));
 		return NULL;
 	}
@@ -138,14 +138,14 @@ static Object *seval_lookup(Node *id, Context *ctx, Object *env)
 
 static int seval_if(Context *ctx, Object **env, Node **expr)
 {
-	Object *condv = seval_expect((*expr)->as.ifelse.cond, ctx, *env, NUM_OBJECT);
+	Object *condv = seval_expect(IfNode_cond(*expr), ctx, *env, NUM_OBJECT);
 	if (!condv) {
 		return EVAL_FAIL;
 	}
 	if (condv->as.num) {
-		*expr = (*expr)->as.ifelse.true;
+		*expr = IfNode_true(*expr);
 	} else {
-		*expr = (*expr)->as.ifelse.false;
+		*expr = IfNode_false(*expr);
 	}
 	return EVAL_OK;
 }
@@ -153,14 +153,14 @@ static int seval_if(Context *ctx, Object **env, Node **expr)
 static int seval_application(Context *ctx, Object **env, Node **expr)
 {
 	Context_stack_push(ctx, *env);
-	Object *fnv = seval_expect((*expr)->as.pair.left, ctx, *env, FN_OBJECT);
+	Object *fnv = seval_expect(PairNode_left(*expr), ctx, *env, FN_OBJECT);
 	if (!fnv) {
 		return EVAL_FAIL;
 	}
 	Context_stack_pop(ctx);
 	Context_stack_push(ctx, *env);
 	Context_stack_push(ctx, fnv);
-	Object *argv = seval_dispatch((*expr)->as.pair.right, ctx, *env);
+	Object *argv = seval_dispatch(PairNode_right(*expr), ctx, *env);
 	if (!argv) {
 		return EVAL_FAIL;
 	}
@@ -168,7 +168,7 @@ static int seval_application(Context *ctx, Object **env, Node **expr)
 	Context_stack_pop(ctx);
 	*env = GC_alloc_env(ctx->gc, fnv->as.fn.env);
 	Env_add((*env)->as.env, fnv->as.fn.arg, argv);
-	*expr = fnv->as.fn.body;
+	*expr = fnv->as.fn.body; // FIXME: use after free
 	return EVAL_OK;
 }
 
@@ -178,23 +178,23 @@ Object *seval_dispatch(Node *expr, Context *ctx, Object *env)
 		GC_collect(ctx->gc, env, ctx->stack);
 		switch (expr->type) {
 			case NUMBER_NODE:
-				return GC_alloc_number(ctx->gc, expr->as.number);
+				return GC_alloc_number(ctx->gc, NumNode_value(expr));
 			case FN_NODE:
-				return GC_alloc_fn(ctx->gc, env, Node_copy(expr->as.fn.body), strdup(expr->as.fn.param->as.id));
+				return GC_alloc_fn(ctx->gc, env, Node_copy(FnNode_body(expr)), strdup(FnNode_param_value(expr)));
 			case ID_NODE:
 				return seval_lookup(expr, ctx, env);
 			case NEG_NODE:
-				return seval_neg(expr->as.neg, ctx, env);
+				return seval_neg(NegNode_value(expr), ctx, env);
 			case EXPT_NODE:
-				return seval_pair(expr->as.pair.left, expr->as.pair.right, ctx, env, '^');
+				return seval_pair(PairNode_left(expr), PairNode_right(expr), ctx, env, '^');
 			case PRODUCT_NODE:
 			case SUM_NODE:
 			case CMP_NODE:
-				return seval_pair(expr->as.pair.left, expr->as.pair.right, ctx, env, expr->as.pair.op);
+				return seval_pair(PairNode_left(expr), PairNode_right(expr), ctx, env, PairNode_op(expr));
 			case AND_NODE:
-				return seval_and(expr->as.pair.left, expr->as.pair.right, ctx, env);
+				return seval_and(PairNode_left(expr), PairNode_right(expr), ctx, env);
 			case OR_NODE:
-				return seval_or(expr->as.pair.left, expr->as.pair.right, ctx, env);
+				return seval_or(PairNode_left(expr), PairNode_right(expr), ctx, env);
 			case IF_NODE:
 				if (seval_if(ctx, &env, &expr) != EVAL_OK) {
 					return NULL;
@@ -206,7 +206,7 @@ Object *seval_dispatch(Node *expr, Context *ctx, Object *env)
 				}
 				break;
 			case LET_NODE:
-				return seval_let(expr->as.let.name, expr->as.let.value, ctx, env);
+				return seval_let(LetNode_name(expr), LetNode_value(expr), ctx, env);
 		}
 	}
 }
@@ -353,29 +353,29 @@ static Object *leval_dispatch(Node *expr, GC *gc, Object *env)
 {
 	switch (expr->type) {
 		case NUMBER_NODE:
-			return GC_alloc_number(gc, expr->as.number);
+			return GC_alloc_number(gc, NumNode_value(expr));
 		case ID_NODE:
 			return leval_lookup(expr, env);
 		case NEG_NODE:
-			return leval_neg(expr->as.neg, gc, env);
+			return leval_neg(NegNode_value(expr), gc, env);
 		case EXPT_NODE:
-			return leval_pair(expr->as.pair.left, expr->as.pair.right, gc, env, '^');
+			return leval_pair(PairNode_left(expr), PairNode_right(expr), gc, env, '^');
 		case PRODUCT_NODE:
 		case SUM_NODE:
 		case CMP_NODE:
-			return leval_pair(expr->as.pair.left, expr->as.pair.right, gc, env, expr->as.pair.op);
+			return leval_pair(PairNode_left(expr), PairNode_right(expr), gc, env, PairNode_op(expr));
 		case AND_NODE:
-			return leval_and(expr->as.pair.left, expr->as.pair.right, gc, env);
+			return leval_and(PairNode_left(expr), PairNode_right(expr), gc, env);
 		case OR_NODE:
-			return leval_or(expr->as.pair.left, expr->as.pair.right, gc, env);
+			return leval_or(PairNode_left(expr), PairNode_right(expr), gc, env);
 		case IF_NODE:
-			return leval_if(expr->as.ifelse.cond, expr->as.ifelse.true, expr->as.ifelse.false, gc, env);
+			return leval_if(IfNode_cond(expr), IfNode_true(expr), IfNode_false(expr), gc, env);
 		case FN_NODE:
-			return GC_alloc_fn(gc, env, Node_copy(expr->as.fn.body), strdup(expr->as.fn.param->as.id));
+			return GC_alloc_fn(gc, env, Node_copy(FnNode_body(expr)), strdup(FnNode_param_value(expr)));
 		case APPLICATION_NODE:
-			return leval_application(expr->as.pair.left, expr->as.pair.right, gc, env);
+			return leval_application(PairNode_left(expr), PairNode_right(expr), gc, env);
 		case LET_NODE:
-			return leval_let(expr->as.let.name, expr->as.let.value, gc, env);
+			return leval_let(LetNode_name(expr), LetNode_value(expr), gc, env);
 	}
 	return NULL;
 }

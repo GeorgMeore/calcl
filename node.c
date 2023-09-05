@@ -26,14 +26,14 @@ void Node_drop(Node *node)
 		case CMP_NODE:
 		case AND_NODE:
 		case OR_NODE:
-			Node_drop(node->as.pair.left);
-			Node_drop(node->as.pair.right);
+			Node_drop(PairNode_left(node));
+			Node_drop(PairNode_right(node));
 			free(node);
 			break;
 		case IF_NODE:
-			Node_drop(node->as.ifelse.cond);
-			Node_drop(node->as.ifelse.true);
-			Node_drop(node->as.ifelse.false);
+			Node_drop(IfNode_cond(node));
+			Node_drop(IfNode_true(node));
+			Node_drop(IfNode_false(node));
 			free(node);
 			break;
 		case FN_NODE:
@@ -183,9 +183,9 @@ Node *IfNode_new(Node *cond, Node *true, Node *false)
 static Node *IfNode_copy(const Node *src)
 {
 	return IfNode_new(
-		Node_copy(src->as.ifelse.cond),
-		Node_copy(src->as.ifelse.true),
-		Node_copy(src->as.ifelse.false)
+		Node_copy(IfNode_cond(src)),
+		Node_copy(IfNode_true(src)),
+		Node_copy(IfNode_false(src))
 	);
 }
 
@@ -218,8 +218,8 @@ Node *LetNode_new(Node *name, Node *value)
 static Node *LetNode_copy(const Node *src)
 {
 	return LetNode_new(
-		Node_copy(src->as.let.name),
-		Node_copy(src->as.let.value)
+		Node_copy(LetNode_name(src)),
+		Node_copy(LetNode_value(src))
 	);
 }
 

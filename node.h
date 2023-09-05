@@ -21,9 +21,15 @@ typedef enum {
 
 typedef double NumberValue;
 
+#define NumNode_value(nodeptr) ((nodeptr)->as.number)
+
 typedef char *IdValue;
 
+#define IdNode_value(nodeptr) ((nodeptr)->as.id)
+
 typedef Node *NegValue;
+
+#define NegNode_value(nodeptr) ((nodeptr)->as.neg)
 
 typedef struct {
 	Node *left;
@@ -31,21 +37,36 @@ typedef struct {
 	int  op; // used by SUM_NODE, PRODUCT_NODE and CMP_NODE to store the operation
 } PairValue;
 
+#define PairNode_left(nodeptr) ((nodeptr)->as.pair.left)
+#define PairNode_right(nodeptr) ((nodeptr)->as.pair.right)
+#define PairNode_op(nodeptr) ((nodeptr)->as.pair.op)
+
 typedef struct {
 	Node *cond;
 	Node *true;
 	Node *false;
 } IfValue;
 
+#define IfNode_cond(nodeptr) ((nodeptr)->as.ifelse.cond)
+#define IfNode_true(nodeptr) ((nodeptr)->as.ifelse.true)
+#define IfNode_false(nodeptr) ((nodeptr)->as.ifelse.false)
+
 typedef struct {
 	Node *param;
 	Node *body;
 } FnValue;
 
+#define FnNode_param(nodeptr) ((nodeptr)->as.fn.param)
+#define FnNode_param_value(nodeptr) IdNode_value(((nodeptr)->as.fn.param))
+#define FnNode_body(nodeptr) ((nodeptr)->as.fn.body)
+
 typedef struct {
 	Node *name;
 	Node *value;
 } LetValue;
+
+#define LetNode_name(nodeptr) ((nodeptr)->as.let.name)
+#define LetNode_value(nodeptr) ((nodeptr)->as.let.value)
 
 typedef union {
 	NumberValue number; // NUMBER_NODE

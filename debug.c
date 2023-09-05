@@ -48,13 +48,13 @@ static void print_tree(const Node *expr, int level);
 
 static void print_pair(const Node *expr, const char *type_string, int level)
 {
-	if (expr->as.pair.op) {
-		indent(level); printf("%s(%c): {\n", type_string, expr->as.pair.op);
+	if (PairNode_op(expr)) {
+		indent(level); printf("%s(%c): {\n", type_string, PairNode_op(expr));
 	} else {
 		indent(level); printf("%s: {\n", type_string);
 	}
-	print_tree(expr->as.pair.left, level + 1);
-	print_tree(expr->as.pair.right, level + 1);
+	print_tree(PairNode_left(expr), level + 1);
+	print_tree(PairNode_right(expr), level + 1);
 	indent(level); printf("}\n");
 }
 
@@ -62,11 +62,11 @@ static void print_if(const Node *expr, int level)
 {
 	indent(level); printf("IF: {\n");
 	indent(level + 1); printf("CONDITION:\n");
-	print_tree(expr->as.ifelse.cond, level + 2);
+	print_tree(IfNode_cond(expr), level + 2);
 	indent(level + 1); printf("THEN:\n");
-	print_tree(expr->as.ifelse.true, level + 2);
+	print_tree(IfNode_true(expr), level + 2);
 	indent(level + 1); printf("ELSE:\n");
-	print_tree(expr->as.ifelse.false, level + 2);
+	print_tree(IfNode_false(expr), level + 2);
 	indent(level); printf("}\n");
 }
 
@@ -74,9 +74,9 @@ static void print_fn(const Node *expr, int level)
 {
 	indent(level); printf("FN: {\n");
 	indent(level + 1); printf("PARAM:\n");
-	print_tree(expr->as.fn.param, level + 2);
+	print_tree(FnNode_param(expr), level + 2);
 	indent(level + 1); printf("BODY:\n");
-	print_tree(expr->as.fn.body, level + 2);
+	print_tree(FnNode_body(expr), level + 2);
 	indent(level); printf("}\n");
 }
 
@@ -84,27 +84,27 @@ static void print_let(const Node *expr, int level)
 {
 	indent(level); printf("LET: {\n");
 	indent(level + 1); printf("NAME:\n");
-	print_tree(expr->as.let.name, level + 2);
+	print_tree(LetNode_name(expr), level + 2);
 	indent(level + 1); printf("VALUE:\n");
-	print_tree(expr->as.let.value, level + 2);
+	print_tree(LetNode_value(expr), level + 2);
 	indent(level); printf("}\n");
 }
 
 static void print_neg(const Node *expr, int level)
 {
 	indent(level); printf("NEG: {\n");
-	print_tree(expr->as.neg, level + 1);
+	print_tree(NegNode_value(expr), level + 1);
 	indent(level); printf("}\n");
 }
 
 static void print_number(const Node *expr, int level)
 {
-	indent(level); printf("NUMBER: %lf\n", expr->as.number);
+	indent(level); printf("NUMBER: %lf\n", NumNode_value(expr));
 }
 
 static void print_id(const Node *expr, int level)
 {
-	indent(level); printf("ID: %s\n", expr->as.id);
+	indent(level); printf("ID: %s\n", IdNode_value(expr));
 }
 
 static void print_tree(const Node *expr, int level)
