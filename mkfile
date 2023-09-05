@@ -13,6 +13,7 @@ SRC=debug.c\
 	scanner.c\
 	gc.c\
 	object.c\
+	stack.c\
 	env.c
 
 prog=calcl

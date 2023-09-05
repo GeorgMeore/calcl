@@ -18,5 +18,8 @@ void Object_println(Object *obj)
 		case THUNK_OBJECT:
 			printf("<thunk>\n");
 			return;
+		case STACK_OBJECT:
+			printf("<stack>\n");
+			return;
 	}
 }

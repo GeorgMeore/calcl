@@ -6,6 +6,7 @@
 
 #include "node.h"
 #include "env.h"
+#include "stack.h"
 #include "gc.h"
 
 
@@ -15,143 +16,117 @@
 #define errorf(fmt, args...) \
 	(fprintf(stderr, "evaluation error: " fmt "\n", args))
 
-static inline Object *seval_expect(Node *expr, GC *gc, Object *env, ObjectType type)
+Context Context_make()
 {
-	Object *obj = seval(expr, gc, env);
+	Context self = {0};
+	self.gc = GC_new();
+	self.root = GC_alloc_env(self.gc, NULL);
+	self.stack = GC_alloc_stack(self.gc);
+	return self;
+}
+
+void Context_destroy(Context self)
+{
+	GC_collect(self.gc, NULL, NULL);
+	GC_drop(self.gc);
+}
+
+Object *seval_dispatch(Node *expr, Context *ctx, Object *env);
+
+static inline Object *seval_expect(Node *expr, Context *ctx, Object *env, ObjectType type)
+{
+	Object *obj = seval_dispatch(expr, ctx, env);
 	if (!obj) {
 		return NULL;
 	}
 	if (obj->type != type) {
 		error("type mismatch");
+		Stack_clear(ctx->stack->as.stack);
 		return NULL;
 	}
 	return obj;
 }
 
-static Object *seval_neg(Node *expr, GC *gc, Object *env)
+static Object *seval_neg(Node *expr, Context *ctx, Object *env)
 {
-	Object *value = seval_expect(expr, gc, env, NUM_OBJECT);
+	Object *value = seval_expect(expr, ctx, env, NUM_OBJECT);
 	if (!value) {
 		return NULL;
 	}
-	value->as.num *= -1;
-	return value;
+	return GC_alloc_number(ctx->gc, value->as.num * -1);
 }
 
-static Object *seval_expt(Node *left, Node *right, GC *gc, Object *env)
+static Object *seval_pair(Node *left, Node *right, Context *ctx, Object *env, int op)
 {
-	Object *leftv = seval_expect(left, gc, env, NUM_OBJECT);
-	Object *rightv = seval_expect(right, gc, env, NUM_OBJECT);
-	if (!leftv || !rightv) {
+	Object *leftv = seval_expect(left, ctx, env, NUM_OBJECT);
+	if (!leftv) {
 		return NULL;
 	}
-	return GC_alloc_number(gc, pow(leftv->as.num, rightv->as.num));
-}
-
-static Object *seval_product(Node *left, Node *right, int op, GC *gc, Object *env)
-{
-	Object *leftv = seval_expect(left, gc, env, NUM_OBJECT);
-	Object *rightv = seval_expect(right, gc, env, NUM_OBJECT);
-	if (!leftv || !rightv) {
+	Stack_push(ctx->stack->as.stack, leftv);
+	Object *rightv = seval_expect(right, ctx, env, NUM_OBJECT);
+	Stack_pop(ctx->stack->as.stack);
+	if (!rightv) {
 		return NULL;
 	}
-	if (op == '*') {
-		return GC_alloc_number(gc, leftv->as.num * rightv->as.num);
+	switch (op) {
+		case '^':
+			return GC_alloc_number(ctx->gc, pow(leftv->as.num, rightv->as.num));
+		case '*':
+			return GC_alloc_number(ctx->gc, leftv->as.num * rightv->as.num);
+		case '/':
+			return GC_alloc_number(ctx->gc, leftv->as.num / rightv->as.num);
+		case '+':
+			return GC_alloc_number(ctx->gc, leftv->as.num + rightv->as.num);
+		case '-':
+			return GC_alloc_number(ctx->gc, leftv->as.num - rightv->as.num);
+		case '>':
+			return GC_alloc_number(ctx->gc, leftv->as.num > rightv->as.num);
+		case '<':
+			return GC_alloc_number(ctx->gc, leftv->as.num < rightv->as.num);
+		case '=':
+			return GC_alloc_number(ctx->gc, leftv->as.num = rightv->as.num);
+		default:
+			errorf("Unknown binary operation: '%c'", op);
+			Stack_clear(ctx->stack->as.stack);
+			return NULL;
 	}
-	return GC_alloc_number(gc, leftv->as.num / rightv->as.num);
 }
 
-static Object *seval_sum(Node *left, Node *right, int op, GC *gc, Object *env)
+static Object *seval_or(Node *left, Node *right, Context *ctx, Object *env)
 {
-	Object *leftv = seval_expect(left, gc, env, NUM_OBJECT);
-	Object *rightv = seval_expect(right, gc, env, NUM_OBJECT);
-	if (!leftv || !rightv) {
-		return NULL;
-	}
-	if (op == '+') {
-		return GC_alloc_number(gc, leftv->as.num + rightv->as.num);
-	}
-	return GC_alloc_number(gc, leftv->as.num - rightv->as.num);
-}
-
-static Object *seval_cmp(Node *left, Node *right, int op, GC *gc, Object *env)
-{
-	Object *leftv = seval_expect(left, gc, env, NUM_OBJECT);
-	Object *rightv = seval_expect(right, gc, env, NUM_OBJECT);
-	if (!leftv || !rightv) {
-		return NULL;
-	}
-	if (op == '>') {
-		return GC_alloc_number(gc, leftv->as.num > rightv->as.num);
-	} else if (op == '<') {
-		return GC_alloc_number(gc, leftv->as.num < rightv->as.num);
-	}
-	return GC_alloc_number(gc, leftv->as.num == rightv->as.num);
-}
-
-static Object *seval_or(Node *left, Node *right, GC *gc, Object *env)
-{
-	Object *leftv = seval_expect(left, gc, env, NUM_OBJECT);
+	Object *leftv = seval_expect(left, ctx, env, NUM_OBJECT);
 	if (!leftv) {
 		return NULL;
 	}
 	if (leftv->as.num) {
-		return GC_alloc_number(gc, leftv->as.num);
+		return leftv;
 	}
-	Object *rightv = seval_expect(right, gc, env, NUM_OBJECT);
+	Object *rightv = seval_expect(right, ctx, env, NUM_OBJECT);
 	if (!rightv) {
 		return NULL;
 	}
-	return GC_alloc_number(gc, rightv->as.num);
+	return rightv;
 }
 
-static Object *seval_and(Node *left, Node *right, GC *gc, Object *env)
+static Object *seval_and(Node *left, Node *right, Context *ctx, Object *env)
 {
-	Object *leftv = seval_expect(left, gc, env, NUM_OBJECT);
+	Object *leftv = seval_expect(left, ctx, env, NUM_OBJECT);
 	if (!leftv) {
 		return NULL;
 	}
 	if (!leftv->as.num) {
-		return GC_alloc_number(gc, leftv->as.num);
+		return leftv;
 	}
-	Object *rightv = seval_expect(right, gc, env, NUM_OBJECT);
+	Object *rightv = seval_expect(right, ctx, env, NUM_OBJECT);
 	if (!rightv) {
 		return NULL;
 	}
-	return GC_alloc_number(gc, rightv->as.num);
+	return rightv;
 }
 
-static Object *seval_if(Node *cond, Node *true, Node *false, GC *gc, Object *env)
+static Object *seval_let(Node *name, Node *expr, Context *ctx, Object *env)
 {
-	Object *condv = seval_expect(cond, gc, env, NUM_OBJECT);
-	if (!condv) {
-		return NULL;
-	}
-	if (condv->as.num) {
-		return seval(true, gc, env);
-	} else {
-		return seval(false, gc, env);
-	}
-}
-
-static Object *seval_application(Node *fn, Node *arg, GC *gc, Object *env)
-{
-	Object *fnv = seval_expect(fn, gc, env, FN_OBJECT);
-	if (!fnv) {
-		return NULL;
-	}
-	Object *argv = seval(arg, gc, env);
-	if (!argv) {
-		return NULL;
-	}
-	Object *extended = GC_alloc_env(gc, fnv->as.fn.env);
-	Env_add(extended->as.env, fnv->as.fn.arg, argv);
-	return seval(fnv->as.fn.body, gc, extended);
-}
-
-static Object *seval_let(Node *name, Node *expr, GC *gc, Object *env)
-{
-	Object *value = seval(expr, gc, env);
+	Object *value = seval_dispatch(expr, ctx, env);
 	if (!value) {
 		return NULL;
 	}
@@ -159,47 +134,75 @@ static Object *seval_let(Node *name, Node *expr, GC *gc, Object *env)
 	return NULL;
 }
 
-static Object *seval_lookup(Node *id, Object *env)
+static Object *seval_lookup(Node *id, Context *ctx, Object *env)
 {
 	Object *value = Env_get(env->as.env, id->as.id);
 	if (!value) {
 		errorf("unbound variable: %s", id->as.id);
+		Stack_clear(ctx->stack->as.stack);
 		return NULL;
 	}
 	return value;
 }
 
-Object *seval(Node *expr, GC *gc, Object *env)
+Object *seval_dispatch(Node *expr, Context *ctx, Object *env)
 {
-	switch (expr->type) {
-		case NUMBER_NODE:
-			return GC_alloc_number(gc, expr->as.number);
-		case ID_NODE:
-			return seval_lookup(expr, env);
-		case NEG_NODE:
-			return seval_neg(expr->as.neg, gc, env);
-		case EXPT_NODE:
-			return seval_expt(expr->as.pair.left, expr->as.pair.right, gc, env);
-		case PRODUCT_NODE:
-			return seval_product(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
-		case SUM_NODE:
-			return seval_sum(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
-		case CMP_NODE:
-			return seval_cmp(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
-		case AND_NODE:
-			return seval_and(expr->as.pair.left, expr->as.pair.right, gc, env);
-		case OR_NODE:
-			return seval_or(expr->as.pair.left, expr->as.pair.right, gc, env);
-		case IF_NODE:
-			return seval_if(expr->as.ifelse.cond, expr->as.ifelse.true, expr->as.ifelse.false, gc, env);
-		case FN_NODE:
-			return GC_alloc_fn(gc, env, Node_copy(expr->as.fn.body), strdup(expr->as.fn.param->as.id));
-		case APPLICATION_NODE:
-			return seval_application(expr->as.pair.left, expr->as.pair.right, gc, env);
-		case LET_NODE:
-			return seval_let(expr->as.let.name, expr->as.let.value, gc, env);
+	for (;;) {
+		GC_collect(ctx->gc, env, ctx->stack);
+		switch (expr->type) {
+			case NUMBER_NODE:
+				return GC_alloc_number(ctx->gc, expr->as.number);
+			case FN_NODE:
+				return GC_alloc_fn(ctx->gc, env, Node_copy(expr->as.fn.body), strdup(expr->as.fn.param->as.id));
+			case ID_NODE:
+				return seval_lookup(expr, ctx, env);
+			case NEG_NODE:
+				return seval_neg(expr->as.neg, ctx, env);
+			case EXPT_NODE:
+				return seval_pair(expr->as.pair.left, expr->as.pair.right, ctx, env, '^');
+			case PRODUCT_NODE:
+			case SUM_NODE:
+			case CMP_NODE:
+				return seval_pair(expr->as.pair.left, expr->as.pair.right, ctx, env, expr->as.pair.op);
+			case AND_NODE:
+				return seval_and(expr->as.pair.left, expr->as.pair.right, ctx, env);
+			case OR_NODE:
+				return seval_or(expr->as.pair.left, expr->as.pair.right, ctx, env);
+			case IF_NODE:
+				Object *condv = seval_expect(expr->as.ifelse.cond, ctx, env, NUM_OBJECT);
+				if (!condv) {
+					return NULL;
+				}
+				if (condv->as.num) {
+					expr = expr->as.ifelse.true;
+				} else {
+					expr = expr->as.ifelse.false;
+				}
+				break;
+			case APPLICATION_NODE:
+				Object *fnv = seval_expect(expr->as.pair.left, ctx, env, FN_OBJECT);
+				if (!fnv) {
+					return NULL;
+				}
+				Stack_push(ctx->stack->as.stack, fnv);
+				Object *argv = seval_dispatch(expr->as.pair.right, ctx, env);
+				Stack_pop(ctx->stack->as.stack);
+				if (!argv) {
+					return NULL;
+				}
+				env = GC_alloc_env(ctx->gc, fnv->as.fn.env);
+				Env_add(env->as.env, fnv->as.fn.arg, argv);
+				expr = fnv->as.fn.body;
+				break;
+			case LET_NODE:
+				return seval_let(expr->as.let.name, expr->as.let.value, ctx, env);
+		}
 	}
-	return NULL;
+}
+
+Object *seval(Node *expr, Context *ctx)
+{
+	return seval_dispatch(expr, ctx, ctx->root);
 }
 
 static Object *delay(Node *expr, GC *gc, Object *env)

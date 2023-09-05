@@ -4,6 +4,7 @@
 
 #include "object.h"
 #include "env.h"
+#include "stack.h"
 
 
 GC *GC_new()
@@ -39,6 +40,8 @@ static void GC_mark(GC *self, Object *obj)
 		if (obj->as.env->prev) {
 			GC_mark(self, obj->as.env->prev);
 		}
+	} else if (obj->type == STACK_OBJECT) {
+		Stack_for_each(obj->as.stack, (void (*)(void *, Object*))GC_mark, self);
 	}
 }
 
@@ -68,8 +71,10 @@ static void GC_sweep(GC *self)
 				if (!obj->as.thunk.value) {
 					Node_drop(obj->as.thunk.body);
 				}
-			}else if (obj->type == ENV_OBJECT) {
+			} else if (obj->type == ENV_OBJECT) {
 				Env_drop(obj->as.env);
+			} else if (obj->type == STACK_OBJECT) {
+				Stack_drop(obj->as.stack);
 			}
 			free(obj);
 		} else {
@@ -79,11 +84,14 @@ static void GC_sweep(GC *self)
 	}
 }
 
-void GC_collect(GC *self, Object *root)
+void GC_collect(GC *self, Object *root, Object *stack)
 {
 	self->curr = !self->curr;
 	if (root) {
 		GC_mark(self, root);
+	}
+	if (stack) {
+		GC_mark(self, stack);
 	}
 	GC_sweep(self);
 }
@@ -129,5 +137,13 @@ Object *GC_alloc_thunk(GC *self, Object *env, Node *body)
 	obj->as.thunk.env = env;
 	obj->as.thunk.body = body;
 	obj->as.thunk.value = NULL;
+	return obj;
+}
+
+Object *GC_alloc_stack(GC *self)
+{
+	Object *obj = GC_alloc_empty_object(self);
+	obj->type = STACK_OBJECT;
+	obj->as.stack = Stack_new();
 	return obj;
 }

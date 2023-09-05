@@ -3,8 +3,13 @@
 
 #include "node.h"
 
-
 typedef struct Object Object;
+
+typedef struct {
+	Object **objects;
+	int    capacity;
+	int    size;
+} Stack;
 
 typedef struct Binding Binding;
 
@@ -28,6 +33,7 @@ typedef enum {
 	ENV_OBJECT,
 	NUM_OBJECT,
 	THUNK_OBJECT,
+	STACK_OBJECT,
 } ObjectType;
 
 typedef struct {
@@ -47,6 +53,7 @@ typedef union {
 	Env         *env;
 	double      num;
 	ThunkObject thunk;
+	Stack       *stack;
 } ObjectValue;
 
 struct Object {
