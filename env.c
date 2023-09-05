@@ -11,8 +11,7 @@
 static Binding *Binding_new(const char *key, Object *obj)
 {
 	Binding *entry = malloc(sizeof(*entry));
-	entry->key = malloc(strlen(key) + 1);
-	strcpy(entry->key, key);
+	entry->key = strdup(key);
 	entry->obj = obj;
 	entry->next = NULL;
 	return entry;
@@ -140,5 +139,17 @@ void Env_for_each(Env *self, void (*fn)(void *, Object *), void *param)
 		for (Binding *entry = self->entries[i]; entry != NULL; entry = entry->next) {
 			fn(param, entry->obj);
 		}
+	}
+}
+
+void Env_dump_objects(Env *self)
+{
+	for (int i = 0; i < self->size; i++) {
+		for (Binding *entry = self->entries[i]; entry != NULL; entry = entry->next) {
+			Object_println(entry->obj);
+		}
+	}
+	if (self->prev) {
+		Env_dump_objects(self->prev->as.env);
 	}
 }

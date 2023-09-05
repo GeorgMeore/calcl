@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 
+#include "node.h"
 #include "object.h"
 #include "env.h"
 #include "stack.h"
@@ -146,4 +147,11 @@ Object *GC_alloc_stack(GC *self)
 	obj->type = STACK_OBJECT;
 	obj->as.stack = Stack_new();
 	return obj;
+}
+
+void GC_dump_objects(GC *self)
+{
+	for (Object *obj = self->first; obj != NULL; obj = obj->next) {
+		Object_println(obj);
+	}
 }
