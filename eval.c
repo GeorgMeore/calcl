@@ -8,28 +8,13 @@
 #include "env.h"
 #include "stack.h"
 #include "gc.h"
-
+#include "context.h"
 
 #define error(message) \
 	(fprintf(stderr, "evaluation error: " message "\n"))
 
 #define errorf(fmt, args...) \
 	(fprintf(stderr, "evaluation error: " fmt "\n", args))
-
-Context Context_make()
-{
-	Context self = {0};
-	self.gc = GC_new();
-	self.root = GC_alloc_env(self.gc, NULL);
-	self.stack = GC_alloc_stack(self.gc);
-	return self;
-}
-
-void Context_destroy(Context self)
-{
-	GC_collect(self.gc, NULL, NULL);
-	GC_drop(self.gc);
-}
 
 Object *seval_dispatch(Node *expr, Context *ctx, Object *env);
 
@@ -41,7 +26,7 @@ static inline Object *seval_expect(Node *expr, Context *ctx, Object *env, Object
 	}
 	if (obj->type != type) {
 		error("type mismatch");
-		Stack_clear(ctx->stack->as.stack);
+		Stack_clear(Context_stack(ctx));
 		return NULL;
 	}
 	return obj;
@@ -62,9 +47,9 @@ static Object *seval_pair(Node *left, Node *right, Context *ctx, Object *env, in
 	if (!leftv) {
 		return NULL;
 	}
-	Stack_push(ctx->stack->as.stack, leftv);
+	Stack_push(Context_stack(ctx), leftv);
 	Object *rightv = seval_expect(right, ctx, env, NUM_OBJECT);
-	Stack_pop(ctx->stack->as.stack);
+	Stack_pop(Context_stack(ctx));
 	if (!rightv) {
 		return NULL;
 	}
@@ -87,7 +72,7 @@ static Object *seval_pair(Node *left, Node *right, Context *ctx, Object *env, in
 			return GC_alloc_number(ctx->gc, leftv->as.num = rightv->as.num);
 		default:
 			errorf("Unknown binary operation: '%c'", op);
-			Stack_clear(ctx->stack->as.stack);
+			Stack_clear(Context_stack(ctx));
 			return NULL;
 	}
 }
@@ -139,7 +124,7 @@ static Object *seval_lookup(Node *id, Context *ctx, Object *env)
 	Object *value = Env_get(env->as.env, id->as.id);
 	if (!value) {
 		errorf("unbound variable: %s", id->as.id);
-		Stack_clear(ctx->stack->as.stack);
+		Stack_clear(Context_stack(ctx));
 		return NULL;
 	}
 	return value;
@@ -184,9 +169,9 @@ Object *seval_dispatch(Node *expr, Context *ctx, Object *env)
 				if (!fnv) {
 					return NULL;
 				}
-				Stack_push(ctx->stack->as.stack, fnv);
+				Stack_push(Context_stack(ctx), fnv);
 				Object *argv = seval_dispatch(expr->as.pair.right, ctx, env);
-				Stack_pop(ctx->stack->as.stack);
+				Stack_pop(Context_stack(ctx));
 				if (!argv) {
 					return NULL;
 				}

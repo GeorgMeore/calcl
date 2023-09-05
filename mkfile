@@ -14,6 +14,7 @@ SRC=debug.c\
 	gc.c\
 	object.c\
 	stack.c\
+	context.c\
 	env.c
 
 prog=calcl
