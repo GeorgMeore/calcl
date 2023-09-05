@@ -243,55 +243,37 @@ static Object *leval_neg(Node *expr, GC *gc, Object *env)
 	return value;
 }
 
-static Object *leval_expt(Node *left, Node *right, GC *gc, Object *env)
+static Object *leval_pair(Node *left, Node *right, GC *gc, Object *env, int op)
 {
 	Object *leftv = leval_expect(left, gc, env, NUM_OBJECT);
-	Object *rightv = leval_expect(right, gc, env, NUM_OBJECT);
-	if (!leftv || !rightv) {
+	if (!leftv) {
 		return NULL;
 	}
-	return GC_alloc_number(gc, pow(leftv->as.num, rightv->as.num));
-}
-
-static Object *leval_product(Node *left, Node *right, int op, GC *gc, Object *env)
-{
-	Object *leftv = leval_expect(left, gc, env, NUM_OBJECT);
 	Object *rightv = leval_expect(right, gc, env, NUM_OBJECT);
-	if (!leftv || !rightv) {
+	if (!rightv) {
 		return NULL;
 	}
-	if (op == '*') {
-		return GC_alloc_number(gc, leftv->as.num * rightv->as.num);
+	switch (op) {
+		case '^':
+			return GC_alloc_number(gc, pow(leftv->as.num, rightv->as.num));
+		case '*':
+			return GC_alloc_number(gc, leftv->as.num * rightv->as.num);
+		case '/':
+			return GC_alloc_number(gc, leftv->as.num / rightv->as.num);
+		case '+':
+			return GC_alloc_number(gc, leftv->as.num + rightv->as.num);
+		case '-':
+			return GC_alloc_number(gc, leftv->as.num - rightv->as.num);
+		case '>':
+			return GC_alloc_number(gc, leftv->as.num > rightv->as.num);
+		case '<':
+			return GC_alloc_number(gc, leftv->as.num < rightv->as.num);
+		case '=':
+			return GC_alloc_number(gc, leftv->as.num = rightv->as.num);
+		default:
+			errorf("Unknown binary operation: '%c'", op);
+			return NULL;
 	}
-	return GC_alloc_number(gc, leftv->as.num / rightv->as.num);
-}
-
-static Object *leval_sum(Node *left, Node *right, int op, GC *gc, Object *env)
-{
-	Object *leftv = leval_expect(left, gc, env, NUM_OBJECT);
-	Object *rightv = leval_expect(right, gc, env, NUM_OBJECT);
-	if (!leftv || !rightv) {
-		return NULL;
-	}
-	if (op == '+') {
-		return GC_alloc_number(gc, leftv->as.num + rightv->as.num);
-	}
-	return GC_alloc_number(gc, leftv->as.num - rightv->as.num);
-}
-
-static Object *leval_cmp(Node *left, Node *right, int op, GC *gc, Object *env)
-{
-	Object *leftv = leval_expect(left, gc, env, NUM_OBJECT);
-	Object *rightv = leval_expect(right, gc, env, NUM_OBJECT);
-	if (!leftv || !rightv) {
-		return NULL;
-	}
-	if (op == '>') {
-		return GC_alloc_number(gc, leftv->as.num > rightv->as.num);
-	} else if (op == '<') {
-		return GC_alloc_number(gc, leftv->as.num < rightv->as.num);
-	}
-	return GC_alloc_number(gc, leftv->as.num == rightv->as.num);
 }
 
 static Object *leval_or(Node *left, Node *right, GC *gc, Object *env)
@@ -366,13 +348,11 @@ static Object *leval_dispatch(Node *expr, GC *gc, Object *env)
 		case NEG_NODE:
 			return leval_neg(expr->as.neg, gc, env);
 		case EXPT_NODE:
-			return leval_expt(expr->as.pair.left, expr->as.pair.right, gc, env);
+			return leval_pair(expr->as.pair.left, expr->as.pair.right, gc, env, '^');
 		case PRODUCT_NODE:
-			return leval_product(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
 		case SUM_NODE:
-			return leval_sum(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
 		case CMP_NODE:
-			return leval_cmp(expr->as.pair.left, expr->as.pair.right, expr->as.pair.op, gc, env);
+			return leval_pair(expr->as.pair.left, expr->as.pair.right, gc, env, expr->as.pair.op);
 		case AND_NODE:
 			return leval_and(expr->as.pair.left, expr->as.pair.right, gc, env);
 		case OR_NODE:
