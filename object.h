@@ -55,10 +55,10 @@ typedef struct {
 #define ThunkObj_env(objptr) ((objptr)->as.thunk.env)
 #define ThunkObj_body(objptr) ((objptr)->as.thunk.body)
 #define ThunkObj_value(objptr) ((objptr)->as.thunk.value)
-#define ThunkObj_set_value(objptr, value) ({          \
-	(objptr)->as.thunk.body = NULL;     \
-	(objptr)->as.thunk.env = NULL;      \
-	(objptr)->as.thunk.value = (value);   \
+#define ThunkObj_set_value(objptr, value) ({ \
+	(objptr)->as.thunk.body = NULL;          \
+	(objptr)->as.thunk.env = NULL;           \
+	(objptr)->as.thunk.value = (value);      \
 })
 
 typedef union {
@@ -70,7 +70,9 @@ typedef union {
 } ObjectValue;
 
 #define EnvObj_env(objptr) ((objptr)->as.env)
+#define EnvObj_prev(objptr) ((objptr)->as.env->prev)
 #define NumObj_num(objptr) ((objptr)->as.num)
+#define StackObj_stack(objptr) ((objptr)->as.stack)
 
 struct Object {
 	ObjectValue as;

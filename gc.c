@@ -29,20 +29,20 @@ static void GC_mark(GC *self, Object *obj)
 	}
 	obj->mark = self->curr;
 	if (obj->type == FN_OBJECT) {
-		GC_mark(self, obj->as.fn.env);
+		GC_mark(self, FnObj_env(obj));
 	} else if (obj->type == THUNK_OBJECT) {
-		if (obj->as.thunk.value) {
-			GC_mark(self, obj->as.thunk.value);
-		} else {
-			GC_mark(self, obj->as.thunk.env);
+		if (ThunkObj_value(obj)) {
+			GC_mark(self, ThunkObj_value(obj));
+		} else if (ThunkObj_env(obj)) {
+			GC_mark(self, ThunkObj_env(obj));
 		}
 	} else if (obj->type == ENV_OBJECT) {
-		Env_for_each(obj->as.env, (void (*)(void *, Object*))GC_mark, self);
-		if (obj->as.env->prev) {
-			GC_mark(self, obj->as.env->prev);
+		Env_for_each(EnvObj_env(obj), (void (*)(void *, Object*))GC_mark, self);
+		if (EnvObj_prev(obj)) {
+			GC_mark(self, EnvObj_prev(obj));
 		}
 	} else if (obj->type == STACK_OBJECT) {
-		Stack_for_each(obj->as.stack, (void (*)(void *, Object*))GC_mark, self);
+		Stack_for_each(StackObj_stack(obj), (void (*)(void *, Object*))GC_mark, self);
 	}
 }
 
@@ -66,16 +66,16 @@ static void GC_sweep(GC *self)
 		Object *next = obj->next;
 		if (obj->mark != self->curr) {
 			if (obj->type == FN_OBJECT) {
-				Node_drop(obj->as.fn.body);
-				free(obj->as.fn.arg);
+				Node_drop(FnObj_body(obj));
+				free(FnObj_arg(obj));
 			} else if (obj->type == THUNK_OBJECT) {
-				if (!obj->as.thunk.value) {
-					Node_drop(obj->as.thunk.body);
+				if (ThunkObj_body(obj)) {
+					Node_drop(ThunkObj_body(obj));
 				}
 			} else if (obj->type == ENV_OBJECT) {
-				Env_drop(obj->as.env);
+				Env_drop(EnvObj_env(obj));
 			} else if (obj->type == STACK_OBJECT) {
-				Stack_drop(obj->as.stack);
+				Stack_drop(StackObj_stack(obj));
 			}
 			free(obj);
 		} else {
