@@ -104,7 +104,7 @@ static Node *parse_let_value(Scanner *scanner)
 	}
 }
 
-// LET ::= 'LET' LET_VALUE
+// LET ::= 'LET' 'ID' LET_VALUE
 static Node *parse_let(Scanner *scanner)
 {
 	Scanner_next(scanner);
