@@ -27,6 +27,7 @@ void print_token(Token token)
 		case AND_TOKEN:      do_print_token("AND", token);      break;
 		case OR_TOKEN:       do_print_token("OR", token);       break;
 		case IF_TOKEN:       do_print_token("IF", token);       break;
+		case ELIF_TOKEN:     do_print_token("ELIF", token);     break;
 		case THEN_TOKEN:     do_print_token("THEN", token);     break;
 		case ELSE_TOKEN:     do_print_token("ELSE", token);     break;
 		case FN_TOKEN:       do_print_token("FN", token);       break;
