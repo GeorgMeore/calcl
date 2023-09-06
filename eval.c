@@ -51,12 +51,9 @@ static Object *eval_number(Node *expr, Context *ctx)
 
 static Object *eval_fn(Node *expr, Context *ctx, Object *env)
 {
-	Object *fn = GC_alloc_fn(
-		ctx->gc, env,
-		Node_copy(FnNode_body(expr)),
-		strdup(FnNode_param_value(expr))
-	);
-	Node_drop(expr);
+	Object *fn = GC_alloc_fn(ctx->gc, env, FnNode_body(expr), strdup(FnNode_param_value(expr)));
+	Node_drop(FnNode_param(expr));
+	Node_drop_one(expr);
 	return fn;
 }
 
