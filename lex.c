@@ -87,6 +87,9 @@ Token take_token(CharIterator *iterator)
 		CharIterator_next(iterator);
 	}
 	char next = CharIterator_peek(iterator);
+	if (next == '#') {
+		return (Token){END_TOKEN, CharIterator_cursor(iterator), 1};
+	}
 	if (isdigit(next)) {
 		return take_number(iterator);
 	}

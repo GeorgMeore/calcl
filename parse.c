@@ -59,10 +59,13 @@ static int is_prod_token(Token token) {
 	return (token.type == ASTERISK_TOKEN || token.type == SLASH_TOKEN);
 }
 
-// VALID ::= (EXPRESSION | LET) 'END'
+// VALID ::= (EXPRESSION | LET)? 'END'
 Node *parse(Scanner *scanner)
 {
 	Token next = Scanner_peek(scanner);
+	if (next.type == END_TOKEN) {
+		return NULL;
+	}
 	Node *expr = NULL;
 	if (next.type == LET_TOKEN) {
 		expr = parse_let(scanner);
