@@ -41,13 +41,13 @@ int main(int argc, char **argv)
 		if (lazy) {
 			GC_collect(ctx.gc, ctx.root, NULL);
 			result = leval(ast, ctx.gc, ctx.root);
+			Node_drop(ast);
 		} else {
 			result = seval(ast, &ctx);
 		}
 		if (result) {
 			Object_println(result);
 		}
-		Node_drop(ast);
 	}
 	Context_destroy(ctx);
 	return 0;
