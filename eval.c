@@ -281,11 +281,11 @@ static Object *force(Object *obj, Context *ctx)
 	}
 	Context_stack_push(ctx, obj);
 	Object *value = actual_value(ThunkObj_body(obj), ctx, ThunkObj_env(obj));
+	ThunkObj_set_value(obj, value);
 	if (!value) {
 		return NULL;
 	}
 	Context_stack_pop(ctx);
-	ThunkObj_set_value(obj, value);
 	return value;
 }
 
