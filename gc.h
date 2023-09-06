@@ -3,10 +3,14 @@
 
 #include "object.h"
 
+#define GC_INITIAL_THRESHOLD 128
+
 typedef struct {
-	Object *first;
-	Object *last;
-	int    curr;
+	Object   *first;
+	Object   *last;
+	int      curr;
+	unsigned count;
+	unsigned thres;
 } GC;
 
 GC     *GC_new();

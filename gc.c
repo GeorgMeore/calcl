@@ -14,6 +14,8 @@ GC *GC_new()
 	self->first = NULL;
 	self->last = NULL;
 	self->curr = 0;
+	self->count = 0;
+	self->thres = GC_INITIAL_THRESHOLD;
 	return self;
 }
 
@@ -48,6 +50,7 @@ static void GC_mark(GC *self, Object *obj)
 
 static void GC_append_object(GC *self, Object *obj)
 {
+	self->count += 1;
 	obj->next = NULL;
 	if (!self->first) {
 		self->first = obj;
@@ -61,7 +64,9 @@ static void GC_append_object(GC *self, Object *obj)
 static void GC_sweep(GC *self)
 {
 	Object *obj = self->first;
-	self->first = self->last = NULL;
+	self->first = NULL;
+	self->last = NULL;
+	self->count = 0;
 	while (obj != NULL) {
 		Object *next = obj->next;
 		if (obj->mark != self->curr) {
@@ -87,6 +92,10 @@ static void GC_sweep(GC *self)
 
 void GC_collect(GC *self, Object *root, Object *stack)
 {
+	if (self->count < self->thres && (root || stack)) {
+		self->thres >>= (self->count < self->thres/2);
+		return;
+	}
 	self->curr = !self->curr;
 	if (root) {
 		GC_mark(self, root);
@@ -95,6 +104,9 @@ void GC_collect(GC *self, Object *root, Object *stack)
 		GC_mark(self, stack);
 	}
 	GC_sweep(self);
+	if (self->count > self->thres) {
+		self->thres <<= 1;
+	}
 }
 
 static Object *GC_alloc_empty_object(GC *self)
