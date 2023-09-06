@@ -152,7 +152,7 @@ Node *ProductNode_new(Node *left, Node *right, int op)
 
 Node *ExptNode_new(Node *base, Node *exponent)
 {
-	return pair_new(EXPT_NODE, base, exponent, 0);
+	return pair_new(EXPT_NODE, base, exponent, '^');
 }
 
 Node *CmpNode_new(Node *left, Node *right, int op)

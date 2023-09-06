@@ -1,6 +1,8 @@
 #ifndef NODE_INCLUDED
 #define NODE_INCLUDED
 
+#include <stdlib.h>
+
 typedef struct Node Node;
 
 typedef enum {
@@ -66,6 +68,7 @@ typedef struct {
 } LetValue;
 
 #define LetNode_name(nodeptr) ((nodeptr)->as.let.name)
+#define LetNode_name_value(nodeptr) IdNode_value(((nodeptr)->as.let.name))
 #define LetNode_value(nodeptr) ((nodeptr)->as.let.value)
 
 typedef union {
@@ -82,6 +85,8 @@ struct Node {
 	NodeType  type;
 	NodeValue as;
 };
+
+#define Node_drop_one free
 
 Node *NumberNode_new(const char *string, int length);
 Node *IdNode_new(const char *string, int length);

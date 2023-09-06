@@ -30,31 +30,65 @@ static inline Object *seval_expect(Node *expr, Context *ctx, Object *env, Object
 	}
 	if (obj->type != type) {
 		error("type mismatch");
-		Stack_clear(Context_stack(ctx));
 		return NULL;
 	}
 	return obj;
 }
 
-static Object *seval_neg(Node *expr, Context *ctx, Object *env)
+static Object *seval_number(Node *expr, Context *ctx)
 {
-	Object *value = seval_expect(expr, ctx, env, NUM_OBJECT);
+	Object *num = GC_alloc_number(ctx->gc, NumNode_value(expr));
+	Node_drop(expr);
+	return num;
+}
+
+static Object *seval_fn(Node *expr, Context *ctx, Object *env)
+{
+	Object *fn = GC_alloc_fn(
+		ctx->gc, env,
+		Node_copy(FnNode_body(expr)),
+		strdup(FnNode_param_value(expr))
+	);
+	Node_drop(expr);
+	return fn;
+}
+
+static Object *seval_lookup(Node *id, Object *env)
+{
+	Object *value = Env_get(env->as.env, IdNode_value(id));
+	if (!value) {
+		errorf("unbound variable: %s", IdNode_value(id));
+		Node_drop(id);
+		return NULL;
+	}
+	Node_drop(id);
+	return value;
+}
+
+static Object *seval_neg(Node *neg, Context *ctx, Object *env)
+{
+	Object *value = seval_expect(NegNode_value(neg), ctx, env, NUM_OBJECT);
+	Node_drop_one(neg);
 	if (!value) {
 		return NULL;
 	}
 	return GC_alloc_number(ctx->gc, value->as.num * -1);
 }
 
-static Object *seval_pair(Node *left, Node *right, Context *ctx, Object *env, int op)
+static Object *seval_pair(Node *pair, Context *ctx, Object *env)
 {
+	int op = PairNode_op(pair);
 	Context_stack_push(ctx, env);
-	Object *leftv = seval_expect(left, ctx, env, NUM_OBJECT);
+	Object *leftv = seval_expect(PairNode_left(pair), ctx, env, NUM_OBJECT);
 	if (!leftv) {
+		Node_drop(PairNode_right(pair));
+		Node_drop_one(pair);
 		return NULL;
 	}
 	Context_stack_pop(ctx);
 	Context_stack_push(ctx, leftv);
-	Object *rightv = seval_expect(right, ctx, env, NUM_OBJECT);
+	Object *rightv = seval_expect(PairNode_right(pair), ctx, env, NUM_OBJECT);
+	Node_drop_one(pair);
 	if (!rightv) {
 		return NULL;
 	}
@@ -78,89 +112,103 @@ static Object *seval_pair(Node *left, Node *right, Context *ctx, Object *env, in
 			return GC_alloc_number(ctx->gc, leftv->as.num = rightv->as.num);
 		default:
 			errorf("unknown binary operation: '%c'", op);
-			Stack_clear(Context_stack(ctx));
 			return NULL;
 	}
 }
 
-static Object *seval_or(Node *left, Node *right, Context *ctx, Object *env)
+static Object *seval_or(Node *or, Context *ctx, Object *env)
 {
-	Object *leftv = seval_expect(left, ctx, env, NUM_OBJECT);
+	Object *leftv = seval_expect(PairNode_left(or), ctx, env, NUM_OBJECT);
 	if (!leftv) {
+		Node_drop(PairNode_right(or));
+		Node_drop_one(or);
 		return NULL;
 	}
 	if (leftv->as.num) {
+		Node_drop(PairNode_right(or));
+		Node_drop_one(or);
 		return leftv;
 	}
-	Object *rightv = seval_expect(right, ctx, env, NUM_OBJECT);
+	Object *rightv = seval_expect(PairNode_right(or), ctx, env, NUM_OBJECT);
+	Node_drop_one(or);
 	if (!rightv) {
 		return NULL;
 	}
 	return rightv;
 }
 
-static Object *seval_and(Node *left, Node *right, Context *ctx, Object *env)
+static Object *seval_and(Node *and, Context *ctx, Object *env)
 {
-	Object *leftv = seval_expect(left, ctx, env, NUM_OBJECT);
+	Object *leftv = seval_expect(PairNode_left(and), ctx, env, NUM_OBJECT);
 	if (!leftv) {
+		Node_drop(PairNode_right(and));
+		Node_drop_one(and);
 		return NULL;
 	}
 	if (!leftv->as.num) {
+		Node_drop(PairNode_right(and));
+		Node_drop_one(and);
 		return leftv;
 	}
-	Object *rightv = seval_expect(right, ctx, env, NUM_OBJECT);
+	Object *rightv = seval_expect(PairNode_right(and), ctx, env, NUM_OBJECT);
+	Node_drop_one(and);
 	if (!rightv) {
 		return NULL;
 	}
 	return rightv;
 }
 
-static Object *seval_let(Node *name, Node *expr, Context *ctx, Object *env)
+static Object *seval_let(Node *let, Context *ctx, Object *env)
 {
-	Object *value = seval_dispatch(expr, ctx, env);
+	Object *value = seval_dispatch(LetNode_value(let), ctx, env);
 	if (!value) {
+		Node_drop(LetNode_name(let));
+		Node_drop_one(let);
 		return NULL;
 	}
-	Env_add(env->as.env, IdNode_value(name), value);
+	Env_add(env->as.env, LetNode_name_value(let), value);
+	Node_drop(LetNode_name(let));
+	Node_drop_one(let);
 	return NULL;
-}
-
-static Object *seval_lookup(Node *id, Context *ctx, Object *env)
-{
-	Object *value = Env_get(env->as.env, IdNode_value(id));
-	if (!value) {
-		errorf("unbound variable: %s", IdNode_value(id));
-		Stack_clear(Context_stack(ctx));
-		return NULL;
-	}
-	return value;
 }
 
 static int seval_if(Context *ctx, Object **env, Node **expr)
 {
-	Object *condv = seval_expect(IfNode_cond(*expr), ctx, *env, NUM_OBJECT);
+	Node *ifn = *expr;
+	Object *condv = seval_expect(IfNode_cond(ifn), ctx, *env, NUM_OBJECT);
 	if (!condv) {
+		Node_drop(IfNode_true(ifn));
+		Node_drop(IfNode_false(ifn));
+		Node_drop_one(ifn);
 		return EVAL_FAIL;
 	}
 	if (condv->as.num) {
 		*expr = IfNode_true(*expr);
+		Node_drop(IfNode_false(ifn));
+		Node_drop_one(ifn);
 	} else {
 		*expr = IfNode_false(*expr);
+		Node_drop(IfNode_true(ifn));
+		Node_drop_one(ifn);
 	}
 	return EVAL_OK;
 }
 
 static int seval_application(Context *ctx, Object **env, Node **expr)
 {
+	Node *appl = *expr;
 	Context_stack_push(ctx, *env);
-	Object *fnv = seval_expect(PairNode_left(*expr), ctx, *env, FN_OBJECT);
+	Object *fnv = seval_expect(PairNode_left(appl), ctx, *env, FN_OBJECT);
 	if (!fnv) {
+		Node_drop(PairNode_right(appl));
+		Node_drop_one(appl);
 		return EVAL_FAIL;
 	}
 	Context_stack_pop(ctx);
 	Context_stack_push(ctx, *env);
 	Context_stack_push(ctx, fnv);
-	Object *argv = seval_dispatch(PairNode_right(*expr), ctx, *env);
+	Object *argv = seval_dispatch(PairNode_right(appl), ctx, *env);
+	Node_drop_one(appl);
 	if (!argv) {
 		return EVAL_FAIL;
 	}
@@ -168,7 +216,7 @@ static int seval_application(Context *ctx, Object **env, Node **expr)
 	Context_stack_pop(ctx);
 	*env = GC_alloc_env(ctx->gc, fnv->as.fn.env);
 	Env_add((*env)->as.env, fnv->as.fn.arg, argv);
-	*expr = fnv->as.fn.body; // FIXME: use after free
+	*expr = Node_copy(fnv->as.fn.body);
 	return EVAL_OK;
 }
 
@@ -178,23 +226,22 @@ Object *seval_dispatch(Node *expr, Context *ctx, Object *env)
 		GC_collect(ctx->gc, env, ctx->stack);
 		switch (expr->type) {
 			case NUMBER_NODE:
-				return GC_alloc_number(ctx->gc, NumNode_value(expr));
+				return seval_number(expr, ctx);
 			case FN_NODE:
-				return GC_alloc_fn(ctx->gc, env, Node_copy(FnNode_body(expr)), strdup(FnNode_param_value(expr)));
+				return seval_fn(expr, ctx, env);
 			case ID_NODE:
-				return seval_lookup(expr, ctx, env);
+				return seval_lookup(expr, env);
 			case NEG_NODE:
-				return seval_neg(NegNode_value(expr), ctx, env);
+				return seval_neg(expr, ctx, env);
 			case EXPT_NODE:
-				return seval_pair(PairNode_left(expr), PairNode_right(expr), ctx, env, '^');
 			case PRODUCT_NODE:
 			case SUM_NODE:
 			case CMP_NODE:
-				return seval_pair(PairNode_left(expr), PairNode_right(expr), ctx, env, PairNode_op(expr));
+				return seval_pair(expr, ctx, env);
 			case AND_NODE:
-				return seval_and(PairNode_left(expr), PairNode_right(expr), ctx, env);
+				return seval_and(expr, ctx, env);
 			case OR_NODE:
-				return seval_or(PairNode_left(expr), PairNode_right(expr), ctx, env);
+				return seval_or(expr, ctx, env);
 			case IF_NODE:
 				if (seval_if(ctx, &env, &expr) != EVAL_OK) {
 					return NULL;
@@ -206,15 +253,18 @@ Object *seval_dispatch(Node *expr, Context *ctx, Object *env)
 				}
 				break;
 			case LET_NODE:
-				return seval_let(LetNode_name(expr), LetNode_value(expr), ctx, env);
+				return seval_let(expr, ctx, env);
 		}
 	}
 }
 
 Object *seval(Node *expr, Context *ctx)
 {
+	Stack_clear(Context_stack(ctx));
 	return seval_dispatch(expr, ctx, ctx->root);
 }
+
+// TODO: tail recursion optimisation for lazy evaluation
 
 static Object *delay(Node *expr, GC *gc, Object *env)
 {
