@@ -12,7 +12,7 @@
 #include "context.h"
 
 
-#define EVAL_OK 1
+#define EVAL_OK   1
 #define EVAL_FAIL 0
 
 #define error(message) \
