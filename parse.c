@@ -184,6 +184,7 @@ static Node *parse_if(Scanner *scanner)
 	Token next = Scanner_next(scanner);
 	if (next.type != THEN_TOKEN) {
 		error("expected 'then'", next);
+		Node_drop(cond);
 		return NULL;
 	}
 	Node *true = parse_expression(scanner);
