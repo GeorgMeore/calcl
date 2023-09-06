@@ -21,7 +21,7 @@
 #define errorf(fmt, args...) \
 	(fprintf(stderr, "evaluation error: " fmt "\n", args))
 
-Object *eval_dispatch(Node *expr, Context *ctx, Object *env);
+static Object *eval_dispatch(Node *expr, Context *ctx, Object *env);
 static Object *actual_value(Node *exp, Context *ctx, Object *env);
 
 static Object *delay(Node *expr, Context *ctx, Object *env)
@@ -233,7 +233,7 @@ static int eval_application(Context *ctx, Object **env, Node **expr)
 	return EVAL_OK;
 }
 
-Object *eval_dispatch(Node *expr, Context *ctx, Object *env)
+static Object *eval_dispatch(Node *expr, Context *ctx, Object *env)
 {
 	for (;;) {
 		GC_collect(ctx->gc, env, ctx->stack);
