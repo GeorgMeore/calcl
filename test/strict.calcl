@@ -21,3 +21,7 @@ let fac x f = if x < 1 then 1 else x * f (x - 1)
 let f = z fac
 f 3
 f 5
+let fac x f = if x < 1 then y else x * f (x - 1)
+let f = z fac
+f 3
+f 5
