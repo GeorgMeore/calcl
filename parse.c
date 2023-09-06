@@ -264,6 +264,7 @@ static Node *parse_cmp(Scanner *scanner)
 		Scanner_next(scanner);
 		Node *right = parse_sum(scanner);
 		if (!right) {
+			Node_drop(left);
 			return NULL;
 		}
 		return CmpNode_new(left, right, next.string[0]);
