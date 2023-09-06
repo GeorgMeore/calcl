@@ -37,13 +37,13 @@ void Node_drop(Node *node)
 			free(node);
 			break;
 		case FN_NODE:
-			Node_drop(node->as.fn.param);
-			Node_drop(node->as.fn.body);
+			Node_drop(FnNode_param(node));
+			Node_drop(FnNode_body(node));
 			free(node);
 			break;
 		case LET_NODE:
-			Node_drop(node->as.let.name);
-			Node_drop(node->as.let.value);
+			Node_drop(LetNode_name(node));
+			Node_drop(LetNode_value(node));
 			free(node);
 			break;
 	}
