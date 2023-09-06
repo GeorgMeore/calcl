@@ -9,7 +9,9 @@ const char *CharIterator_cursor(CharIterator *self)
 char CharIterator_next(CharIterator *self)
 {
 	char next = **self;
-	*self += 1;
+	if (next) {
+		*self += 1;
+	}
 	return next;
 }
 

@@ -77,7 +77,6 @@ TokenType singlet_token_type(char c)
 		case '<':  return LT_TOKEN;
 		case '=':  return EQ_TOKEN;
 		case ':':  return COLON_TOKEN;
-		case '\0': return END_TOKEN;
 		default:   return ERROR_TOKEN;
 	}
 }
@@ -90,8 +89,8 @@ Token take_token(CharIterator *iterator)
 		CharIterator_next(iterator);
 	}
 	char next = CharIterator_peek(iterator);
-	if (next == '#') {
-		return (Token){END_TOKEN, CharIterator_cursor(iterator), 1};
+	if (next == '#' || next == '\0') {
+		return (Token){END_TOKEN, CharIterator_cursor(iterator), 0};
 	}
 	if (isdigit(next)) {
 		return take_number(iterator);
