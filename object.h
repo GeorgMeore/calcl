@@ -42,11 +42,24 @@ typedef struct {
 	char   *arg;
 } FnObject;
 
+#define FnObj_env(objptr) ((objptr)->as.fn.env)
+#define FnObj_body(objptr) ((objptr)->as.fn.body)
+#define FnObj_arg(objptr) ((objptr)->as.fn.arg)
+
 typedef struct {
 	Object *env;
 	Node   *body;
 	Object *value;
 } ThunkObject;
+
+#define ThunkObj_env(objptr) ((objptr)->as.thunk.env)
+#define ThunkObj_body(objptr) ((objptr)->as.thunk.body)
+#define ThunkObj_value(objptr) ((objptr)->as.thunk.value)
+#define ThunkObj_set_value(objptr, value) ({          \
+	(objptr)->as.thunk.body = NULL;     \
+	(objptr)->as.thunk.env = NULL;      \
+	(objptr)->as.thunk.value = (value);   \
+})
 
 typedef union {
 	FnObject    fn;
@@ -55,6 +68,9 @@ typedef union {
 	ThunkObject thunk;
 	Stack       *stack;
 } ObjectValue;
+
+#define EnvObj_env(objptr) ((objptr)->as.env)
+#define NumObj_num(objptr) ((objptr)->as.num)
 
 struct Object {
 	ObjectValue as;

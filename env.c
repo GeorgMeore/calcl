@@ -128,7 +128,7 @@ Object *Env_get(Env *self, const char *key)
 		return entry->obj;
 	}
 	if (self->prev) {
-		return Env_get(self->prev->as.env, key);
+		return Env_get(EnvObj_env(self->prev), key);
 	}
 	return NULL;
 }
@@ -150,6 +150,6 @@ void Env_dump_objects(Env *self)
 		}
 	}
 	if (self->prev) {
-		Env_dump_objects(self->prev->as.env);
+		Env_dump_objects(EnvObj_env(self->prev));
 	}
 }
