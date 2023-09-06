@@ -37,14 +37,7 @@ int main(int argc, char **argv)
 		if (debug) {
 			print_expr(ast);
 		}
-		Object *result = NULL;
-		if (lazy) {
-			GC_collect(ctx.gc, ctx.root, NULL);
-			result = leval(ast, ctx.gc, ctx.root);
-			Node_drop(ast);
-		} else {
-			result = seval(ast, &ctx);
-		}
+		Object *result = eval(ast, &ctx);
 		if (result) {
 			Object_println(result);
 		}
