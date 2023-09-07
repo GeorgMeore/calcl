@@ -61,12 +61,17 @@ static void GC_append_object(GC *self, Object *obj)
 	}
 }
 
-static void GC_sweep(GC *self)
+static void GC_reset(GC *self)
 {
-	Object *obj = self->first;
 	self->first = NULL;
 	self->last = NULL;
 	self->count = 0;
+}
+
+static void GC_sweep(GC *self)
+{
+	Object *obj = self->first;
+	GC_reset(self);
 	while (obj != NULL) {
 		Object *next = obj->next;
 		if (obj->mark != self->curr) {
@@ -104,7 +109,7 @@ void GC_collect(GC *self, Object *root, Object *stack)
 		GC_mark(self, stack);
 	}
 	GC_sweep(self);
-	if (self->count > self->thres) {
+	if (self->count >= self->thres) {
 		self->thres <<= 1;
 	}
 }
