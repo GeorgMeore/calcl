@@ -12,7 +12,7 @@ static void error(const char *message, Token last)
 {
 	fprintf(stderr, "parsing error: %s ", message);
 	if (last.type == END_TOKEN) {
-		fprintf(stderr, "(while parsing 'EOF')\n");
+		fprintf(stderr, "(while parsing 'END')\n");
 	} else {
 		fprintf(stderr, "(while parsing '%.*s')\n", last.length, last.string);
 	}
