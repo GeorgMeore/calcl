@@ -104,6 +104,8 @@ static Object *eval_pair(Node *pair, Context *ctx, Object *env)
 			return GC_alloc_number(ctx->gc, NumObj_num(leftv) * NumObj_num(rightv));
 		case '/':
 			return GC_alloc_number(ctx->gc, NumObj_num(leftv) / NumObj_num(rightv));
+		case '%':
+			return GC_alloc_number(ctx->gc, fmod(NumObj_num(leftv), NumObj_num(rightv)));
 		case '+':
 			return GC_alloc_number(ctx->gc, NumObj_num(leftv) + NumObj_num(rightv));
 		case '-':

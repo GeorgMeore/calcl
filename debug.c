@@ -19,6 +19,7 @@ void print_token(Token token)
 		case CARET_TOKEN:    do_print_token("CARET", token);    break;
 		case ASTERISK_TOKEN: do_print_token("ASTERISK", token); break;
 		case SLASH_TOKEN:    do_print_token("SLASH", token);    break;
+		case PERCENT_TOKEN:  do_print_token("PERCENT", token);  break;
 		case PLUS_TOKEN:     do_print_token("PLUS", token);     break;
 		case MINUS_TOKEN:    do_print_token("MINUS", token);    break;
 		case GT_TOKEN:       do_print_token("GT", token);       break;
