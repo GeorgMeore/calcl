@@ -113,7 +113,7 @@ static Object *eval_pair(Node *pair, Context *ctx, Object *env)
 		case '<':
 			return GC_alloc_number(ctx->gc, NumObj_num(leftv) < NumObj_num(rightv));
 		case '=':
-			return GC_alloc_number(ctx->gc, NumObj_num(leftv) = NumObj_num(rightv));
+			return GC_alloc_number(ctx->gc, NumObj_num(leftv) == NumObj_num(rightv));
 		default:
 			errorf("unknown binary operation: '%c'", op);
 			return NULL;
