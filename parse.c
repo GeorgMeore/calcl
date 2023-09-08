@@ -54,9 +54,13 @@ static int is_sum_token(Token token) {
 	return (token.type == PLUS_TOKEN || token.type == MINUS_TOKEN);
 }
 
-// PROD_TOKEN <- '*' | '/'
+// PROD_TOKEN <- '*' | '/' | '%'
 static int is_prod_token(Token token) {
-	return (token.type == ASTERISK_TOKEN || token.type == SLASH_TOKEN);
+	return (
+		token.type == ASTERISK_TOKEN ||
+		token.type == SLASH_TOKEN ||
+		token.type == PERCENT_TOKEN
+	);
 }
 
 // VALID ::= (EXPRESSION | LET)? 'END'

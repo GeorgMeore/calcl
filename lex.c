@@ -69,6 +69,7 @@ TokenType singlet_token_type(char c)
 		case '-':  return MINUS_TOKEN;
 		case '*':  return ASTERISK_TOKEN;
 		case '/':  return SLASH_TOKEN;
+		case '%':  return PERCENT_TOKEN;
 		case '^':  return CARET_TOKEN;
 		case '>':  return GT_TOKEN;
 		case '<':  return LT_TOKEN;
