@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 			continue;
 		}
 		if (debug) {
-			print_expr(ast);
+			Node_print(ast);
 		}
 		Object *result = eval(ast, &ctx);
 		if (result) {
