@@ -68,6 +68,23 @@ static void GC_reset(GC *self)
 	self->count = 0;
 }
 
+static void GC_free_object(Object *obj)
+{
+	if (obj->type == FN_OBJECT) {
+		Node_drop(FnObj_body(obj));
+		free(FnObj_arg(obj));
+	} else if (obj->type == THUNK_OBJECT) {
+		if (ThunkObj_body(obj)) {
+			Node_drop(ThunkObj_body(obj));
+		}
+	} else if (obj->type == ENV_OBJECT) {
+		Env_drop(EnvObj_env(obj));
+	} else if (obj->type == STACK_OBJECT) {
+		Stack_drop(StackObj_stack(obj));
+	}
+	free(obj);
+}
+
 static void GC_sweep(GC *self)
 {
 	Object *obj = self->first;
@@ -75,19 +92,7 @@ static void GC_sweep(GC *self)
 	while (obj != NULL) {
 		Object *next = obj->next;
 		if (obj->mark != self->curr) {
-			if (obj->type == FN_OBJECT) {
-				Node_drop(FnObj_body(obj));
-				free(FnObj_arg(obj));
-			} else if (obj->type == THUNK_OBJECT) {
-				if (ThunkObj_body(obj)) {
-					Node_drop(ThunkObj_body(obj));
-				}
-			} else if (obj->type == ENV_OBJECT) {
-				Env_drop(EnvObj_env(obj));
-			} else if (obj->type == STACK_OBJECT) {
-				Stack_drop(StackObj_stack(obj));
-			}
-			free(obj);
+			GC_free_object(obj);
 		} else {
 			GC_append_object(self, obj);
 		}
