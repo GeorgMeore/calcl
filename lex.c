@@ -23,9 +23,6 @@ static Token take_keyword_or_id(CharIterator *iterator)
 	if (kweq(start, "if", length)) {
 		return (Token){IF_TOKEN, start, length};
 	}
-	if (kweq(start, "elif", length)) {
-		return (Token){ELIF_TOKEN, start, length};
-	}
 	if (kweq(start, "then", length)) {
 		return (Token){THEN_TOKEN, start, length};
 	}
