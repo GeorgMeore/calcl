@@ -173,39 +173,47 @@ static Node *parse_fn(Scanner *scanner)
 	return FnNode_new(param, body);
 }
 
-// IF ::= ('IF | 'ELIF') OR 'THEN' EXPRESSION IF | 'ELSE' EXPRESSION
-static Node *parse_if(Scanner *scanner)
+// IF_TAIL ::= 'ELSE' EXPRESSION | IF
+static Node *parse_if_tail(Scanner *scanner)
 {
-	Token next = Scanner_next(scanner);
+	Token next = Scanner_peek(scanner);
 	if (next.type == ELSE_TOKEN) {
+		Scanner_next(scanner);
 		return parse_expression(scanner);
-	} else if (next.type == ELIF_TOKEN || next.type == IF_TOKEN) {
-		Node *cond = parse_or(scanner);
-		if (!cond) {
-			return NULL;
-		}
-		next = Scanner_next(scanner);
-		if (next.type != THEN_TOKEN) {
-			error("expected 'then'", next);
-			Node_drop(cond);
-			return NULL;
-		}
-		Node *true = parse_expression(scanner);
-		if (!true) {
-			Node_drop(cond);
-			return NULL;
-		}
-		Node *false = parse_if(scanner);
-		if (!false) {
-			Node_drop(cond);
-			Node_drop(true);
-			return NULL;
-		}
-		return IfNode_new(cond, true, false);
+	} else if (next.type == IF_TOKEN) {
+		return parse_if(scanner);
 	} else {
-		error("expected 'elif' or 'else'", next);
+		error("expected 'if' or 'else'", next);
 		return NULL;
 	}
+}
+
+// IF ::= 'IF OR 'THEN' EXPRESSION IF_TAIL
+static Node *parse_if(Scanner *scanner)
+{
+	Scanner_next(scanner);
+	Node *cond = parse_or(scanner);
+	if (!cond) {
+		return NULL;
+	}
+	Token next = Scanner_next(scanner);
+	if (next.type != THEN_TOKEN) {
+		error("expected 'then'", next);
+		Node_drop(cond);
+		return NULL;
+	}
+	Node *true = parse_expression(scanner);
+	if (!true) {
+		Node_drop(cond);
+		return NULL;
+	}
+	Node *false = parse_if_tail(scanner);
+	if (!false) {
+		Node_drop(cond);
+		Node_drop(true);
+		return NULL;
+	}
+	return IfNode_new(cond, true, false);
 }
 
 // OR ::= AND {'OR' AND}
