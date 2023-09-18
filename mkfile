@@ -15,6 +15,8 @@ SRC=debug.c\
 	object.c\
 	stack.c\
 	context.c\
+	infer.c\
+	types.c\
 	env.c
 
 prog=calcl
