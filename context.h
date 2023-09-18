@@ -3,11 +3,13 @@
 
 #include "object.h"
 #include "gc.h"
+#include "types.h"
 
 typedef struct {
-	GC     *gc;
-	Object *root;
-	Object *stack;
+	GC      *gc;
+	Object  *root;
+	Object  *stack;
+	TypeEnv *tenv;
 } Context;
 
 #define Context_stack(ctx) ((ctx)->stack->as.stack)
