@@ -4,11 +4,10 @@
 #include "opts.h"
 #include "input.h"
 #include "iter.h"
-#include "lex.h"
 #include "scanner.h"
 #include "parse.h"
-#include "node.h"
 #include "eval.h"
+#include "node.h"
 #include "debug.h"
 
 

@@ -10,6 +10,6 @@ void   Stack_drop(Stack *self);
 void   Stack_push(Stack *self, Object *value);
 Object *Stack_pop(Stack *self);
 void   Stack_clear(Stack *self);
-void   Stack_for_each(Stack *self, void (*fn)(void *, Object *), void *param);
+void   Stack_for_each(const Stack *self, void (*fn)(void *, Object *), void *param);
 
 #endif // STACK_INCLUDED

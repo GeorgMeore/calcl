@@ -75,7 +75,7 @@ static void Env_resize(Env *self, int new_size)
 	free(old_entries);
 }
 
-static Binding **find_entry(Env *self, const char *key)
+static Binding **find_entry(const Env *self, const char *key)
 {
 	int index = dbj2_hash(key) % self->size;
 	Binding **indirect = &(self->entries[index]);
@@ -116,12 +116,12 @@ Object *Env_remove(Env *self, const char *key)
 	return NULL;
 }
 
-int Env_has(Env *self, const char *key)
+int Env_has(const Env *self, const char *key)
 {
 	return *find_entry(self, key) == NULL;
 }
 
-Object *Env_get(Env *self, const char *key)
+Object *Env_get(const Env *self, const char *key)
 {
 	Binding *entry = *find_entry(self, key);
 	if (entry) {
@@ -133,7 +133,7 @@ Object *Env_get(Env *self, const char *key)
 	return NULL;
 }
 
-void Env_for_each(Env *self, void (*fn)(void *, Object *), void *param)
+void Env_for_each(const Env *self, void (*fn)(void *, Object *), void *param)
 {
 	for (int i = 0; i < self->size; i++) {
 		for (Binding *entry = self->entries[i]; entry != NULL; entry = entry->next) {
@@ -142,7 +142,7 @@ void Env_for_each(Env *self, void (*fn)(void *, Object *), void *param)
 	}
 }
 
-void Env_dump_objects(Env *self)
+void Env_dump_objects(const Env *self)
 {
 	for (int i = 0; i < self->size; i++) {
 		for (Binding *entry = self->entries[i]; entry != NULL; entry = entry->next) {

@@ -44,7 +44,7 @@ void Stack_clear(Stack *self)
 	self->size = 0;
 }
 
-void Stack_for_each(Stack *self, void (*fn)(void *, Object *), void *param)
+void Stack_for_each(const Stack *self, void (*fn)(void *, Object *), void *param)
 {
 	for (int i = 0; i < self->size; i++) {
 		fn(param, self->objects[i]);
