@@ -81,6 +81,7 @@ struct Object {
 	int         mark;
 };
 
-void Object_println(Object *obj);
+void Object_print(const Object *obj);
+void Object_println(const Object *obj);
 
 #endif // OBJECT_INCLUDED
