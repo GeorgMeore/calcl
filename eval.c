@@ -175,7 +175,7 @@ static Object *eval_let(Node *let, Context *ctx, Object *env)
 	Env_add(EnvObj_env(env), LetNode_name_value(let), value);
 	Node_drop(LetNode_name(let));
 	Node_drop_one(let);
-	return NULL;
+	return value;
 }
 
 static int eval_if(Context *ctx, Object **env, Node **expr)
