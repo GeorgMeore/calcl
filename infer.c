@@ -8,7 +8,8 @@
 #include "context.h"
 
 
-// FIXME: there is a looot of tricky copying, an arena allocator should be used here
+// TODO: there is a looot of tricky copying, an arena allocator should be used here
+// TODO: better error messages
 
 #define error(message) \
 	(fprintf(stderr, "inference error: " message "\n"))
