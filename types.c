@@ -121,6 +121,26 @@ void Type_println(const Type *type)
 	putchar('\n');
 }
 
+int Type_eq(const Type *t1, const Type *t2)
+{
+	if (t1->kind != t2->kind) {
+		return 0;
+	}
+	if (t1->kind == GEN_TYPE) {
+		return Type_eq(GenType_inner(t1), GenType_inner(t2));
+	}
+	if (t1->kind == FN_TYPE) {
+		return (
+			Type_eq(FnType_from(t1), FnType_from(t2)) &&
+			Type_eq(FnType_to(t1), FnType_to(t2))
+		);
+	}
+	if (t1->kind == VAR_TYPE) {
+		return VarType_value(t1) == VarType_value(t2);
+	}
+	return 1;
+}
+
 TypeEnv *TypeEnv_push(const char *name, const Type *type, TypeEnv *prev)
 {
 	TypeEnv *new = malloc(sizeof(*new));

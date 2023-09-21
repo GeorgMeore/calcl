@@ -181,7 +181,7 @@ static Subst *refresh(const Type *mono, Subst *subs)
 	return NULL;
 }
 
-static Type *instantiate(Type *type)
+static Type *instantiate(const Type *type)
 {
 	if (type->kind != GEN_TYPE) {
 		return Type_copy(type);
@@ -201,6 +201,11 @@ static Type *generalize(const Type *mono)
 	return gen;
 }
 
+// This is an implementation of algorithm M for Hindley-Milner type inference.
+// NOTE:
+// `subs`   ownership is trasferred here
+// `target` ownership is not trasferred, the caller is responsible for freeing it
+// The same conventions apply to all of the M_* functions.
 Subst *M(const Node *expr, TypeEnv *env, Subst *subs, const Type *target);
 
 Subst *M_id(const Node *id, TypeEnv *env, Subst *subs, const Type *target)
@@ -333,7 +338,15 @@ Type *infer(const Node *expr, Context *ctx)
 	Type *poly = generalize(mono);
 	Type_drop(mono);
 	if (expr->type == LET_NODE && poly) {
-		ctx->tenv = TypeEnv_push(LetNode_name_value(expr), poly, ctx->tenv);
+		const char *name = LetNode_name_value(expr);
+		Type *old = TypeEnv_lookup(ctx->tenv, name);
+		if (!old) {
+			ctx->tenv = TypeEnv_push(name, poly, ctx->tenv);
+		} else if (!Type_eq(old, poly)) {
+			error("symbol type cannot change");
+			Type_drop(poly);
+			return NULL;
+		}
 	}
 	return poly;
 }
