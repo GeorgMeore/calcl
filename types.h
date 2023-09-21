@@ -41,6 +41,7 @@ Type *GenType_new(Type *inner);
 Type *NumType_get();
 Type *Type_copy(const Type *type);
 void Type_drop(Type *type);
+int  Type_eq(const Type *t1, const Type *t2);
 
 typedef struct TypeEnv TypeEnv;
 
