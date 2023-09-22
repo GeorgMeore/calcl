@@ -1,21 +1,19 @@
 #include "infer.h"
 
-#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "node.h"
 #include "types.h"
 #include "context.h"
+#include "annotations.h"
+#include "error.h"
 
 
 // TODO: there is a looot of tricky copying, an arena allocator should be used here
 // TODO: better error messages
 
-#define error(message) \
-	(fprintf(stderr, "inference error: " message "\n"))
-
-#define errorf(fmt, args...) \
-	(fprintf(stderr, "inference error: " fmt "\n", args))
+#define ERROR_PREFIX "inference error"
 
 typedef struct Subst Subst;
 
@@ -27,7 +25,7 @@ struct Subst {
 
 #define SUBST_EMPTY (Subst *)1
 
-static Subst *Subst_extend(int var, const Type *type, Subst *prev)
+static Subst *Subst_extend(int var, const Type *type, passed Subst *prev)
 {
 	Subst *new = malloc(sizeof(*new));
 	new->var = var;
@@ -36,7 +34,7 @@ static Subst *Subst_extend(int var, const Type *type, Subst *prev)
 	return new;
 }
 
-static Subst *Subst_extend_no_copy(int var, Type *type, Subst *prev)
+static Subst *Subst_extend_no_copy(int var, passed Type *type, passed Subst *prev)
 {
 	Subst *new = malloc(sizeof(*new));
 	new->var = var;
@@ -56,7 +54,7 @@ static Type *Subst_lookup(const Subst *subs, int var)
 	return NULL;
 }
 
-static void Subst_drop(Subst *subs)
+static void Subst_drop(passed Subst *subs)
 {
 	while (subs != SUBST_EMPTY) {
 		Subst *prev = subs->prev;
@@ -201,14 +199,9 @@ static Type *generalize(const Type *mono)
 	return gen;
 }
 
-// This is an implementation of algorithm M for Hindley-Milner type inference.
-// NOTE:
-// `subs`   ownership is trasferred here
-// `target` ownership is not trasferred, the caller is responsible for freeing it
-// The same conventions apply to all of the M_* functions.
-Subst *M(const Node *expr, TypeEnv *env, Subst *subs, const Type *target);
+Subst *M(const Node *expr, TypeEnv *env, passed Subst *subs, const Type *target);
 
-Subst *M_id(const Node *id, TypeEnv *env, Subst *subs, const Type *target)
+Subst *M_id(const Node *id, TypeEnv *env, passed Subst *subs, const Type *target)
 {
 	Type *id_type = TypeEnv_lookup(env, IdNode_value(id));
 	if (!id_type) {
@@ -222,7 +215,7 @@ Subst *M_id(const Node *id, TypeEnv *env, Subst *subs, const Type *target)
 	return subs;
 }
 
-Subst *M_neg(const Node *neg, TypeEnv *env, Subst *subs, const Type *target)
+Subst *M_neg(const Node *neg, TypeEnv *env, passed Subst *subs, const Type *target)
 {
 	subs = unify(target, NumType_get(), subs);
 	if (!subs) {
@@ -231,7 +224,7 @@ Subst *M_neg(const Node *neg, TypeEnv *env, Subst *subs, const Type *target)
 	return M(NegNode_value(neg), env, subs, target);
 }
 
-Subst *M_if(const Node *ifelse, TypeEnv *env, Subst *subs, const Type *target)
+Subst *M_if(const Node *ifelse, TypeEnv *env, passed Subst *subs, const Type *target)
 {
 	subs = M(IfNode_cond(ifelse), env, subs, NumType_get());
 	if (!subs) {
@@ -244,7 +237,7 @@ Subst *M_if(const Node *ifelse, TypeEnv *env, Subst *subs, const Type *target)
 	return M(IfNode_false(ifelse), env, subs, target);
 }
 
-Subst *M_fn(const Node *fn, TypeEnv *env, Subst *subs, const Type *target)
+Subst *M_fn(const Node *fn, TypeEnv *env, passed Subst *subs, const Type *target)
 {
 	Type *arg_type = VarType_new();
 	Type *body_type = VarType_new();
@@ -261,7 +254,7 @@ Subst *M_fn(const Node *fn, TypeEnv *env, Subst *subs, const Type *target)
 	return subs;
 }
 
-Subst *M_pair(const Node *pair, TypeEnv *env, Subst *subs, const Type *target)
+Subst *M_pair(const Node *pair, TypeEnv *env, passed Subst *subs, const Type *target)
 {
 	subs = unify(target, NumType_get(), subs);
 	if (!subs) {
@@ -274,7 +267,7 @@ Subst *M_pair(const Node *pair, TypeEnv *env, Subst *subs, const Type *target)
 	return M(PairNode_right(pair), env, subs, target);
 }
 
-Subst *M_application(const Node *appl, TypeEnv *env, Subst *subs, const Type *target)
+Subst *M_application(const Node *appl, TypeEnv *env, passed Subst *subs, const Type *target)
 {
 	Type *operand_type = VarType_new();
 	Type *operator_type = FnType_new(operand_type, Type_copy(target));
@@ -288,7 +281,7 @@ Subst *M_application(const Node *appl, TypeEnv *env, Subst *subs, const Type *ta
 	return subs;
 }
 
-Subst *M_let(const Node *let, TypeEnv *env, Subst *subs, const Type *target)
+Subst *M_let(const Node *let, TypeEnv *env, passed Subst *subs, const Type *target)
 {
 	TypeEnv *extended = TypeEnv_push(LetNode_name_value(let), target, env);
 	subs = M(LetNode_value(let), extended, subs, target);
@@ -296,7 +289,7 @@ Subst *M_let(const Node *let, TypeEnv *env, Subst *subs, const Type *target)
 	return subs;
 }
 
-Subst *M(const Node *expr, TypeEnv *env, Subst *subs, const Type *target)
+Subst *M(const Node *expr, TypeEnv *env, passed Subst *subs, const Type *target)
 {
 	switch (expr->type) {
 		case NUMBER_NODE:

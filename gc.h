@@ -2,6 +2,7 @@
 #define GC_INCLUDED
 
 #include "object.h"
+#include "annotations.h"
 
 #define GC_INITIAL_THRESHOLD 128
 
@@ -14,7 +15,7 @@ typedef struct {
 } GC;
 
 GC     *GC_new();
-void   GC_drop(GC *self);
+void   GC_drop(passed GC *self);
 void   GC_collect(GC *self, Object *root, Object *stack);
 Object *GC_alloc_env(GC *self, Object *prev);
 Object *GC_alloc_fn(GC *self, Object *env, Node *body, char *arg);

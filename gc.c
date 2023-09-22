@@ -19,7 +19,7 @@ GC *GC_new()
 	return self;
 }
 
-void GC_drop(GC *self)
+void GC_drop(passed GC *self)
 {
 	free(self);
 }

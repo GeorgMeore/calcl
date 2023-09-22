@@ -1,7 +1,6 @@
 #include "eval.h"
 
 #include <math.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "opts.h"
@@ -10,26 +9,24 @@
 #include "stack.h"
 #include "gc.h"
 #include "context.h"
+#include "annotations.h"
+#include "error.h"
 
+
+#define ERROR_PREFIX "evaluation error"
 
 #define EVAL_OK   1
 #define EVAL_FAIL 0
 
-#define error(message) \
-	(fprintf(stderr, "evaluation error: " message "\n"))
+static Object *eval_dispatch(passed Node *expr, Context *ctx, Object *env);
+static Object *actual_value(passed Node *expr, Context *ctx, Object *env);
 
-#define errorf(fmt, args...) \
-	(fprintf(stderr, "evaluation error: " fmt "\n", args))
-
-static Object *eval_dispatch(Node *expr, Context *ctx, Object *env);
-static Object *actual_value(Node *exp, Context *ctx, Object *env);
-
-static Object *delay(Node *expr, Context *ctx, Object *env)
+static Object *delay(passed Node *expr, Context *ctx, Object *env)
 {
 	return GC_alloc_thunk(ctx->gc, env, expr);
 }
 
-static inline Object *eval_expect(Node *expr, Context *ctx, Object *env, ObjectType type)
+static inline Object *eval_expect(passed Node *expr, Context *ctx, Object *env, ObjectType type)
 {
 	Object *obj = actual_value(expr, ctx, env);
 	if (!obj) {
@@ -42,14 +39,14 @@ static inline Object *eval_expect(Node *expr, Context *ctx, Object *env, ObjectT
 	return obj;
 }
 
-static Object *eval_number(Node *expr, Context *ctx)
+static Object *eval_number(passed Node *expr, Context *ctx)
 {
 	Object *num = GC_alloc_number(ctx->gc, NumNode_value(expr));
 	Node_drop(expr);
 	return num;
 }
 
-static Object *eval_fn(Node *expr, Context *ctx, Object *env)
+static Object *eval_fn(passed Node *expr, Context *ctx, Object *env)
 {
 	Object *fn = GC_alloc_fn(ctx->gc, env, FnNode_body(expr), strdup(FnNode_param_value(expr)));
 	Node_drop(FnNode_param(expr));
@@ -57,7 +54,7 @@ static Object *eval_fn(Node *expr, Context *ctx, Object *env)
 	return fn;
 }
 
-static Object *eval_lookup(Node *id, Object *env)
+static Object *eval_lookup(passed Node *id, Object *env)
 {
 	Object *value = Env_get(EnvObj_env(env), IdNode_value(id));
 	if (!value) {
@@ -69,7 +66,7 @@ static Object *eval_lookup(Node *id, Object *env)
 	return value;
 }
 
-static Object *eval_neg(Node *neg, Context *ctx, Object *env)
+static Object *eval_neg(passed Node *neg, Context *ctx, Object *env)
 {
 	Object *value = eval_expect(NegNode_value(neg), ctx, env, NUM_OBJECT);
 	Node_drop_one(neg);
@@ -79,7 +76,7 @@ static Object *eval_neg(Node *neg, Context *ctx, Object *env)
 	return GC_alloc_number(ctx->gc, NumObj_num(value) * -1);
 }
 
-static Object *eval_pair(Node *pair, Context *ctx, Object *env)
+static Object *eval_pair(passed Node *pair, Context *ctx, Object *env)
 {
 	int op = PairNode_op(pair);
 	Context_stack_push(ctx, env);
@@ -122,7 +119,7 @@ static Object *eval_pair(Node *pair, Context *ctx, Object *env)
 	}
 }
 
-static Object *eval_or(Node *or, Context *ctx, Object *env)
+static Object *eval_or(passed Node *or, Context *ctx, Object *env)
 {
 	Object *leftv = eval_expect(PairNode_left(or), ctx, env, NUM_OBJECT);
 	if (!leftv) {
@@ -143,7 +140,7 @@ static Object *eval_or(Node *or, Context *ctx, Object *env)
 	return rightv;
 }
 
-static Object *eval_and(Node *and, Context *ctx, Object *env)
+static Object *eval_and(passed Node *and, Context *ctx, Object *env)
 {
 	Object *leftv = eval_expect(PairNode_left(and), ctx, env, NUM_OBJECT);
 	if (!leftv) {
@@ -164,7 +161,7 @@ static Object *eval_and(Node *and, Context *ctx, Object *env)
 	return rightv;
 }
 
-static Object *eval_let(Node *let, Context *ctx, Object *env)
+static Object *eval_let(passed Node *let, Context *ctx, Object *env)
 {
 	Object *value = eval_dispatch(LetNode_value(let), ctx, env);
 	if (!value) {
@@ -232,7 +229,7 @@ static int eval_application(Context *ctx, Object **env, Node **expr)
 	return EVAL_OK;
 }
 
-static Object *eval_dispatch(Node *expr, Context *ctx, Object *env)
+static Object *eval_dispatch(passed Node *expr, Context *ctx, Object *env)
 {
 	for (;;) {
 		GC_collect(ctx->gc, env, ctx->stack);
@@ -288,12 +285,12 @@ static Object *force(Object *obj, Context *ctx)
 	return value;
 }
 
-static Object *actual_value(Node *exp, Context *ctx, Object *env)
+static Object *actual_value(passed Node *expr, Context *ctx, Object *env)
 {
-	return force(eval_dispatch(exp, ctx, env), ctx);
+	return force(eval_dispatch(expr, ctx, env), ctx);
 }
 
-Object *eval(Node *expr, Context *ctx)
+Object *eval(passed Node *expr, Context *ctx)
 {
 	Stack_clear(Context_stack(ctx));
 	if (lazy) {

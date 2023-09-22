@@ -5,7 +5,7 @@
 #include <ctype.h>
 
 
-void Node_drop(Node *node)
+void Node_drop(passed Node *node)
 {
 	switch (node->type) {
 		case NUMBER_NODE:
@@ -47,6 +47,11 @@ void Node_drop(Node *node)
 			free(node);
 			break;
 	}
+}
+
+void Node_drop_one(passed Node *node)
+{
+	free(node);
 }
 
 static NumberValue number_value(const char *string, int length)
@@ -99,7 +104,7 @@ static Node *IdNode_copy(const Node *src)
 	return node;
 }
 
-Node *NegNode_new(Node *value)
+Node *NegNode_new(passed Node *value)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = NEG_NODE;
@@ -115,7 +120,7 @@ Node *NegNode_copy(const Node *src)
 	return node;
 }
 
-static Node *pair_new(NodeType type, Node *left, Node *right, int op)
+static Node *pair_new(NodeType type, passed Node *left, passed Node *right, int op)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = type;
@@ -135,42 +140,42 @@ static Node *pair_copy(const Node *src)
 	return node;
 }
 
-Node *ApplicationNode_new(Node *left, Node *right)
+Node *ApplicationNode_new(passed Node *left, passed Node *right)
 {
 	return pair_new(APPLICATION_NODE, left, right, 0);
 }
 
-Node *SumNode_new(Node *left, Node *right, int op)
+Node *SumNode_new(passed Node *left, passed Node *right, int op)
 {
 	return pair_new(SUM_NODE, left, right, op);
 }
 
-Node *ProductNode_new(Node *left, Node *right, int op)
+Node *ProductNode_new(passed Node *left, passed Node *right, int op)
 {
 	return pair_new(PRODUCT_NODE, left, right, op);
 }
 
-Node *ExptNode_new(Node *base, Node *exponent)
+Node *ExptNode_new(passed Node *base, passed Node *exponent)
 {
 	return pair_new(EXPT_NODE, base, exponent, '^');
 }
 
-Node *CmpNode_new(Node *left, Node *right, int op)
+Node *CmpNode_new(passed Node *left, passed Node *right, int op)
 {
 	return pair_new(CMP_NODE, left, right, op);
 }
 
-Node *AndNode_new(Node *left, Node *right)
+Node *AndNode_new(passed Node *left, passed Node *right)
 {
 	return pair_new(AND_NODE, left, right, 0);
 }
 
-Node *OrNode_new(Node *left, Node *right)
+Node *OrNode_new(passed Node *left, passed Node *right)
 {
 	return pair_new(OR_NODE, left, right, 0);
 }
 
-Node *IfNode_new(Node *cond, Node *true, Node *false)
+Node *IfNode_new(passed Node *cond, passed Node *true, passed Node *false)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = IF_NODE;
@@ -189,7 +194,7 @@ static Node *IfNode_copy(const Node *src)
 	);
 }
 
-Node *FnNode_new(Node *param, Node *body)
+Node *FnNode_new(passed Node *param, passed Node *body)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = FN_NODE;
@@ -206,7 +211,7 @@ static Node *FnNode_copy(const Node *src)
 	);
 }
 
-Node *LetNode_new(Node *name, Node *value)
+Node *LetNode_new(passed Node *name, passed Node *value)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = LET_NODE;

@@ -4,8 +4,8 @@
 #include "node.h"
 #include "object.h"
 #include "context.h"
+#include "annotations.h"
 
-// NOTE: expr ownership is transferred here
-Object *eval(Node *expr, Context *ctx);
+Object *eval(passed Node *expr, Context *ctx);
 
 #endif // EVAL_INCLUDED

@@ -6,15 +6,17 @@
 #include "scanner.h"
 #include "node.h"
 #include "token.h"
+#include "error.h"
 
 
-static void error(const char *message, Token last)
+#define ERROR_PREFIX "parsing error"
+
+static void tokerror(const char *message, Token last)
 {
-	fprintf(stderr, "parsing error: %s ", message);
 	if (last.type == END_TOKEN) {
-		fprintf(stderr, "(while parsing 'END')\n");
+		errorf("%s (while parsing 'END')", message);
 	} else {
-		fprintf(stderr, "(while parsing '%.*s')\n", last.length, last.string);
+		errorf("%s (while parsing '%.*s')", message, last.length, last.string);
 	}
 }
 
@@ -81,7 +83,7 @@ Node *parse(Scanner *scanner)
 	}
 	next = Scanner_peek(scanner);
 	if (next.type != END_TOKEN) {
-		error("unexpected token after the expression", next);
+		tokerror("unexpected token after the expression", next);
 		Node_drop(expr);
 		return NULL;
 	}
@@ -103,7 +105,7 @@ static Node *parse_let_value(Scanner *scanner)
 		}
 		return FnNode_new(param, body);
 	} else {
-		error("expected '=' or and identifier", next);
+		tokerror("expected '=' or and identifier", next);
 		return NULL;
 	}
 }
@@ -114,7 +116,7 @@ static Node *parse_let(Scanner *scanner)
 	Scanner_next(scanner);
 	Token next = Scanner_next(scanner);
 	if (next.type != ID_TOKEN) {
-		error("expected identifier", next);
+		tokerror("expected identifier", next);
 		return NULL;
 	}
 	Node *name = IdNode_new(next.string, next.length);
@@ -154,7 +156,7 @@ static Node *parse_fn_body(Scanner *scanner)
 		}
 		return FnNode_new(param, body);
 	} else {
-		error("expected ':' or and identifier", next);
+		tokerror("expected ':' or and identifier", next);
 		return NULL;
 	}
 }
@@ -165,7 +167,7 @@ static Node *parse_fn(Scanner *scanner)
 	Scanner_next(scanner);
 	Token next = Scanner_next(scanner);
 	if (next.type != ID_TOKEN) {
-		error("expected identifier", next);
+		tokerror("expected identifier", next);
 		return NULL;
 	}
 	Node *param = IdNode_new(next.string, next.length);
@@ -187,7 +189,7 @@ static Node *parse_if_tail(Scanner *scanner)
 	} else if (next.type == IF_TOKEN) {
 		return parse_if(scanner);
 	} else {
-		error("expected 'if' or 'else'", next);
+		tokerror("expected 'if' or 'else'", next);
 		return NULL;
 	}
 }
@@ -202,7 +204,7 @@ static Node *parse_if(Scanner *scanner)
 	}
 	Token next = Scanner_next(scanner);
 	if (next.type != THEN_TOKEN) {
-		error("expected 'then'", next);
+		tokerror("expected 'then'", next);
 		Node_drop(cond);
 		return NULL;
 	}
@@ -387,7 +389,7 @@ static Node *parse_term(Scanner *scanner)
 		}
 		next = Scanner_next(scanner);
 		if (next.type != RPAREN_TOKEN) {
-			error("expected ')'", next);
+			tokerror("expected ')'", next);
 			Node_drop(expr);
 			return NULL;
 		}
@@ -397,7 +399,7 @@ static Node *parse_term(Scanner *scanner)
 	} else if (next.type == ID_TOKEN) {
 		return IdNode_new(next.string, next.length);
 	} else {
-		error("expected '(', '-' or a number", next);
+		tokerror("expected '(', '-' or a number", next);
 		return NULL;
 	}
 }
