@@ -7,7 +7,7 @@
 #define INITIAL_BUFFER_SIZE 1024
 
 // TODO: intergrate input into CharIterator
-char *get_line()
+const char *get_line()
 {
 	static char *buffer;
 	static int size;

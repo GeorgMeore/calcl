@@ -33,7 +33,7 @@ static Type *VarType_new_from_value(int value)
 	return var;
 }
 
-Type *FnType_new(Type *from, Type *to)
+Type *FnType_new(passed Type *from, passed Type *to)
 {
 	Type *fn = Type_alloc(FN_TYPE);
 	fn->as.fn.from = from;
@@ -41,7 +41,7 @@ Type *FnType_new(Type *from, Type *to)
 	return fn;
 }
 
-Type *GenType_new(Type *inner)
+Type *GenType_new(passed Type *inner)
 {
 	Type *gen = Type_alloc(GEN_TYPE);
 	gen->as.gen = inner;
@@ -80,7 +80,7 @@ void Type_print(const Type *type)
 	}
 }
 
-void Type_drop(Type *type)
+void Type_drop(passed Type *type)
 {
 	switch (type->kind) {
 		case VAR_TYPE:
@@ -141,7 +141,7 @@ int Type_eq(const Type *t1, const Type *t2)
 	return 1;
 }
 
-TypeEnv *TypeEnv_push(const char *name, const Type *type, TypeEnv *prev)
+TypeEnv *TypeEnv_push(const char *name, const Type *type, passed TypeEnv *prev)
 {
 	TypeEnv *new = malloc(sizeof(*new));
 	new->name = strdup(name);
@@ -161,7 +161,7 @@ Type *TypeEnv_lookup(const TypeEnv *env, const char *name)
 	return NULL;
 }
 
-TypeEnv *TypeEnv_pop(TypeEnv *env)
+TypeEnv *TypeEnv_pop(passed TypeEnv *env)
 {
 	TypeEnv *prev = env->prev;
 	free(env->name);
@@ -170,7 +170,7 @@ TypeEnv *TypeEnv_pop(TypeEnv *env)
 	return prev;
 }
 
-void TypeEnv_drop(TypeEnv *env)
+void TypeEnv_drop(passed TypeEnv *env)
 {
 	while (env != TYPEENV_EMPTY) {
 		env = TypeEnv_pop(env);

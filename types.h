@@ -1,6 +1,8 @@
 #ifndef TYPES_INCLUDED
 #define TYPES_INCLUDED
 
+#include "annotations.h"
+
 typedef struct Type Type;
 
 typedef enum {
@@ -36,11 +38,11 @@ void Type_print(const Type *type);
 void Type_println(const Type *type);
 Type *VarType_new();
 void VarType_reset();
-Type *FnType_new(Type *from, Type *to);
-Type *GenType_new(Type *inner);
+Type *FnType_new(passed Type *from, passed Type *to);
+Type *GenType_new(passed Type *inner);
 Type *NumType_get();
 Type *Type_copy(const Type *type);
-void Type_drop(Type *type);
+void Type_drop(passed Type *type);
 int  Type_eq(const Type *t1, const Type *t2);
 
 typedef struct TypeEnv TypeEnv;
@@ -53,9 +55,9 @@ struct TypeEnv {
 
 #define TYPEENV_EMPTY (TypeEnv *)0
 
-TypeEnv *TypeEnv_push(const char *name, const Type *type, TypeEnv *prev);
-TypeEnv *TypeEnv_pop(TypeEnv *env);
+TypeEnv *TypeEnv_push(const char *name, const Type *type, passed TypeEnv *prev);
+TypeEnv *TypeEnv_pop(passed TypeEnv *env);
 Type    *TypeEnv_lookup(const TypeEnv *env, const char *name);
-void    TypeEnv_drop(TypeEnv *env);
+void    TypeEnv_drop(passed TypeEnv *env);
 
 #endif // TYPES_INCLUDED

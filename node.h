@@ -1,7 +1,7 @@
 #ifndef NODE_INCLUDED
 #define NODE_INCLUDED
 
-#include <stdlib.h>
+#include "annotations.h"
 
 typedef struct Node Node;
 
@@ -86,22 +86,21 @@ struct Node {
 	NodeValue as;
 };
 
-#define Node_drop_one free
-
 Node *NumberNode_new(const char *string, int length);
 Node *IdNode_new(const char *string, int length);
-Node *NegNode_new(Node *value);
-Node *ApplicationNode_new(Node *left, Node *right);
-Node *SumNode_new(Node *left, Node *right, int op);
-Node *ProductNode_new(Node *left, Node *right, int op);
-Node *ExptNode_new(Node *base, Node *exponent);
-Node *CmpNode_new(Node *left, Node *right, int op);
-Node *AndNode_new(Node *left, Node *right);
-Node *OrNode_new(Node *left, Node *right);
-Node *IfNode_new(Node *cond, Node *true, Node *false);
-Node *FnNode_new(Node *param, Node *body);
-Node *LetNode_new(Node *name, Node *value);
-void Node_drop(Node *node);
+Node *NegNode_new(passed Node *value);
+Node *ApplicationNode_new(passed Node *left, passed Node *right);
+Node *SumNode_new(passed Node *left, passed Node *right, int op);
+Node *ProductNode_new(passed Node *left, passed Node *right, int op);
+Node *ExptNode_new(passed Node *base, passed Node *exponent);
+Node *CmpNode_new(passed Node *left, passed Node *right, int op);
+Node *AndNode_new(passed Node *left, passed Node *right);
+Node *OrNode_new(passed Node *left, passed Node *right);
+Node *IfNode_new(passed Node *cond, passed Node *true, passed Node *false);
+Node *FnNode_new(passed Node *param, passed Node *body);
+Node *LetNode_new(passed Node *name, passed Node *value);
+void Node_drop(passed Node *node);
+void Node_drop_one(passed Node *node);
 Node *Node_copy(const Node *node);
 
 #endif // NODE_INCLUDED

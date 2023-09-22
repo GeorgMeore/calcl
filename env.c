@@ -42,7 +42,7 @@ Env *Env_new(Object *prev)
 	return self;
 }
 
-void Env_drop(Env *self)
+void Env_drop(passed Env *self)
 {
 	for (int i = 0; i < self->size; i++) {
 		Binding *head = self->entries[i];
