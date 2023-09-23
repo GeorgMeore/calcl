@@ -4,10 +4,12 @@
 #include "scanner.h"
 #include "token.h"
 
+
 Scanner Scanner_make(FILE *file)
 {
 	Scanner scanner;
 	scanner.iterator = Iter_make(file);
+	scanner.next = (Token){ERROR_TOKEN, "", 0};
 	return scanner;
 }
 
