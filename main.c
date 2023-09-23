@@ -13,8 +13,7 @@
 
 int main(int argc, char **argv)
 {
-	if (setopts(argc, argv) < 0) {
-		fprintf(stderr, "usage: %s [-dlt]\n", argv[0]);
+	if (!parse_args(argc, argv)) {
 		return 1;
 	}
 	int tty = isatty(0);
