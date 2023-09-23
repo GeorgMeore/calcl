@@ -33,4 +33,6 @@ typedef struct {
 	int        length;
 } Token;
 
+void Token_print(Token token);
+
 #endif // TOKEN_INCLUDED

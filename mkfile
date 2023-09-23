@@ -1,11 +1,10 @@
 CC=gcc
 CFLAGS=-g -Wall -Wextra
 LDFLAGS=-lm
-SRC=debug.c\
-	eval.c\
+SRC=eval.c\
 	iter.c\
 	lex.c\
-	main.c\
+	token.c\
 	node.c\
 	opts.c\
 	parse.c\
@@ -16,7 +15,8 @@ SRC=debug.c\
 	context.c\
 	infer.c\
 	types.c\
-	env.c
+	env.c\
+	main.c
 
 prog=calcl
 
