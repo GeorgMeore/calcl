@@ -112,7 +112,7 @@ Node *NegNode_new(passed Node *value)
 	return node;
 }
 
-Node *NegNode_copy(const Node *src)
+static Node *NegNode_copy(const Node *src)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = NEG_NODE;
