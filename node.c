@@ -1,6 +1,7 @@
 #include "node.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -120,7 +121,7 @@ static Node *NegNode_copy(const Node *src)
 	return node;
 }
 
-static Node *pair_new(NodeType type, passed Node *left, passed Node *right, int op)
+static Node *PairNode_new(NodeType type, passed Node *left, passed Node *right, int op)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = type;
@@ -130,7 +131,7 @@ static Node *pair_new(NodeType type, passed Node *left, passed Node *right, int 
 	return node;
 }
 
-static Node *pair_copy(const Node *src)
+static Node *PairNode_copy(const Node *src)
 {
 	Node *node = malloc(sizeof(*node));
 	node->type = src->type;
@@ -142,37 +143,37 @@ static Node *pair_copy(const Node *src)
 
 Node *ApplicationNode_new(passed Node *left, passed Node *right)
 {
-	return pair_new(APPLICATION_NODE, left, right, 0);
+	return PairNode_new(APPLICATION_NODE, left, right, ' ');
 }
 
 Node *SumNode_new(passed Node *left, passed Node *right, int op)
 {
-	return pair_new(SUM_NODE, left, right, op);
+	return PairNode_new(SUM_NODE, left, right, op);
 }
 
 Node *ProductNode_new(passed Node *left, passed Node *right, int op)
 {
-	return pair_new(PRODUCT_NODE, left, right, op);
+	return PairNode_new(PRODUCT_NODE, left, right, op);
 }
 
 Node *ExptNode_new(passed Node *base, passed Node *exponent)
 {
-	return pair_new(EXPT_NODE, base, exponent, '^');
+	return PairNode_new(EXPT_NODE, base, exponent, '^');
 }
 
 Node *CmpNode_new(passed Node *left, passed Node *right, int op)
 {
-	return pair_new(CMP_NODE, left, right, op);
+	return PairNode_new(CMP_NODE, left, right, op);
 }
 
 Node *AndNode_new(passed Node *left, passed Node *right)
 {
-	return pair_new(AND_NODE, left, right, 0);
+	return PairNode_new(AND_NODE, left, right, 0);
 }
 
 Node *OrNode_new(passed Node *left, passed Node *right)
 {
-	return pair_new(OR_NODE, left, right, 0);
+	return PairNode_new(OR_NODE, left, right, 0);
 }
 
 Node *IfNode_new(passed Node *cond, passed Node *true, passed Node *false)
@@ -244,7 +245,7 @@ Node *Node_copy(const Node *node)
 		case CMP_NODE:
 		case AND_NODE:
 		case OR_NODE:
-			return pair_copy(node);
+			return PairNode_copy(node);
 		case IF_NODE:
 			return IfNode_copy(node);
 		case FN_NODE:
@@ -253,4 +254,64 @@ Node *Node_copy(const Node *node)
 			return LetNode_copy(node);
 	}
 	return NULL;
+}
+
+static void Node_print_parenthesised(const Node *expr)
+{
+	putchar('(');
+	Node_print(expr);
+	putchar(')');
+}
+
+void Node_print(const Node *expr)
+{
+	switch (expr->type) {
+		case NUMBER_NODE:
+			printf("%lf", NumNode_value(expr));
+			break;
+		case ID_NODE:
+			printf("%s", IdNode_value(expr));
+			break;
+		case NEG_NODE:
+			putchar('-');
+			Node_print_parenthesised(NegNode_value(expr));
+			break;
+		case APPLICATION_NODE:
+		case EXPT_NODE:
+		case PRODUCT_NODE:
+		case SUM_NODE:
+		case CMP_NODE:
+		case AND_NODE:
+		case OR_NODE:
+			Node_print_parenthesised(PairNode_left(expr));
+			putchar(PairNode_op(expr));
+			Node_print_parenthesised(PairNode_right(expr));
+			break;
+		case IF_NODE:
+			printf("if ");
+			Node_print_parenthesised(IfNode_cond(expr));
+			printf(" then ");
+			Node_print_parenthesised(IfNode_true(expr));
+			printf(" else ");
+			Node_print_parenthesised(IfNode_false(expr));
+			break;
+		case FN_NODE:
+			printf("fn ");
+			Node_print(FnNode_param(expr));
+			printf(": ");
+			Node_print(FnNode_body(expr));
+			break;
+		case LET_NODE:
+			printf("let ");
+			Node_print(LetNode_name(expr));
+			printf("= ");
+			Node_print(LetNode_value(expr));
+			break;
+	}
+}
+
+void Node_println(const Node *node)
+{
+	Node_print(node);
+	putchar('\n');
 }

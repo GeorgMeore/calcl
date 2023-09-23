@@ -102,5 +102,7 @@ Node *LetNode_new(passed Node *name, passed Node *value);
 void Node_drop(passed Node *node);
 void Node_drop_one(passed Node *node);
 Node *Node_copy(const Node *node);
+void Node_print(const Node *expr);
+void Node_println(const Node *node);
 
 #endif // NODE_INCLUDED

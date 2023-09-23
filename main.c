@@ -9,7 +9,6 @@
 #include "infer.h"
 #include "types.h"
 #include "eval.h"
-#include "debug.h"
 
 
 int main(int argc, char **argv)
@@ -38,7 +37,7 @@ int main(int argc, char **argv)
 			}
 		}
 		if (debug) {
-			Node_print(ast);
+			Node_println(ast);
 		}
 		Object *result = eval(ast, &ctx);
 		if (result) {
