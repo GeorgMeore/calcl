@@ -68,6 +68,7 @@ static int is_prod_token(Token token) {
 // VALID ::= (EXPRESSION | LET)? 'END'
 Node *parse(Scanner *scanner)
 {
+	Scanner_start(scanner);
 	Token next = Scanner_peek(scanner);
 	if (next.type == END_TOKEN) {
 		return NULL;

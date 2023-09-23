@@ -13,13 +13,13 @@
 
 // keyword <- 'if' | 'then' | 'else' | 'or' | 'and' | 'fn' | 'to'
 // id <- alpha+
-static Token take_keyword_or_id(CharIterator *iterator)
+static Token take_keyword_or_id(Iter *iterator)
 {
-	const char *start = CharIterator_cursor(iterator);
-	while (isalnum(CharIterator_peek(iterator))) {
-		CharIterator_next(iterator);
+	const char *start = Iter_cursor(iterator);
+	while (isalnum(Iter_peek(iterator))) {
+		Iter_next(iterator);
 	}
-	long unsigned length = CharIterator_cursor(iterator) - start;
+	long unsigned length = Iter_cursor(iterator) - start;
 	if (kweq(start, "if", length)) {
 		return (Token){IF_TOKEN, start, length};
 	}
@@ -45,19 +45,19 @@ static Token take_keyword_or_id(CharIterator *iterator)
 }
 
 // number <- digit+ ('.' digit*)?
-static Token take_number(CharIterator *iterator)
+static Token take_number(Iter *iterator)
 {
-	const char *start = CharIterator_cursor(iterator);
-	while (isdigit(CharIterator_peek(iterator))) {
-		CharIterator_next(iterator);
+	const char *start = Iter_cursor(iterator);
+	while (isdigit(Iter_peek(iterator))) {
+		Iter_next(iterator);
 	}
-	if (CharIterator_peek(iterator) == '.') {
-		CharIterator_next(iterator);
+	if (Iter_peek(iterator) == '.') {
+		Iter_next(iterator);
 	}
-	while (isdigit(CharIterator_peek(iterator))) {
-		CharIterator_next(iterator);
+	while (isdigit(Iter_peek(iterator))) {
+		Iter_next(iterator);
 	}
-	return (Token){NUMBER_TOKEN, start, CharIterator_cursor(iterator) - start};
+	return (Token){NUMBER_TOKEN, start, Iter_cursor(iterator) - start};
 }
 
 TokenType singlet_token_type(char c)
@@ -80,15 +80,19 @@ TokenType singlet_token_type(char c)
 }
 
 // token <- number | id | keyword | '(' | ')' | '+' | '*' | '/' | '^' | '>' | '<' | '=' | ':' | '\0'
-Token take_token(CharIterator *iterator)
+Token take_token(Iter *iterator)
 {
-	// skip leading spaces
-	while (isspace(CharIterator_peek(iterator))) {
-		CharIterator_next(iterator);
+	while (Iter_peek(iterator) == ' ' || Iter_peek(iterator) == '\t') {
+		Iter_next(iterator);
 	}
-	char next = CharIterator_peek(iterator);
-	if (next == '#' || next == '\0') {
-		return (Token){END_TOKEN, CharIterator_cursor(iterator), 0};
+	if (Iter_peek(iterator) == '#') {
+		while (Iter_peek(iterator) != '\n' && Iter_peek(iterator) != '\0') {
+			Iter_next(iterator);
+		}
+	}
+	char next = Iter_peek(iterator);
+	if (next == '\0' || next == '\n') {
+		return (Token){END_TOKEN, Iter_cursor(iterator), 0};
 	}
 	if (isdigit(next)) {
 		return take_number(iterator);
@@ -96,7 +100,12 @@ Token take_token(CharIterator *iterator)
 	if (isalpha(next)) {
 		return take_keyword_or_id(iterator);
 	}
-	Token token = {singlet_token_type(next), CharIterator_cursor(iterator), 1};
-	CharIterator_next(iterator);
+	Token token = {singlet_token_type(next), Iter_cursor(iterator), 1};
+	Iter_next(iterator);
+	if (token.type == ERROR_TOKEN) {
+		while (Iter_peek(iterator) != '\n' && Iter_peek(iterator) != '\0') {
+			Iter_next(iterator);
+		}
+	}
 	return token;
 }

@@ -3,7 +3,6 @@ CFLAGS=-g -Wall -Wextra
 LDFLAGS=-lm
 SRC=debug.c\
 	eval.c\
-	input.c\
 	iter.c\
 	lex.c\
 	main.c\

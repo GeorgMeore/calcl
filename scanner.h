@@ -5,12 +5,15 @@
 #include "iter.h"
 
 typedef struct {
-	CharIterator *iterator;
-	Token        next;
+	Iter  iterator;
+	Token next;
 } Scanner;
 
-Scanner Scanner_make(CharIterator *iterator);
-Token   Scanner_peek(Scanner *self);
-Token   Scanner_next(Scanner *self);
+Scanner Scanner_make(FILE *file);
+void    Scanner_destroy(Scanner scanner);
+void    Scanner_start(Scanner *scanner);
+Token   Scanner_peek(Scanner *scanner);
+Token   Scanner_next(Scanner *scanner);
+#define Scanner_eof(scanner) (Iter_eof(&scanner.iterator))
 
 #endif // SCANNER_INCLUDED

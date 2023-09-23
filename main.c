@@ -2,7 +2,6 @@
 #include <unistd.h>
 
 #include "opts.h"
-#include "input.h"
 #include "iter.h"
 #include "scanner.h"
 #include "parse.h"
@@ -15,22 +14,17 @@
 
 int main(int argc, char **argv)
 {
-	int optind = setopts(argc, argv);
-	if (optind < 0) {
+	if (setopts(argc, argv) < 0) {
 		fprintf(stderr, "usage: %s [-dlt]\n", argv[0]);
 		return 1;
 	}
 	int tty = isatty(0);
+	Scanner scanner = Scanner_make(stdin);
 	Context ctx = Context_make();
-	for (;;) {
+	while (!Scanner_eof(scanner)) {
 		if (tty) {
 			fprintf(stderr, "> ");
 		}
-		const char *input = get_line();
-		if (!input) {
-			break;
-		}
-		Scanner scanner = Scanner_make(&input);
 		Node *ast = parse(&scanner);
 		if (!ast) {
 			continue;
@@ -58,6 +52,7 @@ int main(int argc, char **argv)
 			}
 		}
 	}
+	Scanner_destroy(scanner);
 	Context_destroy(ctx);
 	return 0;
 }
