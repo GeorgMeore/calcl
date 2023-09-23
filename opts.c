@@ -1,17 +1,25 @@
 #include "opts.h"
 
+#include "error.h"
+
+
+#define ERROR_PREFIX "arguments error"
 
 int debug = DEBUG_DEFAULT;
-int lazy = LAZY_DEFAULT;
+int lazy  = LAZY_DEFAULT;
 int typed = TYPED_DEFAULT;
 
-int setopts(int argc, char **argv)
+#define usage(name) \
+	(fprintf(stderr, "usage: %s [-dlt]\n", name))
+
+int parse_args(int argc, char **argv)
 {
-	int optind;
-	for (optind = 1; optind < argc; optind++) {
+	for (int optind = 1; optind < argc; optind++) {
 		char *arg = argv[optind];
 		if (arg[0] != '-') {
-			break;
+			errorf("unexpected positional argument: '%s'", arg);
+			usage(argv[0]);
+			return 0;
 		}
 		for (arg++; *arg; arg++) {
 			switch (*arg) {
@@ -19,9 +27,11 @@ int setopts(int argc, char **argv)
 				case 'l': lazy = 1;  break;
 				case 't': typed = 1; break;
 				default:
-					return -1;
+					errorf("unknown flag: '%s'", arg);
+					usage(argv[0]);
+					return 0;
 			}
 		}
 	}
-	return optind;
+	return 1;
 }
