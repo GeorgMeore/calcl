@@ -1,5 +1,13 @@
 # A very basic functional programming language.
 
+## About.
+
+This is an interpreter for an ML-like functional programming language with Hindley-Milner type inference
+(typing is disabled by default, you can enable it via `-t` flag).
+It supports both strict (the default) and lazy (`-l`) evaluation strategies.
+
+This project is purely educational and just-for-fun.
+
 ## Building.
 
 To build this thing you will need `gcc`, `libc` and plan9's `mk`.
@@ -13,6 +21,7 @@ $ mk
 ## Example repl session.
 
 ```
+$ ./calcl
 > 1
 1.000000
 > 1 + 2
