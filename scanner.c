@@ -4,24 +4,32 @@
 #include "scanner.h"
 #include "token.h"
 
-
-Scanner Scanner_make(CharIterator *iterator)
+Scanner Scanner_make(FILE *file)
 {
 	Scanner scanner;
-	scanner.iterator = iterator;
-	Token first = take_token(iterator);
-	scanner.next = first;
+	scanner.iterator = Iter_make(file);
 	return scanner;
 }
 
-Token Scanner_next(Scanner *self)
+void Scanner_destroy(Scanner scanner)
 {
-	Token next = self->next;
-	self->next = take_token(self->iterator);
+	Iter_destroy(scanner.iterator);
+}
+
+void Scanner_start(Scanner *scanner)
+{
+	Iter_reset(&scanner->iterator);
+	scanner->next = take_token(&scanner->iterator);
+}
+
+Token Scanner_next(Scanner *scanner)
+{
+	Token next = scanner->next;
+	scanner->next = take_token(&scanner->iterator);
 	return next;
 }
 
-Token Scanner_peek(Scanner *self)
+Token Scanner_peek(Scanner *scanner)
 {
-	return self->next;
+	return scanner->next;
 }

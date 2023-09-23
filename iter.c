@@ -1,21 +1,69 @@
 #include "iter.h"
 
+#include <stdlib.h>
 
-const char *CharIterator_cursor(CharIterator *self)
+#include "annotations.h"
+
+
+Iter Iter_make(passed FILE *file)
 {
-	return *self;
+	Iter iter = {0};
+	iter.file = file;
+	iter.buff = malloc(INITIAL_BUFFER_SIZE);
+	iter.end = iter.buff;
+	iter.cursor = iter.buff;
+	iter.size = INITIAL_BUFFER_SIZE;
+	return iter;
 }
 
-char CharIterator_next(CharIterator *self)
+void Iter_destroy(Iter iter)
 {
-	char next = **self;
-	if (next) {
-		*self += 1;
+	free(iter.buff);
+	fclose(iter.file);
+}
+
+void Iter_reset(Iter *iter)
+{
+	iter->end = iter->buff;
+	iter->cursor = iter->buff;
+}
+
+char *Iter_cursor(const Iter *iter)
+{
+	return iter->cursor;
+}
+
+static void Iter_getc(Iter *iter, int count)
+{
+	while (!Iter_eof(iter) && count > 0) {
+		if (iter->end - iter->buff == iter->size - 1) {
+			iter->size *= 2;
+			iter->buff = realloc(iter->buff, iter->size);
+		}
+		int c = fgetc(iter->file);
+		iter->end[0] = c == EOF ? '\0' : c;
+		iter->end += 1;
+		count -= 1;
 	}
-	return next;
 }
 
-char CharIterator_peek(CharIterator *self)
+char Iter_peek(Iter *iter)
 {
-	return **self;
+	Iter_getc(iter, 1 - (iter->end - iter->cursor));
+	if (iter->cursor >= iter->end) {
+		return '\0';
+	}
+	return iter->cursor[0];
+}
+
+char Iter_next(Iter *iter)
+{
+	char c = Iter_peek(iter);
+	iter->cursor += 1;
+	return c;
+}
+
+int Iter_eof(const Iter *iter)
+{
+	return feof(iter->file) || ferror(iter->file);
 }

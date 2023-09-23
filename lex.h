@@ -4,6 +4,6 @@
 #include "token.h"
 #include "iter.h"
 
-Token take_token(CharIterator *iterator);
+Token take_token(Iter *iterator);
 
 #endif // LEX_INCLUDED
