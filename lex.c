@@ -93,19 +93,18 @@ Token take_token(Iter *iterator)
 	char next = Iter_peek(iterator);
 	if (next == '\0' || next == '\n') {
 		return (Token){END_TOKEN, Iter_cursor(iterator), 0};
-	}
-	if (isdigit(next)) {
+	} else if (isdigit(next)) {
 		return take_number(iterator);
-	}
-	if (isalpha(next)) {
+	} else if (isalpha(next)) {
 		return take_keyword_or_id(iterator);
-	}
-	Token token = {singlet_token_type(next), Iter_cursor(iterator), 1};
-	Iter_next(iterator);
-	if (token.type == ERROR_TOKEN) {
-		while (Iter_peek(iterator) != '\n' && Iter_peek(iterator) != '\0') {
-			Iter_next(iterator);
+	} else {
+		Token token = {singlet_token_type(next), Iter_cursor(iterator), 1};
+		Iter_next(iterator);
+		if (token.type == ERROR_TOKEN) {
+			while (Iter_peek(iterator) != '\n' && Iter_peek(iterator) != '\0') {
+				Iter_next(iterator);
+			}
 		}
+		return token;
 	}
-	return token;
 }
