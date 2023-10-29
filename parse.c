@@ -1,6 +1,5 @@
 #include "parse.h"
 
-#include <stdlib.h>
 #include <stdio.h>
 
 #include "scanner.h"
