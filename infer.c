@@ -67,16 +67,16 @@ static void Subst_drop(passed Subst *subs)
 static int occurs(const Type *var, const Type *type, const Subst *subs)
 {
 	if (type->kind == VAR_TYPE) {
-		if (type->as.var == var->as.var) {
+		if (VarType_value(type) == VarType_value(var)) {
 			return 1;
 		}
-		Type *val = Subst_lookup(subs, type->as.var);
+		Type *val = Subst_lookup(subs, VarType_value(type));
 		return val && occurs(var, val, subs);
 	}
 	if (type->kind == FN_TYPE) {
 		return (
-			occurs(var, type->as.fn.from, subs) ||
-			occurs(var, type->as.fn.to, subs)
+			occurs(var, FnType_from(type), subs) ||
+			occurs(var, FnType_to(type), subs)
 		);
 	}
 	return 0;
@@ -86,15 +86,15 @@ static Subst *unify(const Type *t1, const Type *t2, Subst *subs);
 
 static Subst *unify_var(const Type *t1, const Type *t2, Subst *subs)
 {
-	Type *v1 = Subst_lookup(subs, t1->as.var);
+	Type *v1 = Subst_lookup(subs, VarType_value(t1));
 	if (v1) {
 		return unify(v1, t2, subs);
 	}
 	if (t2->kind == VAR_TYPE) {
-		if (t1->as.var == t2->as.var) {
+		if (VarType_value(t1) == VarType_value(t2)) {
 			return subs;
 		}
-		Type *v2 = Subst_lookup(subs, t2->as.var);
+		Type *v2 = Subst_lookup(subs, VarType_value(t2));
 		if (v2) {
 			return unify(t1, v2, subs);
 		}
@@ -104,16 +104,16 @@ static Subst *unify_var(const Type *t1, const Type *t2, Subst *subs)
 		Subst_drop(subs);
 		return NULL;
 	}
-	return Subst_extend(t1->as.var, t2, subs);
+	return Subst_extend(VarType_value(t1), t2, subs);
 }
 
 static Subst *unify_fn(const Type *f1, const Type *f2, Subst *subs)
 {
-	subs = unify(f1->as.fn.from, f2->as.fn.from, subs);
+	subs = unify(FnType_from(f1), FnType_from(f2), subs);
 	if (!subs) {
 		return NULL;
 	}
-	return unify(f1->as.fn.to, f2->as.fn.to, subs);
+	return unify(FnType_to(f1), FnType_to(f2), subs);
 }
 
 static Subst *unify(const Type *t1, const Type *t2, Subst *subs)
