@@ -27,6 +27,8 @@ typedef enum {
 	END_TOKEN
 } TokenType;
 
+#define TOKEN_COUNT (END_TOKEN + 1)
+
 typedef struct {
 	TokenType  type;
 	const char *string;

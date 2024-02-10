@@ -8,6 +8,8 @@
 #include "error.h"
 
 
+// TODO: skip tokens of the current line on failure.
+
 #define ERROR_PREFIX "parsing error"
 
 static void tokerror(const char *message, Token last)
@@ -19,18 +21,39 @@ static void tokerror(const char *message, Token last)
 	}
 }
 
-static Node *parse_let(Scanner *scanner);
-static Node *parse_expression(Scanner *scanner);
-static Node *parse_if(Scanner *s);
-static Node *parse_fn(Scanner *s);
-static Node *parse_or(Scanner *s);
-static Node *parse_and(Scanner *s);
-static Node *parse_cmp(Scanner *s);
-static Node *parse_sum(Scanner *s);
-static Node *parse_product(Scanner *s);
-static Node *parse_expt(Scanner *s);
-static Node *parse_application(Scanner *s);
-static Node *parse_term(Scanner *s);
+#define LEFT_ASSOC  0
+#define RIGHT_ASSOC 1
+#define NONE_ASSOC  2
+
+typedef struct {
+	int       assoc;
+	NodeType  optype;
+	int       count;
+	TokenType types[TOKEN_COUNT];
+} Oplevel;
+
+// Binary operators in the order of increasing precedence
+static const Oplevel optable[] = {
+	{LEFT_ASSOC,  OR_NODE,      1, {OR_TOKEN}},
+	{LEFT_ASSOC,  AND_NODE,     1, {AND_TOKEN}},
+	{NONE_ASSOC,  CMP_NODE,     3, {GT_TOKEN, LT_TOKEN, EQ_TOKEN}},
+	{LEFT_ASSOC,  SUM_NODE,     2, {PLUS_TOKEN, MINUS_TOKEN}},
+	{LEFT_ASSOC,  PRODUCT_NODE, 3, {ASTERISK_TOKEN, SLASH_TOKEN, PERCENT_TOKEN}},
+	{RIGHT_ASSOC, EXPT_NODE,    1, {CARET_TOKEN}},
+};
+
+#define MAXPREC (int)(sizeof(optable)/sizeof(optable[0]))
+
+// OP_TOKEN <- any token with type from op->types
+static int is_op_token(const Oplevel *op, Token token)
+{
+	for (int i = 0; i < op->count; i++) {
+		if (op->types[i] == token.type) {
+			return 1;
+		}
+	}
+	return 0;
+}
 
 // TERM_TOKEN <- '(' | 'NUMBER' | 'ID'
 static int is_term_token(Token token) {
@@ -41,28 +64,13 @@ static int is_term_token(Token token) {
 	);
 }
 
-// CMP_TOKEN <- '>' | '<' | '='
-static int is_cmp_token(Token token) {
-	return (
-		token.type == GT_TOKEN ||
-		token.type == LT_TOKEN ||
-		token.type == EQ_TOKEN
-	);
-}
-
-// SUM_TOKEN <- '+' | '-'
-static int is_sum_token(Token token) {
-	return (token.type == PLUS_TOKEN || token.type == MINUS_TOKEN);
-}
-
-// PROD_TOKEN <- '*' | '/' | '%'
-static int is_prod_token(Token token) {
-	return (
-		token.type == ASTERISK_TOKEN ||
-		token.type == SLASH_TOKEN ||
-		token.type == PERCENT_TOKEN
-	);
-}
+static Node *parse_let(Scanner *scanner);
+static Node *parse_expression(Scanner *scanner);
+static Node *parse_if(Scanner *s);
+static Node *parse_fn(Scanner *s);
+static Node *parse_op(Scanner *scanner, int prec);
+static Node *parse_application(Scanner *s);
+static Node *parse_term(Scanner *s);
 
 // VALID ::= (EXPRESSION | LET)? 'END'
 Node *parse(Scanner *scanner)
@@ -81,7 +89,7 @@ Node *parse(Scanner *scanner)
 	if (!expr) {
 		return NULL;
 	}
-	next = Scanner_peek(scanner);
+	next = Scanner_next(scanner);
 	if (next.type != END_TOKEN) {
 		tokerror("unexpected token after the expression", next);
 		Node_drop(expr);
@@ -128,7 +136,7 @@ static Node *parse_let(Scanner *scanner)
 	return LetNode_new(name, value);
 }
 
-// EXPRESSION ::= IF | FN | OR
+// EXPRESSION ::= IF | FN | OP
 static Node *parse_expression(Scanner *scanner)
 {
 	Token next = Scanner_peek(scanner);
@@ -138,7 +146,7 @@ static Node *parse_expression(Scanner *scanner)
 	if (next.type == FN_TOKEN) {
 		return parse_fn(scanner);
 	}
-	return parse_or(scanner);
+	return parse_op(scanner, 0);
 }
 
 // FN_BODY ::= ':' EXPRESSION | 'ID' FN_BODY
@@ -182,7 +190,7 @@ static Node *parse_fn(Scanner *scanner)
 // IF_TAIL ::= 'ELSE' EXPRESSION | IF
 static Node *parse_if_tail(Scanner *scanner)
 {
-	Token next = Scanner_peek(scanner);
+	Token next = Scanner_next(scanner);
 	if (next.type == ELSE_TOKEN) {
 		Scanner_next(scanner);
 		return parse_expression(scanner);
@@ -194,11 +202,11 @@ static Node *parse_if_tail(Scanner *scanner)
 	}
 }
 
-// IF ::= 'IF OR 'THEN' EXPRESSION IF_TAIL
+// IF ::= 'IF OP 'THEN' EXPRESSION IF_TAIL
 static Node *parse_if(Scanner *scanner)
 {
 	Scanner_next(scanner);
-	Node *cond = parse_or(scanner);
+	Node *cond = parse_op(scanner, 0);
 	if (!cond) {
 		return NULL;
 	}
@@ -222,135 +230,88 @@ static Node *parse_if(Scanner *scanner)
 	return IfNode_new(cond, true, false);
 }
 
-// OR ::= AND {'OR' AND}
-static Node *parse_or(Scanner *scanner)
+// LASSOC ::= OP | LASSOC OP_TOKEN OP
+static Node *parse_lassoc(Scanner *scanner, const Oplevel *op, int prec)
 {
-	Node *left = parse_and(scanner);
+	Node *left = parse_op(scanner, prec + 1);
 	if (!left) {
 		return NULL;
 	}
 	for (;;) {
 		Token next = Scanner_peek(scanner);
-		if (next.type != OR_TOKEN) {
+		if (!is_op_token(op, next)) {
 			return left;
 		}
 		Scanner_next(scanner);
-		Node *right = parse_and(scanner);
+		Node *right = parse_op(scanner, prec + 1);
 		if (!right) {
 			Node_drop(left);
 			return NULL;
 		}
-		left = OrNode_new(left, right);
+		left = OpNode_new(left, right, op->optype, next.string[0]);
 	}
 }
 
-// AND ::= CMP {'AND' CMP}
-static Node *parse_and(Scanner *scanner)
+// RASSOC ::= OP | OP OP_TOKEN RASSOC
+static Node *parse_rassoc(Scanner *scanner, const Oplevel *op, int prec)
 {
-	Node *left = parse_cmp(scanner);
-	if (!left) {
-		return NULL;
-	}
-	for (;;) {
-		Token next = Scanner_peek(scanner);
-		if (next.type != AND_TOKEN) {
-			return left;
-		}
-		Scanner_next(scanner);
-		Node *right = parse_cmp(scanner);
-		if (!right) {
-			Node_drop(left);
-			return NULL;
-		}
-		left = AndNode_new(left, right);
-	}
-}
-
-// CMP ::= SUM (CMP_TOKEN SUM)?
-static Node *parse_cmp(Scanner *scanner)
-{
-	Node *left = parse_sum(scanner);
+	Node *left = parse_op(scanner, prec + 1);
 	if (!left) {
 		return NULL;
 	}
 	Token next = Scanner_peek(scanner);
-	if (is_cmp_token(next)) {
+	if (is_op_token(op, next)) {
 		Scanner_next(scanner);
-		Node *right = parse_sum(scanner);
+		Node *right = parse_op(scanner, prec + 1);
 		if (!right) {
 			Node_drop(left);
 			return NULL;
 		}
-		return CmpNode_new(left, right, next.string[0]);
+		return OpNode_new(left, right, op->optype, next.string[0]);
 	}
 	return left;
 }
 
-// SUM ::= PRODUCT {SUM_TOKEN PRODUCT}
-static Node *parse_sum(Scanner *scanner)
+// NASSOC ::= OP | OP OP_TOKEN OP
+static Node *parse_nassoc(Scanner *scanner, const Oplevel *op, int prec)
 {
-	Node *left = parse_product(scanner);
+	Node *left = parse_op(scanner, prec + 1);
 	if (!left) {
-		return NULL;
-	}
-	for (;;) {
-		Token next = Scanner_peek(scanner);
-		if (!is_sum_token(next)) {
-			return left;
-		}
-		Scanner_next(scanner);
-		Node *right = parse_product(scanner);
-		if (!right) {
-			Node_drop(left);
-			return NULL;
-		}
-		left = SumNode_new(left, right, next.string[0]);
-	}
-}
-
-// PRODUCT ::= EXPT {PROD_TOKEN EXPT}
-static Node *parse_product(Scanner *scanner)
-{
-	Node *left = parse_expt(scanner);
-	if (!left) {
-		return NULL;
-	}
-	for (;;) {
-		Token next = Scanner_peek(scanner);
-		if (!is_prod_token(next)) {
-			return left;
-		}
-		Scanner_next(scanner);
-		Node *right = parse_expt(scanner);
-		if (!right) {
-			Node_drop(left);
-			return NULL;
-		}
-		left = ProductNode_new(left, right, next.string[0]);
-	}
-}
-
-// EXPT ::= APPLICATION | APPLICATION '^' EXPT
-static Node *parse_expt(Scanner *scanner)
-{
-	Node *base = parse_application(scanner);
-	if (!base) {
 		return NULL;
 	}
 	Token next = Scanner_peek(scanner);
-	if (next.type == CARET_TOKEN) {
+	if (is_op_token(op, next)) {
 		Scanner_next(scanner);
-		Node *exponent = parse_expt(scanner);
-		if (!exponent) {
-			Node_drop(base);
+		Node *right = parse_op(scanner, prec + 1);
+		if (!right) {
+			Node_drop(left);
 			return NULL;
 		}
-		return ExptNode_new(base, exponent);
+		return OpNode_new(left, right, op->optype, next.string[0]);
 	}
-	return base;
+	return left;
 }
 
-// APPLICATION ::= TERM {TERM}
+// OP ::= APPLICATION | RASSOC | LASSOC | NASSOC
+static Node *parse_op(Scanner *scanner, int prec)
+{
+	if (prec >= MAXPREC) {
+		return parse_application(scanner);
+	}
+	const Oplevel *op = &optable[prec];
+	switch (op->assoc) {
+		case LEFT_ASSOC:
+			return parse_lassoc(scanner, op, prec);
+		case RIGHT_ASSOC:
+			return parse_rassoc(scanner, op, prec);
+		case NONE_ASSOC:
+			return parse_nassoc(scanner, op, prec);
+		default: // unreachable
+			return NULL;
+	}
+}
+
+// APPLICATION ::= TERM | APPLICATION TERM
 static Node *parse_application(Scanner *scanner)
 {
 	Node *operator = parse_term(scanner);

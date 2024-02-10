@@ -146,34 +146,9 @@ Node *ApplicationNode_new(passed Node *left, passed Node *right)
 	return PairNode_new(APPLICATION_NODE, left, right, ' ');
 }
 
-Node *SumNode_new(passed Node *left, passed Node *right, int op)
+Node *OpNode_new(passed Node *left, passed Node *right, NodeType type, int op)
 {
-	return PairNode_new(SUM_NODE, left, right, op);
-}
-
-Node *ProductNode_new(passed Node *left, passed Node *right, int op)
-{
-	return PairNode_new(PRODUCT_NODE, left, right, op);
-}
-
-Node *ExptNode_new(passed Node *base, passed Node *exponent)
-{
-	return PairNode_new(EXPT_NODE, base, exponent, '^');
-}
-
-Node *CmpNode_new(passed Node *left, passed Node *right, int op)
-{
-	return PairNode_new(CMP_NODE, left, right, op);
-}
-
-Node *AndNode_new(passed Node *left, passed Node *right)
-{
-	return PairNode_new(AND_NODE, left, right, 0);
-}
-
-Node *OrNode_new(passed Node *left, passed Node *right)
-{
-	return PairNode_new(OR_NODE, left, right, 0);
+	return PairNode_new(type, left, right, op);
 }
 
 Node *IfNode_new(passed Node *cond, passed Node *true, passed Node *false)
