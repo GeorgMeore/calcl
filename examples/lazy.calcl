@@ -24,7 +24,8 @@ let f = z fac
 f 3
 f 5
 
+let fac2 f x = if x < 1 then 1 else x * f (x - 1)
 let fix f = f (fix f)
-let f = fix fac
+let f = fix fac2
 f 3
 f 5
