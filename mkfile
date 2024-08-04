@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -Wall -Wextra
+CFLAGS=-g -Wall -Wextra -fsanitize=address,undefined
 LDFLAGS=-lm
 SRC=eval.c\
 	iter.c\
@@ -23,9 +23,9 @@ prog=calcl
 OBJ=${SRC:%.c=%.o}
 
 $prog: $OBJ
-	$CC $LDFLAGS -o $target $prereq
+	$CC $CFLAGS $LDFLAGS -o $target $prereq
 
-%.o: %.c
+%.o: %.c mkfile
 	$CC $CFLAGS -c $stem.c
 
 # generate dependency list

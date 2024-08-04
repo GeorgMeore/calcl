@@ -190,7 +190,7 @@ static Node *parse_fn(Scanner *scanner)
 // IF_TAIL ::= 'ELSE' EXPRESSION | IF
 static Node *parse_if_tail(Scanner *scanner)
 {
-	Token next = Scanner_next(scanner);
+	Token next = Scanner_peek(scanner);
 	if (next.type == ELSE_TOKEN) {
 		Scanner_next(scanner);
 		return parse_expression(scanner);
