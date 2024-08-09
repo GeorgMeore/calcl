@@ -10,6 +10,7 @@ SRC=eval.c\
 	parse.c\
 	scanner.c\
 	gc.c\
+	arena.c\
 	object.c\
 	stack.c\
 	context.c\
