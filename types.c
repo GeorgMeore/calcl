@@ -5,18 +5,22 @@
 #include <stdio.h>
 
 
-static Type *Type_alloc(TypeKind kind)
+Type num_type = {
+	.kind = NUM_TYPE
+};
+
+static Type *Type_alloc(Arena *a, TypeKind kind)
 {
-	Type *type = malloc(sizeof(*type));
+	Type *type = a ? Arena_alloc(a, sizeof(*type)) : malloc(sizeof(*type));
 	type->kind = kind;
 	return type;
 }
 
 static long long unsigned id = 0;
 
-Type *VarType_new()
+Type *VarType_new(Arena *a)
 {
-	Type *var = Type_alloc(VAR_TYPE);
+	Type *var = Type_alloc(a, VAR_TYPE);
 	var->as.var = id++;
 	return var;
 }
@@ -26,32 +30,26 @@ void VarType_reset()
 	id = 0;
 }
 
-static Type *VarType_new_from_value(int value)
+static Type *VarType_new_from_value(Arena *a, int value)
 {
-	Type *var = Type_alloc(VAR_TYPE);
+	Type *var = Type_alloc(a, VAR_TYPE);
 	var->as.var = value;
 	return var;
 }
 
-Type *FnType_new(passed Type *from, passed Type *to)
+Type *FnType_new(Arena *a, passed Type *from, passed Type *to)
 {
-	Type *fn = Type_alloc(FN_TYPE);
+	Type *fn = Type_alloc(a, FN_TYPE);
 	fn->as.fn.from = from;
 	fn->as.fn.to = to;
 	return fn;
 }
 
-Type *GenType_new(passed Type *inner)
+Type *GenType_new(Arena *a, passed Type *inner)
 {
-	Type *gen = Type_alloc(GEN_TYPE);
+	Type *gen = Type_alloc(a, GEN_TYPE);
 	gen->as.gen = inner;
 	return gen;
-}
-
-Type *NumType_get()
-{
-	static Type num = {.kind = NUM_TYPE};
-	return &num;
 }
 
 void Type_print(const Type *type)
@@ -104,13 +102,13 @@ Type *Type_copy(const Type *type)
 {
 	switch (type->kind) {
 		case VAR_TYPE:
-			return VarType_new_from_value(VarType_value(type));
+			return VarType_new_from_value(NULL, VarType_value(type));
 		case NUM_TYPE:
-			return NumType_get();
+			return &num_type;
 		case FN_TYPE:
-			return FnType_new(Type_copy(FnType_from(type)), Type_copy(FnType_to(type)));
+			return FnType_new(NULL, Type_copy(FnType_from(type)), Type_copy(FnType_to(type)));
 		case GEN_TYPE:
-			return GenType_new(Type_copy(GenType_inner(type)));
+			return GenType_new(NULL, Type_copy(GenType_inner(type)));
 	}
 	return NULL;
 }
@@ -141,13 +139,13 @@ int Type_eq(const Type *t1, const Type *t2)
 	return 1;
 }
 
-TypeEnv *TypeEnv_push(const char *name, const Type *type, passed TypeEnv *prev)
+void TypeEnv_push(TypeEnv **env, const char *name, const Type *type)
 {
 	TypeEnv *new = malloc(sizeof(*new));
 	new->name = strdup(name);
 	new->type = Type_copy(type);
-	new->prev = prev;
-	return new;
+	new->prev = *env;
+	*env = new;
 }
 
 Type *TypeEnv_lookup(const TypeEnv *env, const char *name)
@@ -161,18 +159,13 @@ Type *TypeEnv_lookup(const TypeEnv *env, const char *name)
 	return NULL;
 }
 
-TypeEnv *TypeEnv_pop(passed TypeEnv *env)
-{
-	TypeEnv *prev = env->prev;
-	free(env->name);
-	Type_drop(env->type);
-	free(env);
-	return prev;
-}
-
 void TypeEnv_drop(passed TypeEnv *env)
 {
 	while (env != TYPEENV_EMPTY) {
-		env = TypeEnv_pop(env);
+		TypeEnv *prev = env->prev;
+		Type_drop(env->type);
+		free(env->name);
+		free(env);
+		env = prev;
 	}
 }
