@@ -11,6 +11,8 @@
 #include "eval.h"
 
 
+#define TMP_ARENA_PAGE_SIZE 4096
+
 int main(int argc, char **argv)
 {
 	if (!parse_args(argc, argv)) {
@@ -19,7 +21,9 @@ int main(int argc, char **argv)
 	int tty = isatty(0);
 	Scanner scanner = Scanner_make(stdin);
 	Context ctx = Context_make();
+	Arena *tmp = Arena_new(TMP_ARENA_PAGE_SIZE);
 	while (!Scanner_eof(scanner)) {
+		Arena_reset(tmp);
 		if (tty) {
 			fprintf(stderr, "> ");
 		}
@@ -29,7 +33,7 @@ int main(int argc, char **argv)
 		}
 		Type *type = NULL;
 		if (typed) {
-			type = infer(ast, &ctx);
+			type = infer(ast, &ctx, tmp);
 			if (!type) {
 				Node_drop(ast);
 				continue;
@@ -44,7 +48,6 @@ int main(int argc, char **argv)
 				Object_print(result);
 				printf(" :: ");
 				Type_println(type);
-				Type_drop(type);
 			} else {
 				Object_println(result);
 			}
@@ -52,5 +55,6 @@ int main(int argc, char **argv)
 	}
 	Scanner_destroy(scanner);
 	Context_destroy(ctx);
+	Arena_drop(tmp);
 	return 0;
 }

@@ -3,9 +3,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-// data alignment
-#define WORDSIZE sizeof(size_t)
-#define ALIGN(v) (v % WORDSIZE == 0 ? v : v + WORDSIZE - v % WORDSIZE)
+#define WORD_SIZE sizeof(size_t)
+#define ALIGN(v) (v % WORD_SIZE == 0 ? v : v + WORD_SIZE - v % WORD_SIZE)
 
 typedef struct Page Page;
 
