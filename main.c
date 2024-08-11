@@ -21,21 +21,20 @@ int main(int argc, char **argv)
 	int tty = isatty(0);
 	Scanner scanner = Scanner_make(stdin);
 	Context ctx = Context_make();
-	Arena *tmp = Arena_new(TMP_ARENA_PAGE_SIZE);
+	Arena tmp = Arena_make(TMP_ARENA_PAGE_SIZE);
 	while (!Scanner_eof(scanner)) {
-		Arena_reset(tmp);
+		Arena_reset(&tmp);
 		if (tty) {
 			fprintf(stderr, "> ");
 		}
-		Node *ast = parse(&scanner);
+		Node *ast = parse(&scanner, &tmp);
 		if (!ast) {
 			continue;
 		}
 		Type *type = NULL;
 		if (typed) {
-			type = infer(ast, &ctx, tmp);
+			type = infer(ast, &ctx, &tmp);
 			if (!type) {
-				Node_drop(ast);
 				continue;
 			}
 		}
@@ -43,18 +42,18 @@ int main(int argc, char **argv)
 			Node_println(ast);
 		}
 		Object *result = eval(ast, &ctx);
-		if (result) {
-			if (typed) {
-				Object_print(result);
-				printf(" :: ");
-				Type_println(type);
-			} else {
-				Object_println(result);
-			}
+		if (!result) {
+			continue;
 		}
+		Object_print(result);
+		if (type) {
+			printf(" :: ");
+			Type_print(type);
+		}
+		printf("\n");
 	}
 	Scanner_destroy(scanner);
 	Context_destroy(ctx);
-	Arena_drop(tmp);
+	Arena_destroy(tmp);
 	return 0;
 }

@@ -6,7 +6,7 @@
 typedef struct Object Object;
 
 typedef struct {
-	Object **objects;
+	Object *(*objects)[2];
 	int    capacity;
 	int    size;
 } Stack;
@@ -56,6 +56,7 @@ typedef struct {
 #define ThunkObj_body(objptr) ((objptr)->as.thunk.body)
 #define ThunkObj_value(objptr) ((objptr)->as.thunk.value)
 #define ThunkObj_set_value(objptr, value) ({ \
+	Node_drop((objptr)->as.thunk.body);      \
 	(objptr)->as.thunk.body = NULL;          \
 	(objptr)->as.thunk.env = NULL;           \
 	(objptr)->as.thunk.value = (value);      \

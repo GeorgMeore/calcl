@@ -9,24 +9,15 @@
 #include "stack.h"
 #include "gc.h"
 #include "context.h"
-#include "annotations.h"
 #include "error.h"
 
 
 #define ERROR_PREFIX "evaluation error"
 
-#define EVAL_OK   1
-#define EVAL_FAIL 0
+static Object *eval_dispatch(const Node *expr, Context *ctx, Object *env);
+static Object *actual_value(const Node *expr, Context *ctx, Object *env);
 
-static Object *eval_dispatch(passed Node *expr, Context *ctx, Object *env);
-static Object *actual_value(passed Node *expr, Context *ctx, Object *env);
-
-static Object *delay(passed Node *expr, Context *ctx, Object *env)
-{
-	return GC_alloc_thunk(ctx->gc, env, expr);
-}
-
-static inline Object *eval_expect(passed Node *expr, Context *ctx, Object *env, ObjectType type)
+static inline Object *eval_expect(const Node *expr, Context *ctx, Object *env, ObjectType type)
 {
 	Object *obj = actual_value(expr, ctx, env);
 	if (!obj) {
@@ -39,57 +30,36 @@ static inline Object *eval_expect(passed Node *expr, Context *ctx, Object *env, 
 	return obj;
 }
 
-static Object *eval_number(passed Node *expr, Context *ctx)
-{
-	Object *num = GC_alloc_number(ctx->gc, NumNode_value(expr));
-	Node_drop(expr);
-	return num;
-}
-
-static Object *eval_fn(passed Node *expr, Context *ctx, Object *env)
-{
-	Object *fn = GC_alloc_fn(ctx->gc, env, FnNode_body(expr), strdup(FnNode_param_value(expr)));
-	Node_drop(FnNode_param(expr));
-	Node_drop_one(expr);
-	return fn;
-}
-
-static Object *eval_lookup(passed Node *id, Object *env)
+static Object *eval_lookup(const Node *id, Object *env)
 {
 	Object *value = Env_get(EnvObj_env(env), IdNode_value(id));
 	if (!value) {
 		errorf("unbound variable: %s", IdNode_value(id));
-		Node_drop(id);
 		return NULL;
 	}
-	Node_drop(id);
 	return value;
 }
 
-static Object *eval_neg(passed Node *neg, Context *ctx, Object *env)
+static Object *eval_neg(const Node *neg, Context *ctx, Object *env)
 {
 	Object *value = eval_expect(NegNode_value(neg), ctx, env, NUM_OBJECT);
-	Node_drop_one(neg);
 	if (!value) {
 		return NULL;
 	}
 	return GC_alloc_number(ctx->gc, NumObj_num(value) * -1);
 }
 
-static Object *eval_pair(passed Node *pair, Context *ctx, Object *env)
+static Object *eval_pair(const Node *pair, Context *ctx, Object *env)
 {
 	int op = PairNode_op(pair);
 	Context_stack_push(ctx, env);
 	Object *leftv = eval_expect(PairNode_left(pair), ctx, env, NUM_OBJECT);
 	if (!leftv) {
-		Node_drop(PairNode_right(pair));
-		Node_drop_one(pair);
 		return NULL;
 	}
 	Context_stack_pop(ctx);
 	Context_stack_push(ctx, leftv);
 	Object *rightv = eval_expect(PairNode_right(pair), ctx, env, NUM_OBJECT);
-	Node_drop_one(pair);
 	if (!rightv) {
 		return NULL;
 	}
@@ -119,123 +89,97 @@ static Object *eval_pair(passed Node *pair, Context *ctx, Object *env)
 	}
 }
 
-static Object *eval_or(passed Node *or, Context *ctx, Object *env)
+static Object *eval_or(const Node *or, Context *ctx, Object *env)
 {
 	Object *leftv = eval_expect(PairNode_left(or), ctx, env, NUM_OBJECT);
 	if (!leftv) {
-		Node_drop(PairNode_right(or));
-		Node_drop_one(or);
 		return NULL;
 	}
 	if (NumObj_num(leftv)) {
-		Node_drop(PairNode_right(or));
-		Node_drop_one(or);
 		return leftv;
 	}
 	Object *rightv = eval_expect(PairNode_right(or), ctx, env, NUM_OBJECT);
-	Node_drop_one(or);
 	if (!rightv) {
 		return NULL;
 	}
 	return rightv;
 }
 
-static Object *eval_and(passed Node *and, Context *ctx, Object *env)
+static Object *eval_and(const Node *and, Context *ctx, Object *env)
 {
 	Object *leftv = eval_expect(PairNode_left(and), ctx, env, NUM_OBJECT);
 	if (!leftv) {
-		Node_drop(PairNode_right(and));
-		Node_drop_one(and);
 		return NULL;
 	}
 	if (!NumObj_num(leftv)) {
-		Node_drop(PairNode_right(and));
-		Node_drop_one(and);
 		return leftv;
 	}
 	Object *rightv = eval_expect(PairNode_right(and), ctx, env, NUM_OBJECT);
-	Node_drop_one(and);
 	if (!rightv) {
 		return NULL;
 	}
 	return rightv;
 }
 
-static Object *eval_let(passed Node *let, Context *ctx, Object *env)
+static Object *eval_let(const Node *let, Context *ctx, Object *env)
 {
 	Object *value = eval_dispatch(LetNode_value(let), ctx, env);
 	if (!value) {
-		Node_drop(LetNode_name(let));
-		Node_drop_one(let);
 		return NULL;
 	}
 	Env_add(EnvObj_env(env), LetNode_name_value(let), value);
-	Node_drop(LetNode_name(let));
-	Node_drop_one(let);
 	return value;
 }
 
-static int eval_if(Context *ctx, Object **env, Node **expr)
+static Node *eval_if(Context *ctx, Object **env, const Node *expr)
 {
-	Node *ifn = *expr;
-	Object *condv = eval_expect(IfNode_cond(ifn), ctx, *env, NUM_OBJECT);
+	Object *condv = eval_expect(IfNode_cond(expr), ctx, *env, NUM_OBJECT);
 	if (!condv) {
-		Node_drop(IfNode_true(ifn));
-		Node_drop(IfNode_false(ifn));
-		Node_drop_one(ifn);
-		return EVAL_FAIL;
+		return NULL;
 	}
 	if (NumObj_num(condv)) {
-		*expr = IfNode_true(*expr);
-		Node_drop(IfNode_false(ifn));
-		Node_drop_one(ifn);
+		return IfNode_true(expr);
 	} else {
-		*expr = IfNode_false(*expr);
-		Node_drop(IfNode_true(ifn));
-		Node_drop_one(ifn);
+		return IfNode_false(expr);
 	}
-	return EVAL_OK;
 }
 
-static int eval_application(Context *ctx, Object **env, Node **expr)
+static Node *eval_application(Context *ctx, Object **env, const Node *expr)
 {
-	Node *appl = *expr;
 	Context_stack_push(ctx, *env);
-	Object *fnv = eval_expect(PairNode_left(appl), ctx, *env, FN_OBJECT);
+	Object *fnv = eval_expect(PairNode_left(expr), ctx, *env, FN_OBJECT);
 	if (!fnv) {
-		Node_drop(PairNode_right(appl));
-		Node_drop_one(appl);
-		return EVAL_FAIL;
+		return NULL;
 	}
 	Object *argv = NULL;
 	if (lazy) {
-		argv = delay(PairNode_right(appl), ctx, *env);
-		Node_drop_one(appl);
+		argv = GC_alloc_thunk(ctx->gc, *env, PairNode_right(expr));
 	} else {
 		Context_stack_push(ctx, fnv);
-		argv = eval_dispatch(PairNode_right(appl), ctx, *env);
-		Node_drop_one(appl);
+		argv = eval_dispatch(PairNode_right(expr), ctx, *env);
 		if (!argv) {
-			return EVAL_FAIL;
+			return NULL;
 		}
 		Context_stack_pop(ctx);
 	}
 	Context_stack_pop(ctx);
 	*env = GC_alloc_env(ctx->gc, FnObj_env(fnv));
 	Env_add(EnvObj_env(*env), FnObj_arg(fnv), argv);
-	*expr = Node_copy(FnObj_body(fnv));
-	return EVAL_OK;
+	// NOTE: we "pin" the function to the current stack top to
+	// keep it alive while it's body is being evaluated.
+	Context_stack_pin(ctx, fnv);
+	return FnObj_body(fnv);
 }
 
-static Object *eval_dispatch(passed Node *expr, Context *ctx, Object *env)
+static Object *eval_dispatch(const Node *expr, Context *ctx, Object *env)
 {
 	for (;;) {
 		GC_collect(ctx->gc, env, ctx->stack);
 		switch (expr->type) {
 			case NUMBER_NODE:
-				return eval_number(expr, ctx);
+				return GC_alloc_number(ctx->gc, NumNode_value(expr));
 			case FN_NODE:
-				return eval_fn(expr, ctx, env);
+				return GC_alloc_fn(ctx->gc, env, FnNode_body(expr), FnNode_param_value(expr));
 			case ID_NODE:
 				return eval_lookup(expr, env);
 			case NEG_NODE:
@@ -250,12 +194,14 @@ static Object *eval_dispatch(passed Node *expr, Context *ctx, Object *env)
 			case OR_NODE:
 				return eval_or(expr, ctx, env);
 			case IF_NODE:
-				if (eval_if(ctx, &env, &expr) != EVAL_OK) {
+				expr = eval_if(ctx, &env, expr);
+				if (!expr) {
 					return NULL;
 				}
 				break;
 			case APPLICATION_NODE:
-				if (eval_application(ctx, &env, &expr) != EVAL_OK) {
+				expr = eval_application(ctx, &env, expr);
+				if (!expr) {
 					return NULL;
 				}
 				break;
@@ -283,14 +229,15 @@ static Object *force(Object *obj, Context *ctx)
 	return value;
 }
 
-static Object *actual_value(passed Node *expr, Context *ctx, Object *env)
+static Object *actual_value(const Node *expr, Context *ctx, Object *env)
 {
 	return force(eval_dispatch(expr, ctx, env), ctx);
 }
 
-Object *eval(passed Node *expr, Context *ctx)
+Object *eval(const Node *expr, Context *ctx)
 {
 	Stack_clear(Context_stack(ctx));
+	Context_stack_push(ctx, ctx->root);
 	if (lazy) {
 		return actual_value(expr, ctx, ctx->root);
 	} else {

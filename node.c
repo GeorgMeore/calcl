@@ -3,10 +3,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
+
+#include "arena.h"
 
 
-void Node_drop(passed Node *node)
+void Node_drop(Node *node)
 {
 	switch (node->type) {
 		case NUMBER_NODE:
@@ -50,169 +51,90 @@ void Node_drop(passed Node *node)
 	}
 }
 
-void Node_drop_one(passed Node *node)
+static Node *Node_alloc(Arena *a, NodeType type)
 {
-	free(node);
-}
-
-static NumberValue number_value(const char *string, int length)
-{
-	double number = 0;
-	int i;
-	// whole part
-	for (i = 0; i < length && isdigit(string[i]); i++) {
-		number = (string[i] - '0') + number * 10;
-	}
-	if (string[i] == '.') {
-		i++;
-	}
-	// fractional part
-	for (double factor = 0.1; i < length; i++, factor/=10) {
-		number += (string[i] - '0') * factor;
-	}
-	return number;
-}
-
-Node *NumberNode_new(const char *string, int length)
-{
-	Node *node = malloc(sizeof(*node));
-	node->type = NUMBER_NODE;
-	node->as.number = number_value(string, length);
+	Node *node = a ? Arena_alloc(a, sizeof(*node)) : malloc(sizeof(*node));
+	node->type = type;
 	return node;
 }
 
-static Node *NumberNode_copy(const Node *src)
+Node *NumberNode_new(Arena *a, double number)
 {
-	Node *node = malloc(sizeof(*node));
-	node->type = NUMBER_NODE;
-	node->as.number = src->as.number;
+	Node *node = Node_alloc(a, NUMBER_NODE);
+	node->as.number = number;
 	return node;
 }
 
-Node *IdNode_new(const char *string, int length)
+Node *IdNode_new(Arena *a, const char *string, int length)
 {
-	Node *node = malloc(sizeof(*node));
-	node->type = ID_NODE;
-	node->as.id = strndup(string, length);
+	Node *node = Node_alloc(a, ID_NODE);
+	char *id = a ? Arena_alloc(a, length+1) : malloc(length+1);
+	strncpy(id, string, length);
+	id[length] = '\0';
+	node->as.id = id;
 	return node;
 }
 
-static Node *IdNode_copy(const Node *src)
+Node *NegNode_new(Arena *a, Node *value)
 {
-	Node *node = malloc(sizeof(*node));
-	node->type = ID_NODE;
-	node->as.id = strdup(src->as.id);
-	return node;
-}
-
-Node *NegNode_new(passed Node *value)
-{
-	Node *node = malloc(sizeof(*node));
-	node->type = NEG_NODE;
+	Node *node = Node_alloc(a, NEG_NODE);
 	node->as.neg = value;
 	return node;
 }
 
-static Node *NegNode_copy(const Node *src)
+static Node *PairNode_new(Arena *a, NodeType type, Node *left, Node *right, int op)
 {
-	Node *node = malloc(sizeof(*node));
-	node->type = NEG_NODE;
-	node->as.neg = Node_copy(src->as.neg);
-	return node;
-}
-
-static Node *PairNode_new(NodeType type, passed Node *left, passed Node *right, int op)
-{
-	Node *node = malloc(sizeof(*node));
-	node->type = type;
+	Node *node = Node_alloc(a, type);
 	node->as.pair.left = left;
 	node->as.pair.right = right;
 	node->as.pair.op = op;
 	return node;
 }
 
-static Node *PairNode_copy(const Node *src)
+Node *ApplicationNode_new(Arena *a, Node *left, Node *right)
 {
-	Node *node = malloc(sizeof(*node));
-	node->type = src->type;
-	node->as.pair.left = Node_copy(src->as.pair.left);
-	node->as.pair.right = Node_copy(src->as.pair.right);
-	node->as.pair.op = src->as.pair.op;
-	return node;
+	return PairNode_new(a, APPLICATION_NODE, left, right, ' ');
 }
 
-Node *ApplicationNode_new(passed Node *left, passed Node *right)
+Node *OpNode_new(Arena *a, Node *left, Node *right, NodeType type, int op)
 {
-	return PairNode_new(APPLICATION_NODE, left, right, ' ');
+	return PairNode_new(a, type, left, right, op);
 }
 
-Node *OpNode_new(passed Node *left, passed Node *right, NodeType type, int op)
+Node *IfNode_new(Arena *a, Node *cond, Node *true, Node *false)
 {
-	return PairNode_new(type, left, right, op);
-}
-
-Node *IfNode_new(passed Node *cond, passed Node *true, passed Node *false)
-{
-	Node *node = malloc(sizeof(*node));
-	node->type = IF_NODE;
+	Node *node = Node_alloc(a, IF_NODE);
 	node->as.ifelse.cond = cond;
 	node->as.ifelse.true = true;
 	node->as.ifelse.false = false;
 	return node;
 }
 
-static Node *IfNode_copy(const Node *src)
+Node *FnNode_new(Arena *a, Node *param, Node *body)
 {
-	return IfNode_new(
-		Node_copy(IfNode_cond(src)),
-		Node_copy(IfNode_true(src)),
-		Node_copy(IfNode_false(src))
-	);
-}
-
-Node *FnNode_new(passed Node *param, passed Node *body)
-{
-	Node *node = malloc(sizeof(*node));
-	node->type = FN_NODE;
+	Node *node = Node_alloc(a, FN_NODE);
 	node->as.fn.param = param;
 	node->as.fn.body = body;
 	return node;
 }
 
-static Node *FnNode_copy(const Node *src)
+Node *LetNode_new(Arena *a, Node *name, Node *value)
 {
-	return FnNode_new(
-		Node_copy(src->as.fn.param),
-		Node_copy(src->as.fn.body)
-	);
-}
-
-Node *LetNode_new(passed Node *name, passed Node *value)
-{
-	Node *node = malloc(sizeof(*node));
-	node->type = LET_NODE;
+	Node *node = Node_alloc(a, LET_NODE);
 	node->as.let.name = name;
 	node->as.let.value = value;
 	return node;
-}
-
-static Node *LetNode_copy(const Node *src)
-{
-	return LetNode_new(
-		Node_copy(LetNode_name(src)),
-		Node_copy(LetNode_value(src))
-	);
 }
 
 Node *Node_copy(const Node *node)
 {
 	switch (node->type) {
 		case NUMBER_NODE:
-			return NumberNode_copy(node);
+			return NumberNode_new(NULL, node->as.number);
 		case ID_NODE:
-			return IdNode_copy(node);
+			return IdNode_new(NULL, node->as.id, strlen(node->as.id));
 		case NEG_NODE:
-			return NegNode_copy(node);
+			return NegNode_new(NULL, Node_copy(node->as.neg));
 		case APPLICATION_NODE:
 		case EXPT_NODE:
 		case PRODUCT_NODE:
@@ -220,13 +142,28 @@ Node *Node_copy(const Node *node)
 		case CMP_NODE:
 		case AND_NODE:
 		case OR_NODE:
-			return PairNode_copy(node);
+			return PairNode_new(NULL,
+				node->type,
+				Node_copy(node->as.pair.left),
+				Node_copy(node->as.pair.right),
+				node->as.pair.op
+			);
 		case IF_NODE:
-			return IfNode_copy(node);
+			return IfNode_new(NULL,
+				Node_copy(IfNode_cond(node)),
+				Node_copy(IfNode_true(node)),
+				Node_copy(IfNode_false(node))
+			);
 		case FN_NODE:
-			return FnNode_copy(node);
+			return FnNode_new(NULL,
+				Node_copy(node->as.fn.param),
+				Node_copy(node->as.fn.body)
+			);
 		case LET_NODE:
-			return LetNode_copy(node);
+			return LetNode_new(NULL,
+				Node_copy(LetNode_name(node)),
+				Node_copy(LetNode_value(node))
+			);
 	}
 	return NULL;
 }
