@@ -1,0 +1,8 @@
+let adder x y = x + y
+
+let bad1 x = (adder 0 x) and (adder 1 x)
+bad1 0
+let bad2 x = (adder 0 x) or (adder 1 x)
+bad2 0
+let bad3 x= if (adder 0 x) then (adder 1 x) + 1 else (adder 1 x) + 2
+bad3 1
