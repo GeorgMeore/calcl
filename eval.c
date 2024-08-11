@@ -154,6 +154,7 @@ static Node *eval_application(Context *ctx, Object **env, const Node *expr)
 {
 	Context_stack_push(ctx, *env);
 	Object *fnv = eval_expect(PairNode_left(expr), ctx, *env, FN_OBJECT);
+	Context_stack_pop(ctx);
 	if (!fnv) {
 		return NULL;
 	}
@@ -163,12 +164,11 @@ static Node *eval_application(Context *ctx, Object **env, const Node *expr)
 	} else {
 		Context_stack_push(ctx, fnv);
 		argv = eval_dispatch(PairNode_right(expr), ctx, *env);
+		Context_stack_pop(ctx);
 		if (!argv) {
 			return NULL;
 		}
-		Context_stack_pop(ctx);
 	}
-	Context_stack_pop(ctx);
 	*env = GC_alloc_env(ctx->gc, FnObj_env(fnv));
 	Env_add(EnvObj_env(*env), FnObj_arg(fnv), argv);
 	// NOTE: we "pin" the function to the current stack top to
@@ -243,6 +243,7 @@ static Object *actual_value(const Node *expr, Context *ctx, Object *env)
 Object *eval(const Node *expr, Context *ctx)
 {
 	Stack_clear(Context_stack(ctx));
+	// NOTE: we need to have at least one thing on the stack
 	Context_stack_push(ctx, ctx->root);
 	if (lazy) {
 		return actual_value(expr, ctx, ctx->root);

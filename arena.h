@@ -3,7 +3,6 @@
 
 #include <stddef.h>
 
-
 typedef struct Page Page;
 
 typedef struct {

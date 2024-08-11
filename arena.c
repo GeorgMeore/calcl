@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+
 #define WORD_SIZE sizeof(size_t)
 #define ALIGN(v) (v % WORD_SIZE == 0 ? v : v + WORD_SIZE - v % WORD_SIZE)
 
