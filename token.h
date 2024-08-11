@@ -15,6 +15,7 @@ typedef enum {
 	GT_TOKEN,
 	LT_TOKEN,
 	EQ_TOKEN,
+	BANG_TOKEN,
 	AND_TOKEN,
 	OR_TOKEN,
 	IF_TOKEN,

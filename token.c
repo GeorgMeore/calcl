@@ -22,6 +22,7 @@ void Token_print(Token token)
 		case GT_TOKEN:       tokprintf("gt", token);       break;
 		case LT_TOKEN:       tokprintf("lt", token);       break;
 		case EQ_TOKEN:       tokprintf("eq", token);       break;
+		case BANG_TOKEN:     tokprintf("bang", token);     break;
 		case AND_TOKEN:      tokprintf("and", token);      break;
 		case OR_TOKEN:       tokprintf("or", token);       break;
 		case IF_TOKEN:       tokprintf("if", token);       break;

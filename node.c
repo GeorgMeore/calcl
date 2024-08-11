@@ -21,6 +21,10 @@ void Node_drop(Node *node)
 			Node_drop(node->as.neg);
 			free(node);
 			break;
+		case FORCE_NODE:
+			Node_drop(node->as.force);
+			free(node);
+			break;
 		case APPLICATION_NODE:
 		case EXPT_NODE:
 		case PRODUCT_NODE:
@@ -82,6 +86,13 @@ Node *NegNode_new(Arena *a, Node *value)
 	return node;
 }
 
+Node *ForceNode_new(Arena *a, Node *value)
+{
+	Node *node = Node_alloc(a, FORCE_NODE);
+	node->as.force = value;
+	return node;
+}
+
 static Node *PairNode_new(Arena *a, NodeType type, Node *left, Node *right, int op)
 {
 	Node *node = Node_alloc(a, type);
@@ -135,6 +146,8 @@ Node *Node_copy(const Node *node)
 			return IdNode_new(NULL, node->as.id, strlen(node->as.id));
 		case NEG_NODE:
 			return NegNode_new(NULL, Node_copy(node->as.neg));
+		case FORCE_NODE:
+			return ForceNode_new(NULL, Node_copy(node->as.force));
 		case APPLICATION_NODE:
 		case EXPT_NODE:
 		case PRODUCT_NODE:
@@ -186,6 +199,10 @@ void Node_print(const Node *expr)
 			break;
 		case NEG_NODE:
 			putchar('-');
+			Node_print_parenthesised(NegNode_value(expr));
+			break;
+		case FORCE_NODE:
+			putchar('!');
 			Node_print_parenthesised(NegNode_value(expr));
 			break;
 		case APPLICATION_NODE:

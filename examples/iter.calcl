@@ -1,0 +1,4 @@
+let i1 x = 10
+let i2 x = i1 !(x + 1)
+let i1 x = i2 !(x + 1)
+i1 0

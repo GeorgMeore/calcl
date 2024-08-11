@@ -75,6 +75,7 @@ TokenType singlet_token_type(char c)
 		case '<':  return LT_TOKEN;
 		case '=':  return EQ_TOKEN;
 		case ':':  return COLON_TOKEN;
+		case '!':  return BANG_TOKEN;
 		default:   return ERROR_TOKEN;
 	}
 }

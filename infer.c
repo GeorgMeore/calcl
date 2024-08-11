@@ -263,6 +263,8 @@ static Subst *M(const Node *expr, TypeEnv *env, Subst *subs, Type *target, Arena
 			return M_id(expr, env, subs, target, a);
 		case NEG_NODE:
 			return M_neg(expr, env, subs, target, a);
+		case FORCE_NODE:
+			return M(ForceNode_value(expr), env, subs, target, a);
 		case IF_NODE:
 			return M_if(expr, env, subs, target, a);
 		case FN_NODE:

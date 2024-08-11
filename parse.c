@@ -60,7 +60,8 @@ static int is_term_token(Token token) {
 	return (
 		token.type == LPAREN_TOKEN ||
 		token.type == NUMBER_TOKEN ||
-		token.type == ID_TOKEN
+		token.type == ID_TOKEN ||
+		token.type == BANG_TOKEN
 	);
 }
 
@@ -338,34 +339,40 @@ static Node *parse_number(Token tok, Arena *a)
 	return NumberNode_new(a, number);
 }
 
-// TERM ::= '(' EXPRESSION ')' | 'NUMBER' | 'ID' | '-' TERM
+// TERM ::= '(' EXPRESSION ')' | 'NUMBER' | 'ID' | '-' TERM | '!' TERM
 static Node *parse_term(Scanner *scanner, Arena *a)
 {
 	Token next = Scanner_next(scanner);
-	if (next.type == MINUS_TOKEN) {
-		Node *term = parse_term(scanner, a);
-		if (!term) {
-			return NULL;
-		}
-		return NegNode_new(a, term);
+	switch (next.type) {
+		case MINUS_TOKEN:
+			Node *value = parse_term(scanner, a);
+			if (!value) {
+				return NULL;
+			}
+			return NegNode_new(a, value);
+		case BANG_TOKEN:
+			Node *term = parse_term(scanner, a);
+			if (!term) {
+				return NULL;
+			}
+			return ForceNode_new(a, term);
+		case LPAREN_TOKEN:
+			Node *expr = parse_expression(scanner, a);
+			if (!expr) {
+				return NULL;
+			}
+			next = Scanner_next(scanner);
+			if (next.type != RPAREN_TOKEN) {
+				tokerror("expected ')'", next);
+				return NULL;
+			}
+			return expr;
+		case NUMBER_TOKEN:
+			return parse_number(next, a);
+		case ID_TOKEN:
+			return IdNode_new(a, next.string, next.length);
+		default:
+			tokerror("expected '(', '-' or a number", next);
 	}
-	if (next.type == LPAREN_TOKEN) {
-		Node *expr = parse_expression(scanner, a);
-		if (!expr) {
-			return NULL;
-		}
-		next = Scanner_next(scanner);
-		if (next.type != RPAREN_TOKEN) {
-			tokerror("expected ')'", next);
-			return NULL;
-		}
-		return expr;
-	} else if (next.type == NUMBER_TOKEN) {
-		return parse_number(next, a);
-	} else if (next.type == ID_TOKEN) {
-		return IdNode_new(a, next.string, next.length);
-	} else {
-		tokerror("expected '(', '-' or a number", next);
-		return NULL;
-	}
+	return NULL;
 }

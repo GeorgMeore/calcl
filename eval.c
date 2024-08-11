@@ -160,7 +160,7 @@ static Node *eval_application(Context *ctx, Object **env, const Node *expr)
 		return NULL;
 	}
 	Object *argv = NULL;
-	if (lazy) {
+	if (lazy && PairNode_right(expr)->type != FORCE_NODE) {
 		argv = GC_alloc_thunk(ctx->gc, *env, PairNode_right(expr));
 	} else {
 		Context_stack_push(ctx, fnv);
@@ -191,6 +191,8 @@ static Object *eval_dispatch(const Node *expr, Context *ctx, Object *env)
 				return eval_lookup(expr, env);
 			case NEG_NODE:
 				return eval_neg(expr, ctx, env);
+			case FORCE_NODE:
+				return actual_value(ForceNode_value(expr), ctx, env);
 			case EXPT_NODE:
 			case PRODUCT_NODE:
 			case SUM_NODE:
