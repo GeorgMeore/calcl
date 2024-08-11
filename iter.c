@@ -2,10 +2,8 @@
 
 #include <stdlib.h>
 
-#include "annotations.h"
 
-
-Iter Iter_make(passed FILE *file)
+Iter Iter_make(FILE *file)
 {
 	Iter iter = {0};
 	iter.file = file;

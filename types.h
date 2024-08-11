@@ -1,7 +1,6 @@
 #ifndef TYPES_INCLUDED
 #define TYPES_INCLUDED
 
-#include "annotations.h"
 #include "arena.h"
 
 typedef struct Type Type;
@@ -38,17 +37,14 @@ struct Type {
 void Type_print(const Type *type);
 void Type_println(const Type *type);
 
-// basic types (only number for now)
-extern Type num_type;
-
-// complex types
+Type *NumType_get(void);
 Type *VarType_new(Arena *a);
 void VarType_reset(void);
 Type *FnType_new(Arena *a, Type *from, Type *to);
 Type *GenType_new(Arena *a, Type *inner);
 
-Type *Type_copy(const Type *type);
-void Type_drop(passed Type *type);
+Type *Type_copy(const Type *type); // NOTE: the return value is malloc'ed, must be Type_drop'ed
+void Type_drop(Type *type);
 int  Type_eq(const Type *t1, const Type *t2);
 
 typedef struct TypeEnv TypeEnv;
@@ -63,6 +59,6 @@ struct TypeEnv {
 
 void TypeEnv_push(TypeEnv **env, const char *name, const Type *type);
 Type *TypeEnv_lookup(const TypeEnv *env, const char *name);
-void TypeEnv_drop(passed TypeEnv *env);
+void TypeEnv_drop(TypeEnv *env);
 
 #endif // TYPES_INCLUDED

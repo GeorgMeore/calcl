@@ -36,24 +36,11 @@ static Page *Page_new(size_t page_size)
 	return self;
 }
 
-struct Arena {
-	Page   *first;
-	size_t page_size;
-};
-
-Arena *Arena_new(size_t page_size)
+Arena Arena_make(size_t page_size)
 {
-	page_size = ALIGN(page_size);
-	Arena *self = malloc(sizeof(*self));
-	if (!self) {
-		return NULL;
-	}
-	self->first = Page_new(page_size);
-	if (!self->first) {
-		free(self);
-		return NULL;
-	}
-	self->page_size = page_size;
+	Arena self = {0};
+	self.first = Page_new(page_size);
+	self.page_size = ALIGN(page_size);
 	return self;
 }
 
@@ -87,13 +74,12 @@ void Arena_reset(Arena *self)
 	}
 }
 
-void Arena_drop(Arena *self)
+void Arena_destroy(Arena self)
 {
-	Page *p = self->first;
+	Page *p = self.first;
 	while (p) {
 		Page *next = p->next;
 		Page_drop(p);
 		p = next;
 	}
-	free(self);
 }

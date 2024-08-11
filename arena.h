@@ -4,12 +4,16 @@
 #include <stddef.h>
 
 
-typedef struct Arena Arena;
+typedef struct Page Page;
 
-Arena *Arena_new(size_t page_size);
+typedef struct {
+	Page   *first;
+	size_t page_size;
+} Arena;
+
+Arena Arena_make(size_t page_size);
 void  *Arena_alloc(Arena *self, size_t bytes);
-void   Arena_reset(Arena *self);
-void   Arena_drop(Arena *self);
-
+void  Arena_reset(Arena *self);
+void  Arena_destroy(Arena self);
 
 #endif // ARENA_INCLUDED

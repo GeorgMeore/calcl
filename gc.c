@@ -1,6 +1,7 @@
 #include "gc.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "node.h"
 #include "object.h"
@@ -19,7 +20,7 @@ GC *GC_new()
 	return self;
 }
 
-void GC_drop(passed GC *self)
+void GC_drop(GC *self)
 {
 	free(self);
 }
@@ -135,13 +136,13 @@ Object *GC_alloc_env(GC *self, Object *prev)
 	return obj;
 }
 
-Object *GC_alloc_fn(GC *self, Object *env, Node *body, char *arg)
+Object *GC_alloc_fn(GC *self, Object *env, const Node *body, const char *arg)
 {
 	Object *obj = GC_alloc_empty_object(self);
 	obj->type = FN_OBJECT;
 	obj->as.fn.env = env;
-	obj->as.fn.body = body;
-	obj->as.fn.arg = arg;
+	obj->as.fn.body = Node_copy(body);
+	obj->as.fn.arg = strdup(arg);
 	return obj;
 }
 
@@ -153,12 +154,12 @@ Object *GC_alloc_number(GC *self, double num)
 	return obj;
 }
 
-Object *GC_alloc_thunk(GC *self, Object *env, Node *body)
+Object *GC_alloc_thunk(GC *self, Object *env, const Node *body)
 {
 	Object *obj = GC_alloc_empty_object(self);
 	obj->type = THUNK_OBJECT;
 	obj->as.thunk.env = env;
-	obj->as.thunk.body = body;
+	obj->as.thunk.body = Node_copy(body);
 	obj->as.thunk.value = NULL;
 	return obj;
 }

@@ -4,10 +4,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "arena.h"
 
-Type num_type = {
-	.kind = NUM_TYPE
-};
 
 static Type *Type_alloc(Arena *a, TypeKind kind)
 {
@@ -37,7 +35,7 @@ static Type *VarType_new_from_value(Arena *a, int value)
 	return var;
 }
 
-Type *FnType_new(Arena *a, passed Type *from, passed Type *to)
+Type *FnType_new(Arena *a, Type *from, Type *to)
 {
 	Type *fn = Type_alloc(a, FN_TYPE);
 	fn->as.fn.from = from;
@@ -45,11 +43,17 @@ Type *FnType_new(Arena *a, passed Type *from, passed Type *to)
 	return fn;
 }
 
-Type *GenType_new(Arena *a, passed Type *inner)
+Type *GenType_new(Arena *a, Type *inner)
 {
 	Type *gen = Type_alloc(a, GEN_TYPE);
 	gen->as.gen = inner;
 	return gen;
+}
+
+Type *NumType_get(void)
+{
+	static Type num = {.kind = NUM_TYPE};
+	return &num;
 }
 
 void Type_print(const Type *type)
@@ -78,7 +82,7 @@ void Type_print(const Type *type)
 	}
 }
 
-void Type_drop(passed Type *type)
+void Type_drop(Type *type)
 {
 	switch (type->kind) {
 		case VAR_TYPE:
@@ -104,7 +108,7 @@ Type *Type_copy(const Type *type)
 		case VAR_TYPE:
 			return VarType_new_from_value(NULL, VarType_value(type));
 		case NUM_TYPE:
-			return &num_type;
+			return NumType_get();
 		case FN_TYPE:
 			return FnType_new(NULL, Type_copy(FnType_from(type)), Type_copy(FnType_to(type)));
 		case GEN_TYPE:
@@ -159,7 +163,7 @@ Type *TypeEnv_lookup(const TypeEnv *env, const char *name)
 	return NULL;
 }
 
-void TypeEnv_drop(passed TypeEnv *env)
+void TypeEnv_drop(TypeEnv *env)
 {
 	while (env != TYPEENV_EMPTY) {
 		TypeEnv *prev = env->prev;

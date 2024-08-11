@@ -2,11 +2,10 @@
 #define HASH_INCLUDED
 
 #include "object.h"
-#include "annotations.h"
 
 // NOTE: Env_add overwrites the existing value!
 Env     *Env_new(Object *prev);
-void    Env_drop(passed Env *self);
+void    Env_drop(Env *self);
 void    Env_add(Env *self, const char *key, Object *obj);
 Object  *Env_remove(Env *self, const char *key);
 int     Env_has(const Env *self, const char *key);

@@ -6,7 +6,6 @@
 #include "node.h"
 #include "types.h"
 #include "context.h"
-#include "annotations.h"
 #include "error.h"
 #include "arena.h"
 
@@ -129,7 +128,7 @@ static Type *substitute(Type *mono, const Subst *subs, int recursive, Arena *a)
 			}
 			return val;
 		case NUM_TYPE:
-			return &num_type;
+			return NumType_get();
 		case FN_TYPE:
 			Type *new_from = substitute(FnType_from(mono), subs, recursive, a);
 			Type *new_to = substitute(FnType_to(mono), subs, recursive, a);
@@ -192,7 +191,7 @@ static Subst *M_id(const Node *id, TypeEnv *env, Subst *subs, Type *target, Aren
 
 static Subst *M_neg(const Node *neg, TypeEnv *env, Subst *subs, Type *target, Arena *a)
 {
-	subs = unify(target, &num_type, subs, a);
+	subs = unify(target, NumType_get(), subs, a);
 	if (!subs) {
 		return NULL;
 	}
@@ -201,7 +200,7 @@ static Subst *M_neg(const Node *neg, TypeEnv *env, Subst *subs, Type *target, Ar
 
 static Subst *M_if(const Node *ifelse, TypeEnv *env, Subst *subs, Type *target, Arena *a)
 {
-	subs = M(IfNode_cond(ifelse), env, subs, &num_type, a);
+	subs = M(IfNode_cond(ifelse), env, subs, NumType_get(), a);
 	if (!subs) {
 		return NULL;
 	}
@@ -228,7 +227,7 @@ static Subst *M_fn(const Node *fn, TypeEnv *env, Subst *subs, Type *target, Aren
 
 static Subst *M_pair(const Node *pair, TypeEnv *env, Subst *subs, Type *target, Arena *a)
 {
-	subs = unify(target, &num_type, subs, a);
+	subs = unify(target, NumType_get(), subs, a);
 	if (!subs) {
 		return NULL;
 	}
@@ -262,7 +261,7 @@ static Subst *M(const Node *expr, TypeEnv *env, Subst *subs, Type *target, Arena
 {
 	switch (expr->type) {
 		case NUMBER_NODE:
-			return unify(target, &num_type, subs, a);
+			return unify(target, NumType_get(), subs, a);
 		case ID_NODE:
 			return M_id(expr, env, subs, target, a);
 		case NEG_NODE:

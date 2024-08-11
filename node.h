@@ -1,7 +1,7 @@
 #ifndef NODE_INCLUDED
 #define NODE_INCLUDED
 
-#include "annotations.h"
+#include "arena.h"
 
 typedef struct Node Node;
 
@@ -86,17 +86,16 @@ struct Node {
 	NodeValue as;
 };
 
-Node *NumberNode_new(const char *string, int length);
-Node *IdNode_new(const char *string, int length);
-Node *NegNode_new(passed Node *value);
-Node *ApplicationNode_new(passed Node *left, passed Node *right);
-Node *OpNode_new(passed Node *left, passed Node *right, NodeType type, int op);
-Node *IfNode_new(passed Node *cond, passed Node *true, passed Node *false);
-Node *FnNode_new(passed Node *param, passed Node *body);
-Node *LetNode_new(passed Node *name, passed Node *value);
-void Node_drop(passed Node *node);
-void Node_drop_one(passed Node *node);
-Node *Node_copy(const Node *node);
+Node *NumberNode_new(Arena *a, double number);
+Node *IdNode_new(Arena *a, const char *string, int length);
+Node *NegNode_new(Arena *a, Node *value);
+Node *ApplicationNode_new(Arena *a, Node *left, Node *right);
+Node *OpNode_new(Arena *a, Node *left, Node *right, NodeType type, int op);
+Node *IfNode_new(Arena *a, Node *cond, Node *true, Node *false);
+Node *FnNode_new(Arena *a, Node *param, Node *body);
+Node *LetNode_new(Arena *a, Node *name, Node *value);
+Node *Node_copy(const Node *node); // NOTE: the return value is malloc'ed, must be Node_drop'ed
+void Node_drop(Node *node);
 void Node_print(const Node *expr);
 void Node_println(const Node *node);
 
