@@ -212,8 +212,6 @@ static int eval_application(Context *ctx, Object **env, Node **expr)
 		argv = delay(PairNode_right(appl), ctx, *env);
 		Node_drop_one(appl);
 	} else {
-		Context_stack_pop(ctx);
-		Context_stack_push(ctx, *env);
 		Context_stack_push(ctx, fnv);
 		argv = eval_dispatch(PairNode_right(appl), ctx, *env);
 		Node_drop_one(appl);
@@ -221,8 +219,8 @@ static int eval_application(Context *ctx, Object **env, Node **expr)
 			return EVAL_FAIL;
 		}
 		Context_stack_pop(ctx);
-		Context_stack_pop(ctx);
 	}
+	Context_stack_pop(ctx);
 	*env = GC_alloc_env(ctx->gc, FnObj_env(fnv));
 	Env_add(EnvObj_env(*env), FnObj_arg(fnv), argv);
 	*expr = Node_copy(FnObj_body(fnv));
