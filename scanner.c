@@ -35,3 +35,10 @@ Token Scanner_peek(Scanner *scanner)
 {
 	return scanner->next;
 }
+
+void Scanner_seek(Scanner *scanner, TokenType type)
+{
+	while (Scanner_peek(scanner).type != type) {
+		Scanner_next(scanner);
+	}
+}
