@@ -112,9 +112,6 @@ static Subst *unify(Type *t1, Type *t2, Subst *subs, Arena *a)
 	return NULL;
 }
 
-#define SUB_ONELEVEL  0
-#define SUB_RECURSIVE 1
-
 static Type *substitute(Type *mono, const Subst *subs, int recursive, Arena *a)
 {
 	switch (mono->kind) {
@@ -123,7 +120,7 @@ static Type *substitute(Type *mono, const Subst *subs, int recursive, Arena *a)
 			if (!val) {
 				return mono;
 			}
-			if (recursive == SUB_RECURSIVE) {
+			if (recursive) {
 				return substitute(val, subs, recursive, a);
 			}
 			return val;
@@ -163,7 +160,7 @@ static Type *instantiate(Type *type, Arena *a)
 		return type;
 	}
 	Subst *subs = refresh(GenType_inner(type), SUBST_EMPTY, a);
-	Type *mono = substitute(GenType_inner(type), subs, SUB_ONELEVEL, a);
+	Type *mono = substitute(GenType_inner(type), subs, 0, a);
 	return mono;
 }
 
@@ -171,7 +168,7 @@ static Type *generalize(Type *mono, Arena *a)
 {
 	VarType_reset();
 	Subst *subs = refresh(mono, SUBST_EMPTY, a);
-	Type *gen = GenType_new(a, substitute(mono, subs, SUB_ONELEVEL, a));
+	Type *gen = GenType_new(a, substitute(mono, subs, 0, a));
 	return gen;
 }
 
@@ -292,7 +289,7 @@ Type *infer(const Node *expr, Context *ctx, Arena *a)
 	if (!subs) {
 		return NULL;
 	}
-	Type *mono = substitute(target, subs, SUB_RECURSIVE, a);
+	Type *mono = substitute(target, subs, 1, a);
 	Type *poly = generalize(mono, a);
 	if (expr->type == LET_NODE) {
 		const char *name = LetNode_name_value(expr);
