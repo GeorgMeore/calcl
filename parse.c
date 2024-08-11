@@ -10,8 +10,6 @@
 #include "arena.h"
 
 
-// TODO: skip tokens of the current line on failure.
-
 #define ERROR_PREFIX "parsing error"
 
 static void tokerror(const char *message, Token last)
@@ -89,11 +87,13 @@ Node *parse(Scanner *scanner, Arena *a)
 		expr = parse_expression(scanner, a);
 	}
 	if (!expr) {
+		Scanner_seek(scanner, END_TOKEN);
 		return NULL;
 	}
 	next = Scanner_next(scanner);
 	if (next.type != END_TOKEN) {
 		tokerror("unexpected token after the expression", next);
+		Scanner_seek(scanner, END_TOKEN);
 		return NULL;
 	}
 	return expr;
