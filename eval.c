@@ -54,16 +54,16 @@ static Object *eval_pair(const Node *pair, Context *ctx, Object *env)
 	int op = PairNode_op(pair);
 	Context_stack_push(ctx, env);
 	Object *leftv = eval_expect(PairNode_left(pair), ctx, env, NUM_OBJECT);
+	Context_stack_pop(ctx);
 	if (!leftv) {
 		return NULL;
 	}
-	Context_stack_pop(ctx);
 	Context_stack_push(ctx, leftv);
 	Object *rightv = eval_expect(PairNode_right(pair), ctx, env, NUM_OBJECT);
+	Context_stack_pop(ctx);
 	if (!rightv) {
 		return NULL;
 	}
-	Context_stack_pop(ctx);
 	switch (op) {
 		case '^':
 			return GC_alloc_number(ctx->gc, pow(NumObj_num(leftv), NumObj_num(rightv)));
@@ -91,7 +91,9 @@ static Object *eval_pair(const Node *pair, Context *ctx, Object *env)
 
 static Object *eval_or(const Node *or, Context *ctx, Object *env)
 {
+	Context_stack_push(ctx, env);
 	Object *leftv = eval_expect(PairNode_left(or), ctx, env, NUM_OBJECT);
+	Context_stack_pop(ctx);
 	if (!leftv) {
 		return NULL;
 	}
@@ -107,7 +109,9 @@ static Object *eval_or(const Node *or, Context *ctx, Object *env)
 
 static Object *eval_and(const Node *and, Context *ctx, Object *env)
 {
+	Context_stack_push(ctx, env);
 	Object *leftv = eval_expect(PairNode_left(and), ctx, env, NUM_OBJECT);
+	Context_stack_pop(ctx);
 	if (!leftv) {
 		return NULL;
 	}
@@ -133,7 +137,9 @@ static Object *eval_let(const Node *let, Context *ctx, Object *env)
 
 static Node *eval_if(Context *ctx, Object **env, const Node *expr)
 {
+	Context_stack_push(ctx, *env);
 	Object *condv = eval_expect(IfNode_cond(expr), ctx, *env, NUM_OBJECT);
+	Context_stack_pop(ctx);
 	if (!condv) {
 		return NULL;
 	}
