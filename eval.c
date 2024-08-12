@@ -217,27 +217,20 @@ static Object *eval_dispatch(const Node *expr, Context *ctx, Object *env)
 	}
 }
 
-static Object *force(Object *obj, Context *ctx)
-{
-	if (!obj || obj->type != THUNK_OBJECT) {
-		return obj;
-	}
-	if (ThunkObj_value(obj)) {
-		return ThunkObj_value(obj);
-	}
-	Context_stack_push(ctx, obj);
-	Object *value = actual_value(ThunkObj_body(obj), ctx, ThunkObj_env(obj));
-	ThunkObj_set_value(obj, value);
-	if (!value) {
-		return NULL;
-	}
-	Context_stack_pop(ctx);
-	return value;
-}
-
 static Object *actual_value(const Node *expr, Context *ctx, Object *env)
 {
-	return force(eval_dispatch(expr, ctx, env), ctx);
+	Object *result = eval_dispatch(expr, ctx, env);
+	if (!result || result->type != THUNK_OBJECT) {
+		return result;
+	}
+	if (ThunkObj_value(result)) {
+		return ThunkObj_value(result);
+	}
+	Context_stack_push(ctx, result);
+	Object *value = actual_value(ThunkObj_body(result), ctx, ThunkObj_env(result));
+	Context_stack_pop(ctx);
+	ThunkObj_set_value(result, value);
+	return value;
 }
 
 Object *eval(const Node *expr, Context *ctx)
