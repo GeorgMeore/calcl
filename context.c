@@ -6,7 +6,7 @@
 #include "types.h"
 
 
-Context Context_make()
+Context Context_make(void)
 {
 	Context self = {0};
 	self.gc = GC_new();

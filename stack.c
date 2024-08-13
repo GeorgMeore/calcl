@@ -5,7 +5,7 @@
 #include "object.h"
 
 
-Stack *Stack_new()
+Stack *Stack_new(void)
 {
 	Stack *self = malloc(sizeof(*self));
 	self->size = 0;

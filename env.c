@@ -6,6 +6,12 @@
 #include "object.h"
 
 
+struct Binding {
+	Object  *obj;
+	char    *key;
+	Binding *next;
+};
+
 #define INITIAL_TABLE_SIZE 512
 
 static Binding *Binding_new(const char *key, Object *obj)
@@ -114,11 +120,6 @@ Object *Env_remove(Env *self, const char *key)
 		return obj;
 	}
 	return NULL;
-}
-
-int Env_has(const Env *self, const char *key)
-{
-	return *find_entry(self, key) == NULL;
 }
 
 Object *Env_get(const Env *self, const char *key)
