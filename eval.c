@@ -5,9 +5,10 @@
 
 #include "opts.h"
 #include "node.h"
+#include "gc.h"
+#include "values.h"
 #include "env.h"
 #include "stack.h"
-#include "gc.h"
 #include "context.h"
 #include "error.h"
 

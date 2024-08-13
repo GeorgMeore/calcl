@@ -5,11 +5,12 @@
 
 #include "node.h"
 #include "object.h"
+#include "values.h"
 #include "env.h"
 #include "stack.h"
 
 
-GC *GC_new()
+GC *GC_new(void)
 {
 	GC *self = malloc(sizeof(*self));
 	self->first = NULL;
@@ -71,19 +72,22 @@ static void GC_reset(GC *self)
 
 static void GC_free_object(Object *obj)
 {
-	if (obj->type == FN_OBJECT) {
+	if (obj->type == NUM_OBJECT) {
+		free(ObjToVal(obj, Num));
+	} else if (obj->type == FN_OBJECT) {
 		Node_drop(FnObj_body(obj));
 		free(FnObj_arg(obj));
+		free(ObjToVal(obj, Fn));
 	} else if (obj->type == THUNK_OBJECT) {
 		if (ThunkObj_body(obj)) {
 			Node_drop(ThunkObj_body(obj));
 		}
+		free(ObjToVal(obj, Thunk));
 	} else if (obj->type == ENV_OBJECT) {
 		Env_drop(EnvObj_env(obj));
 	} else if (obj->type == STACK_OBJECT) {
 		Stack_drop(StackObj_stack(obj));
 	}
-	free(obj);
 }
 
 static void GC_sweep(GC *self)
@@ -120,56 +124,47 @@ void GC_collect(GC *self, Object *root, Object *stack)
 	}
 }
 
-static Object *GC_alloc_empty_object(GC *self)
-{
-	Object *obj = malloc(sizeof(*obj));
-	obj->mark = self->curr;
-	GC_append_object(self, obj);
-	return obj;
-}
+#define GC_init_object(self, val, otype) ({\
+	Object *obj = ValToObj(val);\
+	obj->mark = self->curr;\
+	obj->type = otype;\
+	GC_append_object(self, obj);\
+	obj;\
+})
 
 Object *GC_alloc_env(GC *self, Object *prev)
 {
-	Object *obj = GC_alloc_empty_object(self);
-	obj->type = ENV_OBJECT;
-	obj->as.env = Env_new(prev);
-	return obj;
+	return GC_init_object(self, Env_new(prev), ENV_OBJECT);
 }
 
 Object *GC_alloc_fn(GC *self, Object *env, const Node *body, const char *arg)
 {
-	Object *obj = GC_alloc_empty_object(self);
-	obj->type = FN_OBJECT;
-	obj->as.fn.env = env;
-	obj->as.fn.body = Node_copy(body);
-	obj->as.fn.arg = strdup(arg);
-	return obj;
+	Fn *fn = malloc(sizeof(*fn));
+	fn->env = env;
+	fn->body = Node_copy(body);
+	fn->arg = strdup(arg);
+	return GC_init_object(self, fn, FN_OBJECT);
 }
 
 Object *GC_alloc_number(GC *self, double num)
 {
-	Object *obj = GC_alloc_empty_object(self);
-	obj->type = NUM_OBJECT;
-	obj->as.num = num;
-	return obj;
+	Num *n = malloc(sizeof(*n));
+	n->num = num;
+	return GC_init_object(self, n, NUM_OBJECT);
 }
 
 Object *GC_alloc_thunk(GC *self, Object *env, const Node *body)
 {
-	Object *obj = GC_alloc_empty_object(self);
-	obj->type = THUNK_OBJECT;
-	obj->as.thunk.env = env;
-	obj->as.thunk.body = Node_copy(body);
-	obj->as.thunk.value = NULL;
-	return obj;
+	Thunk *th = malloc(sizeof(*th));
+	th->env = env;
+	th->body = Node_copy(body);
+	th->value = NULL;
+	return GC_init_object(self, th, THUNK_OBJECT);
 }
 
 Object *GC_alloc_stack(GC *self)
 {
-	Object *obj = GC_alloc_empty_object(self);
-	obj->type = STACK_OBJECT;
-	obj->as.stack = Stack_new();
-	return obj;
+	return GC_init_object(self, Stack_new(), STACK_OBJECT);
 }
 
 void GC_dump_objects(GC *self)

@@ -2,6 +2,7 @@
 #define GC_INCLUDED
 
 #include "object.h"
+#include "node.h"
 
 #define GC_INITIAL_THRESHOLD 128
 
@@ -13,7 +14,7 @@ typedef struct {
 	unsigned thres;
 } GC;
 
-GC     *GC_new();
+GC     *GC_new(void);
 void   GC_drop(GC *self);
 void   GC_collect(GC *self, Object *root, Object *stack);
 Object *GC_alloc_env(GC *self, Object *prev);

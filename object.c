@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+#include "values.h"
+
 
 void Object_print(const Object *obj)
 {
