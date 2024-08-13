@@ -113,7 +113,7 @@ static Node *parse_let_value(Scanner *scanner, Arena *a)
 		}
 		return FnNode_new(a, param, body);
 	} else {
-		tokerror("expected '=' or and identifier", next);
+		tokerror("expected '=' or an identifier", next);
 		return NULL;
 	}
 }
