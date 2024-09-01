@@ -14,6 +14,9 @@ void Object_print(const Object *obj)
 		case FN_OBJECT:
 			printf("<fn %s>", FnObj_arg(obj));
 			return;
+		case COMPFN_OBJECT:
+			printf("<compfn %p>", CompfnObj_text(obj));
+			return;
 		case ENV_OBJECT:
 			printf("<env-%p>", obj);
 			return;

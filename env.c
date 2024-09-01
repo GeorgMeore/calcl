@@ -1,5 +1,6 @@
 #include "env.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -147,6 +148,7 @@ void Env_dump_objects(const Env *self)
 {
 	for (int i = 0; i < self->size; i++) {
 		for (Binding *entry = self->entries[i]; entry != NULL; entry = entry->next) {
+			printf("%s -> ", entry->key);
 			Object_println(entry->obj);
 		}
 	}

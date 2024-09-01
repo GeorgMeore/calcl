@@ -32,21 +32,26 @@ static void GC_mark(GC *self, Object *obj)
 		return;
 	}
 	obj->mark = self->curr;
-	if (obj->type == FN_OBJECT) {
-		GC_mark(self, FnObj_env(obj));
-	} else if (obj->type == THUNK_OBJECT) {
-		if (ThunkObj_value(obj)) {
-			GC_mark(self, ThunkObj_value(obj));
-		} else if (ThunkObj_env(obj)) {
-			GC_mark(self, ThunkObj_env(obj));
-		}
-	} else if (obj->type == ENV_OBJECT) {
-		Env_for_each(EnvObj_env(obj), (void (*)(void *, Object*))GC_mark, self);
-		if (EnvObj_prev(obj)) {
-			GC_mark(self, EnvObj_prev(obj));
-		}
-	} else if (obj->type == STACK_OBJECT) {
-		Stack_for_each(StackObj_stack(obj), (void (*)(void *, Object*))GC_mark, self);
+	switch (obj->type) {
+		case NUM_OBJECT:
+			return;
+		case FN_OBJECT:
+			return GC_mark(self, FnObj_env(obj));
+		case COMPFN_OBJECT:
+			return GC_mark(self, CompfnObj_env(obj));
+		case THUNK_OBJECT:
+			if (ThunkObj_value(obj)) {
+				return GC_mark(self, ThunkObj_value(obj));
+			} else {
+				return GC_mark(self, ThunkObj_env(obj));
+			}
+		case ENV_OBJECT:
+			if (EnvObj_prev(obj)) {
+				GC_mark(self, EnvObj_prev(obj));
+			}
+			return Env_for_each(EnvObj_env(obj), (void (*)(void *, Object*))GC_mark, self);
+		case STACK_OBJECT:
+			return Stack_for_each(StackObj_stack(obj), (void (*)(void *, Object*))GC_mark, self);
 	}
 }
 
@@ -72,21 +77,28 @@ static void GC_reset(GC *self)
 
 static void GC_free_object(Object *obj)
 {
-	if (obj->type == NUM_OBJECT) {
-		free(ObjToVal(obj, Num));
-	} else if (obj->type == FN_OBJECT) {
-		Node_drop(FnObj_body(obj));
-		free(FnObj_arg(obj));
-		free(ObjToVal(obj, Fn));
-	} else if (obj->type == THUNK_OBJECT) {
-		if (ThunkObj_body(obj)) {
-			Node_drop(ThunkObj_body(obj));
-		}
-		free(ObjToVal(obj, Thunk));
-	} else if (obj->type == ENV_OBJECT) {
-		Env_drop(EnvObj_env(obj));
-	} else if (obj->type == STACK_OBJECT) {
-		Stack_drop(StackObj_stack(obj));
+	switch (obj->type) {
+		case NUM_OBJECT:
+			free(ObjToVal(obj, Num));
+			return;
+		case FN_OBJECT:
+			Node_drop(FnObj_body(obj));
+			free(FnObj_arg(obj));
+			free(ObjToVal(obj, Fn));
+			return;
+		case COMPFN_OBJECT:
+			free(ObjToVal(obj, Compfn));
+			return;
+		case THUNK_OBJECT:
+			if (ThunkObj_body(obj)) {
+				Node_drop(ThunkObj_body(obj));
+			}
+			free(ObjToVal(obj, Thunk));
+			return;
+		case ENV_OBJECT:
+			return Env_drop(EnvObj_env(obj));
+		case STACK_OBJECT:
+			return Stack_drop(StackObj_stack(obj));
 	}
 }
 
@@ -124,6 +136,27 @@ void GC_collect(GC *self, Object *root, Object *stack)
 	}
 }
 
+void GC_collect_comp(GC *self, Object *root, void *rsp, void *rbp)
+{
+	if (self->count < self->thres && root) {
+		self->thres >>= (self->count < self->thres/2);
+		return;
+	}
+	self->curr = !self->curr;
+	if (root) {
+		GC_mark(self, root);
+	}
+	for (size_t *v = rsp; v < (size_t *)rbp; v += 2) {
+		if (v[0] == PTR_OBJ) {
+			GC_mark(self, (Object *)v[1]);
+		}
+	}
+	GC_sweep(self);
+	if (self->count >= self->thres) {
+		self->thres <<= 1;
+	}
+}
+
 #define GC_init_object(self, val, otype) ({\
 	Object *obj = ValToObj(val);\
 	obj->mark = self->curr;\
@@ -144,6 +177,14 @@ Object *GC_alloc_fn(GC *self, Object *env, const Node *body, const char *arg)
 	fn->body = Node_copy(body);
 	fn->arg = strdup(arg);
 	return GC_init_object(self, fn, FN_OBJECT);
+}
+
+Object *GC_alloc_compfn(GC *self, Object *env, void *text)
+{
+	Compfn *c = malloc(sizeof(*c));
+	c->env = env;
+	c->text = text;
+	return GC_init_object(self, c, COMPFN_OBJECT);
 }
 
 Object *GC_alloc_number(GC *self, double num)

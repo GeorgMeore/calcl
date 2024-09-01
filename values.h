@@ -17,6 +17,15 @@ typedef struct {
 
 typedef struct {
 	Object *env;
+	void   *text;
+	Object handle;
+} Compfn;
+
+#define CompfnObj_env(objptr) (ObjToVal(objptr, Compfn)->env)
+#define CompfnObj_text(objptr) (ObjToVal(objptr, Compfn)->text)
+
+typedef struct {
+	Object *env;
 	Node   *body;
 	Object *value;
 	Object handle;
