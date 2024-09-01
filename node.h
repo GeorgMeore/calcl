@@ -8,7 +8,6 @@ typedef struct Node Node;
 typedef enum {
 	NUMBER_NODE,
 	ID_NODE,
-	NEG_NODE,
 	APPLICATION_NODE,
 	SUM_NODE,
 	PRODUCT_NODE,
@@ -28,10 +27,6 @@ typedef double NumberValue;
 typedef char *IdValue;
 
 #define IdNode_value(nodeptr) ((nodeptr)->as.id)
-
-typedef Node *NegValue;
-
-#define NegNode_value(nodeptr) ((nodeptr)->as.neg)
 
 typedef struct {
 	Node *left;
@@ -74,7 +69,6 @@ typedef struct {
 typedef union {
 	NumberValue number; // NUMBER_NODE
 	IdValue     id;     // ID_NODE
-	NegValue    neg;    // NEG_NODE
 	IfValue     ifelse; // IF_NODE
 	FnValue     fn;     // FN_NODE
 	LetValue    let;    // LET_NODE
@@ -88,7 +82,6 @@ struct Node {
 
 Node *NumberNode_new(Arena *a, double number);
 Node *IdNode_new(Arena *a, const char *string, int length);
-Node *NegNode_new(Arena *a, Node *value);
 Node *ApplicationNode_new(Arena *a, Node *left, Node *right);
 Node *OpNode_new(Arena *a, Node *left, Node *right, NodeType type, int op);
 Node *IfNode_new(Arena *a, Node *cond, Node *true, Node *false);

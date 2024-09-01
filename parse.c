@@ -347,7 +347,7 @@ static Node *parse_term(Scanner *scanner, Arena *a)
 		if (!term) {
 			return NULL;
 		}
-		return NegNode_new(a, term);
+		return OpNode_new(a, term, NumberNode_new(a, -1), PRODUCT_NODE, '*');
 	}
 	if (next.type == LPAREN_TOKEN) {
 		Node *expr = parse_expression(scanner, a);

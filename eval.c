@@ -41,15 +41,6 @@ static Object *eval_lookup(const Node *expr, Object *env)
 	return value;
 }
 
-static Object *eval_neg(const Node *expr, Context *ctx, Object *env)
-{
-	Object *value = eval_expect(NegNode_value(expr), ctx, env, NUM_OBJECT);
-	if (!value) {
-		return NULL;
-	}
-	return GC_alloc_number(ctx->gc, NumObj_num(value) * -1);
-}
-
 static Object *eval_pair(const Node *expr, Context *ctx, Object *env)
 {
 	int op = PairNode_op(expr);
@@ -189,8 +180,6 @@ static Object *eval_dispatch(const Node *expr, Context *ctx, Object *env)
 				return GC_alloc_fn(ctx->gc, env, FnNode_body(expr), FnNode_param_value(expr));
 			case ID_NODE:
 				return eval_lookup(expr, env);
-			case NEG_NODE:
-				return eval_neg(expr, ctx, env);
 			case EXPT_NODE:
 			case PRODUCT_NODE:
 			case SUM_NODE:

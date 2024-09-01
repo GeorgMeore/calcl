@@ -186,15 +186,6 @@ static Subst *M_id(const Node *id, TypeEnv *env, Subst *subs, Type *target, Aren
 	return subs;
 }
 
-static Subst *M_neg(const Node *neg, TypeEnv *env, Subst *subs, Type *target, Arena *a)
-{
-	subs = unify(target, NumType_get(), subs, a);
-	if (!subs) {
-		return NULL;
-	}
-	return M(NegNode_value(neg), env, subs, target, a);
-}
-
 static Subst *M_if(const Node *ifelse, TypeEnv *env, Subst *subs, Type *target, Arena *a)
 {
 	subs = M(IfNode_cond(ifelse), env, subs, NumType_get(), a);
@@ -261,8 +252,6 @@ static Subst *M(const Node *expr, TypeEnv *env, Subst *subs, Type *target, Arena
 			return unify(target, NumType_get(), subs, a);
 		case ID_NODE:
 			return M_id(expr, env, subs, target, a);
-		case NEG_NODE:
-			return M_neg(expr, env, subs, target, a);
 		case IF_NODE:
 			return M_if(expr, env, subs, target, a);
 		case FN_NODE:
