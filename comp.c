@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include <stdarg.h>
 
-#include "iter.h"
 #include "scanner.h"
 #include "parse.h"
 #include "node.h"
