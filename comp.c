@@ -16,8 +16,8 @@
 int main(void)
 {
 	Scanner scanner = Scanner_make(stdin);
-	Context ctx = Context_make();
 	Arena tmp = Arena_make(TMP_ARENA_PAGE_SIZE);
+	TypeEnv *tenv = TYPEENV_EMPTY;
 	compile_begin();
 	while (!Scanner_eof(scanner)) {
 		Arena_reset(&tmp);
@@ -25,7 +25,7 @@ int main(void)
 		if (!ast) {
 			break;
 		}
-		Type *type = infer(ast, &ctx, &tmp);
+		Type *type = infer(ast, &tenv, &tmp);
 		if (!type) {
 			break;
 		}
@@ -33,7 +33,7 @@ int main(void)
 	}
 	compile_end();
 	Scanner_destroy(scanner);
-	Context_destroy(ctx);
+	TypeEnv_drop(tenv);
 	Arena_destroy(tmp);
 	return 0;
 }

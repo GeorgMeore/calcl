@@ -22,6 +22,7 @@ struct Subst {
 	Subst *prev;
 };
 
+// TODO: remove that garbage and make a normal struct for that
 #define SUBST_EMPTY (Subst *)1
 
 static Subst *Subst_extend(int var, Type *type, Subst *prev, Arena *a)
@@ -271,10 +272,10 @@ static Subst *M(const Node *expr, TypeEnv *env, Subst *subs, Type *target, Arena
 	return NULL;
 }
 
-Type *infer(const Node *expr, Context *ctx, Arena *a)
+Type *infer(const Node *expr, TypeEnv **tenv, Arena *a)
 {
 	Type *target = VarType_new(a);
-	Subst *subs = M(expr, ctx->tenv, SUBST_EMPTY, target, a);
+	Subst *subs = M(expr, *tenv, SUBST_EMPTY, target, a);
 	if (!subs) {
 		return NULL;
 	}
@@ -282,9 +283,9 @@ Type *infer(const Node *expr, Context *ctx, Arena *a)
 	Type *poly = generalize(mono, a);
 	if (expr->type == LET_NODE) {
 		const char *name = LetNode_name_value(expr);
-		Type *old = TypeEnv_lookup(ctx->tenv, name);
+		Type *old = TypeEnv_lookup(*tenv, name);
 		if (!old) {
-			TypeEnv_push(&ctx->tenv, name, poly);
+			TypeEnv_push(tenv, name, poly);
 		} else if (!Type_eq(old, poly)) {
 			error("symbol type cannot change");
 			return NULL;

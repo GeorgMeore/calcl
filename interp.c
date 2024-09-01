@@ -21,6 +21,7 @@ int main(int argc, char **argv)
 	int tty = isatty(0);
 	Scanner scanner = Scanner_make(stdin);
 	Context ctx = Context_make();
+	TypeEnv *tenv = TYPEENV_EMPTY;
 	Arena tmp = Arena_make(TMP_ARENA_PAGE_SIZE);
 	while (!Scanner_eof(scanner)) {
 		Arena_reset(&tmp);
@@ -33,7 +34,7 @@ int main(int argc, char **argv)
 		}
 		Type *type = NULL;
 		if (typed) {
-			type = infer(ast, &ctx, &tmp);
+			type = infer(ast, &tenv, &tmp);
 			if (!type) {
 				continue;
 			}
@@ -54,6 +55,7 @@ int main(int argc, char **argv)
 	}
 	Scanner_destroy(scanner);
 	Context_destroy(ctx);
+	TypeEnv_drop(tenv);
 	Arena_destroy(tmp);
 	return 0;
 }
