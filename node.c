@@ -17,10 +17,6 @@ void Node_drop(Node *node)
 			free(node->as.id);
 			free(node);
 			break;
-		case NEG_NODE:
-			Node_drop(node->as.neg);
-			free(node);
-			break;
 		case APPLICATION_NODE:
 		case EXPT_NODE:
 		case PRODUCT_NODE:
@@ -75,13 +71,6 @@ Node *IdNode_new(Arena *a, const char *string, int length)
 	return node;
 }
 
-Node *NegNode_new(Arena *a, Node *value)
-{
-	Node *node = Node_alloc(a, NEG_NODE);
-	node->as.neg = value;
-	return node;
-}
-
 static Node *PairNode_new(Arena *a, NodeType type, Node *left, Node *right, int op)
 {
 	Node *node = Node_alloc(a, type);
@@ -133,8 +122,6 @@ Node *Node_copy(const Node *node)
 			return NumberNode_new(NULL, node->as.number);
 		case ID_NODE:
 			return IdNode_new(NULL, node->as.id, strlen(node->as.id));
-		case NEG_NODE:
-			return NegNode_new(NULL, Node_copy(node->as.neg));
 		case APPLICATION_NODE:
 		case EXPT_NODE:
 		case PRODUCT_NODE:
@@ -183,10 +170,6 @@ void Node_print(const Node *expr)
 			break;
 		case ID_NODE:
 			printf("%s", IdNode_value(expr));
-			break;
-		case NEG_NODE:
-			putchar('-');
-			Node_print_parenthesised(NegNode_value(expr));
 			break;
 		case APPLICATION_NODE:
 		case EXPT_NODE:

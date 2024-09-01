@@ -10,6 +10,8 @@
 #include "gc.h"
 
 
+// TODO: only save registers when they need to be saved
+
 #define ERROR_PREFIX "compillation error"
 
 #define REG_VAL  "%r12"
@@ -185,11 +187,17 @@ static void compile_pair(const Node *expr)
 	printf("	movq %d(%s), %%xmm0\n", ObjFldOff(Num, num), REG_TMP);
 	printf("	movq %d(%s), %%xmm1\n", ObjFldOff(Num, num), REG_VAL);
 	switch (op) {
+		case '^':
+			printf("	call pow\n");
+			break;
 		case '*':
 			printf("	mulsd %%xmm1, %%xmm0\n");
 			break;
 		case '/':
 			printf("	divsd %%xmm1, %%xmm0\n");
+			break;
+		case '%':
+			printf("	call fmod\n");
 			break;
 		case '+':
 			printf("	addsd %%xmm1, %%xmm0\n");
@@ -211,6 +219,26 @@ static void compile_pair(const Node *expr)
 	printf("	mov %%rax, %s\n", REG_VAL);
 }
 
+static void compile_and(const Node *expr, Linkage l)
+{
+	int id = generate_id();
+	compile_dispatch(PairNode_left(expr), LINK_NEXT);
+	printf("	cmpq $0, %d(%s)\n", ObjFldOff(Num, num), REG_VAL);
+	printf("	je and_false%d\n", id);
+	compile_dispatch(PairNode_right(expr), l);
+	printf("and_false%d:\n", id);
+}
+
+static void compile_or(const Node *expr, Linkage l)
+{
+	int id = generate_id();
+	compile_dispatch(PairNode_left(expr), LINK_NEXT);
+	printf("	cmpq $0, %d(%s)\n", ObjFldOff(Num, num), REG_VAL);
+	printf("	jne or_true%d\n", id);
+	compile_dispatch(PairNode_right(expr), l);
+	printf("or_true%d:\n", id);
+}
+
 static void compile_dispatch(const Node *expr, Linkage l)
 {
 	printf("// "); Node_println(expr);
@@ -230,6 +258,12 @@ static void compile_dispatch(const Node *expr, Linkage l)
 		case CMP_NODE:
 			compile_pair(expr);
 			break;
+		case AND_NODE:
+			compile_and(expr, l);
+			break;
+		case OR_NODE:
+			compile_or(expr, l);
+			break;
 		case IF_NODE:
 			compile_if(expr, l);
 			break;
@@ -239,19 +273,10 @@ static void compile_dispatch(const Node *expr, Linkage l)
 		case LET_NODE:
 			compile_let(expr);
 			break;
-		default:
-			error("NOT IMPLEMENTED");
-			return;
 	}
 	if (l == LINK_RETURN) {
 		printf("jmp *%s\n", REG_LINK);
 	}
-}
-
-static void compile_print(void)
-{
-	printf("	mov %s, %%rdi\n", REG_VAL);
-	printf("	call Object_println\n");
 }
 
 void compile(const Node *expr)
@@ -259,7 +284,8 @@ void compile(const Node *expr)
 	compile_gc_call();
 	compile_dispatch(expr, LINK_NEXT);
 	if (expr->type != LET_NODE) {
-		compile_print();
+		printf("	mov %s, %%rdi\n", REG_VAL);
+		printf("	call Object_println\n");
 	}
 }
 
