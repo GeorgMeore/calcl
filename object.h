@@ -5,6 +5,7 @@
 
 typedef enum {
 	FN_OBJECT,
+	COMPFN_OBJECT,
 	ENV_OBJECT,
 	NUM_OBJECT,
 	THUNK_OBJECT,
@@ -21,6 +22,8 @@ struct Object {
 
 #define ValToObj(val) (&(val)->handle)
 #define ObjToVal(objptr, type) ((type *)((char *)(objptr) - offsetof(type, handle)))
+#define ObjValOff(type) (-(int)offsetof(type, handle))
+#define ObjFldOff(type, field) ((int)offsetof(type, field) - (int)offsetof(type, handle))
 
 void Object_print(const Object *obj);
 void Object_println(const Object *obj);

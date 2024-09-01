@@ -1,7 +1,8 @@
 CC=gcc
-CFLAGS=-g -Wall -Wextra -fsanitize=address,undefined
+CFLAGS=-g -Wall -Wextra # -fsanitize=address,undefined
 LDFLAGS=-lm
 SRC=eval.c\
+	codegen.c\
 	iter.c\
 	lex.c\
 	token.c\
@@ -16,15 +17,22 @@ SRC=eval.c\
 	context.c\
 	infer.c\
 	types.c\
-	env.c\
-	main.c
-
-prog=calcl
+	env.c
 
 OBJ=${SRC:%.c=%.o}
 
-$prog: $OBJ
+interp: interp.c $OBJ
 	$CC $CFLAGS $LDFLAGS -o $target $prereq
+
+comp: comp.c $OBJ
+	$CC $CFLAGS $LDFLAGS -o $target $prereq
+
+test.s: comp test.calcl
+	./comp >test.s <test.calcl
+
+test: test.s $OBJ
+	as -g -o test.o test.s
+	ld -o test -dynamic-linker /lib/ld-linux-x86-64.so.2 -lc -lm test.o $OBJ
 
 %.o: %.c mkfile
 	$CC $CFLAGS -c $stem.c
@@ -33,4 +41,4 @@ $prog: $OBJ
 <|$CC -MM $SRC
 
 clean:V:
-	rm -f $OBJ $prog
+	rm -f $OBJ interp comp

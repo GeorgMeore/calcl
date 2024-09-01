@@ -31,36 +31,36 @@ static inline Object *eval_expect(const Node *expr, Context *ctx, Object *env, O
 	return obj;
 }
 
-static Object *eval_lookup(const Node *id, Object *env)
+static Object *eval_lookup(const Node *expr, Object *env)
 {
-	Object *value = Env_get(EnvObj_env(env), IdNode_value(id));
+	Object *value = Env_get(EnvObj_env(env), IdNode_value(expr));
 	if (!value) {
-		errorf("unbound variable: %s", IdNode_value(id));
+		errorf("unbound variable: %s", IdNode_value(expr));
 		return NULL;
 	}
 	return value;
 }
 
-static Object *eval_neg(const Node *neg, Context *ctx, Object *env)
+static Object *eval_neg(const Node *expr, Context *ctx, Object *env)
 {
-	Object *value = eval_expect(NegNode_value(neg), ctx, env, NUM_OBJECT);
+	Object *value = eval_expect(NegNode_value(expr), ctx, env, NUM_OBJECT);
 	if (!value) {
 		return NULL;
 	}
 	return GC_alloc_number(ctx->gc, NumObj_num(value) * -1);
 }
 
-static Object *eval_pair(const Node *pair, Context *ctx, Object *env)
+static Object *eval_pair(const Node *expr, Context *ctx, Object *env)
 {
-	int op = PairNode_op(pair);
+	int op = PairNode_op(expr);
 	Context_stack_push(ctx, env);
-	Object *leftv = eval_expect(PairNode_left(pair), ctx, env, NUM_OBJECT);
+	Object *leftv = eval_expect(PairNode_left(expr), ctx, env, NUM_OBJECT);
 	Context_stack_pop(ctx);
 	if (!leftv) {
 		return NULL;
 	}
 	Context_stack_push(ctx, leftv);
-	Object *rightv = eval_expect(PairNode_right(pair), ctx, env, NUM_OBJECT);
+	Object *rightv = eval_expect(PairNode_right(expr), ctx, env, NUM_OBJECT);
 	Context_stack_pop(ctx);
 	if (!rightv) {
 		return NULL;
@@ -90,10 +90,10 @@ static Object *eval_pair(const Node *pair, Context *ctx, Object *env)
 	}
 }
 
-static Object *eval_or(const Node *or, Context *ctx, Object *env)
+static Object *eval_or(const Node *expr, Context *ctx, Object *env)
 {
 	Context_stack_push(ctx, env);
-	Object *leftv = eval_expect(PairNode_left(or), ctx, env, NUM_OBJECT);
+	Object *leftv = eval_expect(PairNode_left(expr), ctx, env, NUM_OBJECT);
 	Context_stack_pop(ctx);
 	if (!leftv) {
 		return NULL;
@@ -101,17 +101,17 @@ static Object *eval_or(const Node *or, Context *ctx, Object *env)
 	if (NumObj_num(leftv)) {
 		return leftv;
 	}
-	Object *rightv = eval_expect(PairNode_right(or), ctx, env, NUM_OBJECT);
+	Object *rightv = eval_expect(PairNode_right(expr), ctx, env, NUM_OBJECT);
 	if (!rightv) {
 		return NULL;
 	}
 	return rightv;
 }
 
-static Object *eval_and(const Node *and, Context *ctx, Object *env)
+static Object *eval_and(const Node *expr, Context *ctx, Object *env)
 {
 	Context_stack_push(ctx, env);
-	Object *leftv = eval_expect(PairNode_left(and), ctx, env, NUM_OBJECT);
+	Object *leftv = eval_expect(PairNode_left(expr), ctx, env, NUM_OBJECT);
 	Context_stack_pop(ctx);
 	if (!leftv) {
 		return NULL;
@@ -119,20 +119,20 @@ static Object *eval_and(const Node *and, Context *ctx, Object *env)
 	if (!NumObj_num(leftv)) {
 		return leftv;
 	}
-	Object *rightv = eval_expect(PairNode_right(and), ctx, env, NUM_OBJECT);
+	Object *rightv = eval_expect(PairNode_right(expr), ctx, env, NUM_OBJECT);
 	if (!rightv) {
 		return NULL;
 	}
 	return rightv;
 }
 
-static Object *eval_let(const Node *let, Context *ctx, Object *env)
+static Object *eval_let(const Node *expr, Context *ctx, Object *env)
 {
-	Object *value = eval_dispatch(LetNode_value(let), ctx, env);
+	Object *value = eval_dispatch(LetNode_value(expr), ctx, env);
 	if (!value) {
 		return NULL;
 	}
-	Env_add(EnvObj_env(env), LetNode_name_value(let), value);
+	Env_add(EnvObj_env(env), LetNode_name_value(expr), value);
 	return value;
 }
 
@@ -237,7 +237,7 @@ static Object *actual_value(const Node *expr, Context *ctx, Object *env)
 Object *eval(const Node *expr, Context *ctx)
 {
 	Stack_clear(Context_stack(ctx));
-	// NOTE: we need to have at least one thing on the stack
+	// NOTE: we need to have at least one thing on the stack (for Stack_pin)
 	Context_stack_push(ctx, ctx->root);
 	if (lazy) {
 		return actual_value(expr, ctx, ctx->root);
