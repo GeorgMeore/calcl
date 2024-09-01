@@ -9,7 +9,6 @@ typedef struct {
 	GC      *gc;
 	Object  *root;
 	Object  *stack;
-	TypeEnv *tenv;
 } Context;
 
 #define Context_stack(ctx) (StackObj_stack((ctx)->stack))

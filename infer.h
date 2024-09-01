@@ -6,6 +6,6 @@
 #include "context.h"
 #include "arena.h"
 
-Type *infer(const Node *expr, Context *ctx, Arena *a);
+Type *infer(const Node *expr, TypeEnv **tenv, Arena *a);
 
 #endif // INFER_INCLUDED
