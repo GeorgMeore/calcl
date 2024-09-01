@@ -10,6 +10,8 @@
 #include "arena.h"
 
 
+// TODO: make the syntax not line-oriented
+
 #define ERROR_PREFIX "parsing error"
 
 static void tokerror(const char *message, Token last)
