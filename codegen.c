@@ -80,6 +80,18 @@ static void compile_if(const Node *expr, Linkage l)
 	printf("if_end%d:\n", id);
 }
 
+static void compile_stack_push(PtrType type, const char *reg)
+{
+	printf("	push %s\n", reg);
+	printf("	pushq $%d\n", type);
+}
+
+static void compile_stack_pop(const char *reg)
+{
+	printf("	add $8, %%rsp\n");
+	printf("	pop %s\n", reg);
+}
+
 static void compile_fn(const Node *expr)
 {
 	int id = generate_id();
@@ -97,6 +109,7 @@ static void compile_fn(const Node *expr)
 	printf("	mov %s, %%rdx\n", REG_VAL);
 	printf("	call Env_add\n");
 	compile_gc_call();
+	compile_stack_push(PTR_ADDR, REG_LINK);
 	compile_dispatch(FnNode_body(expr), LINK_RETURN);
 	printf("fn_end%d:\n", id);
 	printf("	mov gc, %%rdi\n");
@@ -104,18 +117,6 @@ static void compile_fn(const Node *expr)
 	printf("	mov $fn%d, %%rdx\n", id);
 	printf("	call GC_alloc_compfn\n");
 	printf("	mov %%rax, %s\n", REG_VAL);
-}
-
-static void compile_stack_push(PtrType type, const char *reg)
-{
-	printf("	push %s\n", reg);
-	printf("	pushq $%d\n", type);
-}
-
-static void compile_stack_pop(const char *reg)
-{
-	printf("	add $8, %%rsp\n");
-	printf("	pop %s\n", reg);
 }
 
 static void compile_application(const Node *expr, Linkage l)
@@ -127,16 +128,15 @@ static void compile_application(const Node *expr, Linkage l)
 	compile_stack_pop(REG_TMP);
 	if (l == LINK_NEXT) {
 		compile_stack_push(PTR_OBJ, REG_ENV);
-		compile_stack_push(PTR_ADDR, REG_LINK);
 	}
 	printf("	mov %d(%s), %s\n", ObjFldOff(Compfn, env), REG_TMP, REG_ENV);
 	if (l == LINK_NEXT) {
 		printf("	mov $after_call%d, %s\n", id, REG_LINK);
 		printf("	jmp *%d(%s)\n", ObjFldOff(Compfn, text), REG_TMP);
 		printf("after_call%d:\n", id);
-		compile_stack_pop(REG_LINK);
 		compile_stack_pop(REG_ENV);
 	} else {
+		compile_stack_pop(REG_LINK);
 		printf("	jmp *%d(%s)\n", ObjFldOff(Compfn, text), REG_TMP);
 	}
 }
@@ -259,22 +259,20 @@ static void compile_dispatch(const Node *expr, Linkage l)
 			compile_pair(expr);
 			break;
 		case AND_NODE:
-			compile_and(expr, l);
-			break;
+			return compile_and(expr, l);
 		case OR_NODE:
-			compile_or(expr, l);
-			break;
+			return compile_or(expr, l);
 		case IF_NODE:
-			compile_if(expr, l);
-			break;
+			return compile_if(expr, l);
 		case APPLICATION_NODE:
-			compile_application(expr, l);
-			break;
+			return compile_application(expr, l);
 		case LET_NODE:
 			compile_let(expr);
 			break;
 	}
+	// NOTE: AND_NODE, OR_NODE, IF_NODE and APPLICATION_NODE don't need that
 	if (l == LINK_RETURN) {
+		compile_stack_pop(REG_LINK);
 		printf("jmp *%s\n", REG_LINK);
 	}
 }
