@@ -24,7 +24,7 @@ typedef enum {
 	COLON_TOKEN,
 	LET_TOKEN,
 	ERROR_TOKEN,
-	END_TOKEN
+	END_TOKEN,
 } TokenType;
 
 #define TOKEN_COUNT (END_TOKEN + 1)
