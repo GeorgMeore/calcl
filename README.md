@@ -6,6 +6,9 @@ This is an interpreter for an ML-like functional programming language with Hindl
 (typing is disabled by default, you can enable it via `-t` flag).
 It supports both strict (the default) and lazy (`-l`) evaluation strategies.
 
+There is also a very limited compiler for `amd64`.
+For now it only supports strict evaluation with typing.
+
 This project is purely educational and just-for-fun.
 
 ## Building.
@@ -21,7 +24,7 @@ $ mk
 ## Example repl session.
 
 ```
-$ ./calcl
+$ ./interp
 > 1
 1.000000
 > 1 + 2
@@ -59,4 +62,27 @@ $ ./calcl
 6.000000
 > f 5
 120.000000
+```
+
+## Compiler usage example.
+
+```
+$ ./comp <examples/test.calcl >test.s
+$ gcc -o test -lm test.s runtime.o
+$ ./test
+1.000000
+0.000000
+0.000000
+0.000000
+0.000000
+1.000000
+0.000000
+1.000000
+1.000000
+-1.000000
+-125.000000
+125.000000
+6.000000
+3628800.000000
+61.000000
 ```

@@ -21,16 +21,16 @@ SRC=eval.c\
 
 OBJ=${SRC:%.c=%.o}
 
+all:V: interp comp runtime.o
+
 interp: interp.c $OBJ
 	$CC $CFLAGS $LDFLAGS -o $target $prereq
 
+# TODO: link in only the necessary stuff
+runtime.o: $OBJ
+	ld -i -o $target $prereq
+
 comp: comp.c $OBJ
-	$CC $CFLAGS $LDFLAGS -o $target $prereq
-
-test.s: comp test.calcl
-	./comp >test.s <test.calcl
-
-test: test.s $OBJ
 	$CC $CFLAGS $LDFLAGS -o $target $prereq
 
 %.o: %.c mkfile
@@ -40,4 +40,4 @@ test: test.s $OBJ
 <|$CC -MM $SRC
 
 clean:V:
-	rm -f $OBJ interp comp
+	rm -f $OBJ interp comp runtime.o
