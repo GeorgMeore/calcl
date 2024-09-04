@@ -35,7 +35,7 @@ static void compile_dispatch(const Node *expr, Linkage l);
 
 static void compile_gc_call(void)
 {
-	printf("	mov gc, %%rdi\n");
+	printf("	mov gc(%%rip), %%rdi\n");
 	printf("	mov %s, %%rsi\n", REG_ENV);
 	printf("	mov %%rsp, %%rdx\n");
 	printf("	mov %%rbp, %%rcx\n");
@@ -48,8 +48,8 @@ static void compile_num(const Node *expr)
 	printf(".data\n");
 	printf("v%d: .double %lf\n", id, NumNode_value(expr));
 	printf(".text\n");
-	printf("	mov gc, %%rdi\n");
-	printf("	movsd v%d, %%xmm0\n", id);
+	printf("	mov gc(%%rip), %%rdi\n");
+	printf("	movsd v%d(%%rip), %%xmm0\n", id);
 	printf("	call GC_alloc_number\n");
 	printf("	mov %%rax, %s\n", REG_VAL);
 }
@@ -61,7 +61,7 @@ static void compile_id(const Node *expr)
 	printf("i%d: .asciz \"%s\"\n", id, IdNode_value(expr));
 	printf(".text\n");
 	printf("	lea %d(%s), %%rdi\n", ObjValOff(Env), REG_ENV);
-	printf("	mov $i%d, %%rsi\n", id);
+	printf("	lea i%d(%%rip), %%rsi\n", id);
 	printf("	call Env_get\n");
 	printf("	mov %%rax, %s\n", REG_VAL);
 }
@@ -100,21 +100,21 @@ static void compile_fn(const Node *expr)
 	printf(".text\n");
 	printf("	jmp fn_end%d\n", id);
 	printf("fn%d:\n", id);
-	printf("	mov gc, %%rdi\n");
+	printf("	mov gc(%%rip), %%rdi\n");
 	printf("	mov %s, %%rsi\n", REG_ENV);
 	printf("	call GC_alloc_env\n");
 	printf("	mov %%rax, %s\n", REG_ENV);
 	printf("	lea %d(%%rax), %%rdi\n", ObjValOff(Env));
-	printf("	mov $a%d, %%rsi\n", id);
+	printf("	lea a%d(%%rip), %%rsi\n", id);
 	printf("	mov %s, %%rdx\n", REG_VAL);
 	printf("	call Env_add\n");
 	compile_gc_call();
 	compile_stack_push(PTR_ADDR, REG_LINK);
 	compile_dispatch(FnNode_body(expr), LINK_RETURN);
 	printf("fn_end%d:\n", id);
-	printf("	mov gc, %%rdi\n");
+	printf("	mov gc(%%rip), %%rdi\n");
 	printf("	mov %s, %%rsi\n", REG_ENV);
-	printf("	mov $fn%d, %%rdx\n", id);
+	printf("	lea fn%d(%%rip), %%rdx\n", id);
 	printf("	call GC_alloc_compfn\n");
 	printf("	mov %%rax, %s\n", REG_VAL);
 }
@@ -131,7 +131,7 @@ static void compile_application(const Node *expr, Linkage l)
 	}
 	printf("	mov %d(%s), %s\n", ObjFldOff(Compfn, env), REG_TMP, REG_ENV);
 	if (l == LINK_NEXT) {
-		printf("	mov $after_call%d, %s\n", id, REG_LINK);
+		printf("	lea after_call%d(%%rip), %s\n", id, REG_LINK);
 		printf("	jmp *%d(%s)\n", ObjFldOff(Compfn, text), REG_TMP);
 		printf("after_call%d:\n", id);
 		compile_stack_pop(REG_ENV);
@@ -149,7 +149,7 @@ static void compile_let(const Node *expr)
 	printf(".text\n");
 	compile_dispatch(LetNode_value(expr), LINK_NEXT);
 	printf("	lea %d(%s), %%rdi\n", ObjValOff(Env), REG_ENV);
-	printf("	mov $i%d, %%rsi\n", id);
+	printf("	lea i%d(%%rip), %%rsi\n", id);
 	printf("	mov %s, %%rdx\n", REG_VAL);
 	printf("	call Env_add\n");
 }
@@ -170,10 +170,10 @@ static void compile_cmp_pair(int op)
 			printf("	jne cmp_false%d\n", id);
 			break;
 	}
-	printf("	movq true, %%xmm0\n");
+	printf("	movq true(%%rip), %%xmm0\n");
 	printf("	jmp cmp_end%d\n", id);
 	printf("cmp_false%d:\n", id);
-	printf("	movq false, %%xmm0\n");
+	printf("	movq false(%%rip), %%xmm0\n");
 	printf("cmp_end%d:\n", id);
 }
 
@@ -214,7 +214,7 @@ static void compile_pair(const Node *expr)
 			errorf("unknown binary operation: '%c'", op);
 			return;
 	}
-	printf("	mov gc, %%rdi\n");
+	printf("	mov gc(%%rip), %%rdi\n");
 	printf("	call GC_alloc_number\n");
 	printf("	mov %%rax, %s\n", REG_VAL);
 }
@@ -234,7 +234,7 @@ static void compile_or(const Node *expr, Linkage l)
 	int id = generate_id();
 	compile_dispatch(PairNode_left(expr), LINK_NEXT);
 	printf("	cmpq $0, %d(%s)\n", ObjFldOff(Num, num), REG_VAL);
-	printf("	jne or_true%d\n", id);
+	printf("	jne or_true%d\n", id); // ????
 	compile_dispatch(PairNode_right(expr), l);
 	printf("or_true%d:\n", id);
 }
@@ -289,33 +289,34 @@ void compile(const Node *expr)
 
 void compile_begin(void)
 {
-	printf(".global _start\n");
+	printf(".global main\n");
 	printf(".data\n");
 	printf("gc: .quad 0\n");
 	printf("env: .quad 0\n");
 	printf("true:  .double 1.0\n");
 	printf("false: .double 0.0\n");
 	printf(".text\n");
-	printf("_start:\n");
+	printf("main:\n");
+	printf("	push %%rbp\n");
 	printf("	mov %%rsp, %%rbp\n");
 	printf("	call GC_new\n");
-	printf("	mov %%rax, gc\n");
+	printf("	mov %%rax, gc(%%rip)\n");
 	printf("	mov %%rax, %%rdi\n");
 	printf("	mov $0, %%rsi\n");
 	printf("	call GC_alloc_env\n");
-	printf("	mov %%rax, env\n");
-	printf("	mov env, %s\n", REG_ENV);
+	printf("	mov %%rax, env(%%rip)\n");
+	printf("	mov env(%%rip), %s\n", REG_ENV);
 }
 
 void compile_end(void)
 {
-	printf("_exit:\n");
-	printf("	mov gc, %%rdi\n");
+	printf("	mov gc(%%rip), %%rdi\n");
 	printf("	mov $0, %%rsi\n");
 	printf("	mov $0, %%rdx\n");
 	printf("	call GC_collect\n");
-	printf("	mov gc, %%rdi\n");
+	printf("	mov gc(%%rip), %%rdi\n");
 	printf("	call GC_drop\n");
-	printf("	mov $0, %%rdi\n");
-	printf("	call exit\n");
+	printf("	mov $0, %%rax\n");
+	printf("	pop %%rbp\n");
+	printf("	ret\n");
 }
