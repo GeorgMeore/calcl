@@ -13,6 +13,10 @@
 
 #define TMP_ARENA_PAGE_SIZE 4096
 
+// TODO: support for lazy evaluation
+// TODO: support for non-typed mode
+// TODO: proper error handling
+
 int main(void)
 {
 	Scanner scanner = Scanner_make(stdin);

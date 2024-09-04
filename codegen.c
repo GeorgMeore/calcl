@@ -11,6 +11,7 @@
 
 
 // TODO: only save registers when they need to be saved
+// TODO: lexical addressing
 
 #define ERROR_PREFIX "compillation error"
 
