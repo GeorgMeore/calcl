@@ -124,7 +124,7 @@ static Object *eval_let(const Node *expr, Context *ctx, Object *env)
 		return NULL;
 	}
 	Env_add(EnvObj_env(env), LetNode_name_value(expr), value);
-	return value;
+	return NULL;
 }
 
 static Node *eval_if(Context *ctx, Object **env, const Node *expr)
