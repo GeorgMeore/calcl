@@ -1,5 +1,15 @@
+1
+
+let x = 10
+
 let not x = if x then 0 else 1
+
+not 1
+
+1 > 2
+
 let bar a b = if (a < 0) and (b < 0) then a + b if (a > b - 1) or (a < b - 3) then bar (a - 1) (b - 1) else bar (a - 2) (b - 2)
+
 bar 10 10
 1 and 0
 0 and 1

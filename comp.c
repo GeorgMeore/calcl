@@ -23,7 +23,7 @@ int main(void)
 		Arena_reset(&tmp);
 		Node *ast = parse(&scanner, &tmp);
 		if (!ast) {
-			break;
+			continue;
 		}
 		Type *type = infer(ast, &tenv, &tmp);
 		if (!type) {

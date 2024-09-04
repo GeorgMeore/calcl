@@ -31,8 +31,7 @@ test.s: comp test.calcl
 	./comp >test.s <test.calcl
 
 test: test.s $OBJ
-	as -g -o test.o test.s
-	ld -o test -dynamic-linker /lib/ld-linux-x86-64.so.2 -lc -lm test.o $OBJ
+	$CC $CFLAGS $LDFLAGS -o $target $prereq
 
 %.o: %.c mkfile
 	$CC $CFLAGS -c $stem.c
