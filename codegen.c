@@ -82,6 +82,12 @@ static void compile_stack_pop(const char *reg)
 	printf("	pop %s\n", reg);
 }
 
+static void compile_ret(void)
+{
+	compile_stack_pop(REG_LINK);
+	printf("	jmp *%s\n", REG_LINK);
+}
+
 static void compile_force_sub(void)
 {
 	printf("force:\n");
@@ -344,6 +350,9 @@ static void compile_and(const Node *expr, Linkage l)
 	printf("	je and_false%d\n", id);
 	compile_dispatch(PairNode_right(expr), l);
 	printf("and_false%d:\n", id);
+	if (l == LINK_RETURN) {
+		compile_ret();
+	}
 }
 
 static void compile_or(const Node *expr, Linkage l)
@@ -360,6 +369,9 @@ static void compile_or(const Node *expr, Linkage l)
 	printf("	jne or_true%d\n", id); // ????
 	compile_dispatch(PairNode_right(expr), l);
 	printf("or_true%d:\n", id);
+	if (l == LINK_RETURN) {
+		compile_ret();
+	}
 }
 
 static void compile_dispatch(const Node *expr, Linkage l)
@@ -393,10 +405,10 @@ static void compile_dispatch(const Node *expr, Linkage l)
 			compile_let(expr);
 			break;
 	}
-	// NOTE: AND_NODE, OR_NODE, IF_NODE and APPLICATION_NODE don't need that
+	// NOTE: AND_NODE, OR_NODE, IF_NODE and APPLICATION_NODE
+	// must handle linkage themselves
 	if (l == LINK_RETURN) {
-		compile_stack_pop(REG_LINK);
-		printf("	jmp *%s\n", REG_LINK);
+		compile_ret();
 	}
 }
 
