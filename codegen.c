@@ -11,6 +11,7 @@
 #include "opts.h"
 
 
+// TODO: only do type assertions where necessary
 // TODO: only save registers when they need to be saved
 // TODO: lexical addressing
 
@@ -120,6 +121,12 @@ static void compile_force_call(void)
 	printf("force_end%d:\n", id);
 }
 
+static void compile_type_assertion(ObjectType type)
+{
+	printf("	cmpl $%d, (%s)\n", type, REG_VAL);
+	printf("	jne failure\n");
+}
+
 static void compile_num(const Node *expr)
 {
 	int id = generate_id();
@@ -150,6 +157,9 @@ static void compile_if(const Node *expr, Linkage l)
 	compile_dispatch(IfNode_cond(expr), LINK_NEXT);
 	if (forceable(IfNode_cond(expr))) {
 		compile_force_call();
+	}
+	if (!typed) {
+		compile_type_assertion(NUM_OBJECT);
 	}
 	printf("	cmpq $0, %d(%s)\n", ObjFldOff(Num, num), REG_VAL);
 	printf("	je false_branch%d\n", id);
@@ -194,6 +204,9 @@ static void compile_application(const Node *expr, Linkage l)
 	compile_dispatch(PairNode_left(expr), LINK_NEXT);
 	if (forceable(PairNode_left(expr))) {
 		compile_force_call();
+	}
+	if (!typed) {
+		compile_type_assertion(COMPFN_OBJECT);
 	}
 	compile_stack_push(PTR_OBJ, REG_VAL);
 	if (lazy) {
@@ -270,10 +283,16 @@ static void compile_pair(const Node *expr)
 	if (forceable(PairNode_left(expr))) {
 		compile_force_call();
 	}
+	if (!typed) {
+		compile_type_assertion(NUM_OBJECT);
+	}
 	compile_stack_push(PTR_OBJ, REG_VAL);
 	compile_dispatch(PairNode_right(expr), LINK_NEXT);
 	if (forceable(PairNode_right(expr))) {
 		compile_force_call();
+	}
+	if (!typed) {
+		compile_type_assertion(NUM_OBJECT);
 	}
 	compile_stack_pop(REG_TMP);
 	printf("	movq %d(%s), %%xmm0\n", ObjFldOff(Num, num), REG_TMP);
@@ -318,6 +337,9 @@ static void compile_and(const Node *expr, Linkage l)
 	if (forceable(PairNode_left(expr))) {
 		compile_force_call();
 	}
+	if (!typed) {
+		compile_type_assertion(NUM_OBJECT);
+	}
 	printf("	cmpq $0, %d(%s)\n", ObjFldOff(Num, num), REG_VAL);
 	printf("	je and_false%d\n", id);
 	compile_dispatch(PairNode_right(expr), l);
@@ -330,6 +352,9 @@ static void compile_or(const Node *expr, Linkage l)
 	compile_dispatch(PairNode_left(expr), LINK_NEXT);
 	if (forceable(PairNode_left(expr))) {
 		compile_force_call();
+	}
+	if (!typed) {
+		compile_type_assertion(NUM_OBJECT);
 	}
 	printf("	cmpq $0, %d(%s)\n", ObjFldOff(Num, num), REG_VAL);
 	printf("	jne or_true%d\n", id); // ????
@@ -419,6 +444,18 @@ void compile_end(void)
 	printf("	mov gc(%%rip), %%rdi\n");
 	printf("	call GC_drop\n");
 	printf("	mov $0, %%rax\n");
+	printf("	pop %%rbp\n");
+	printf("	ret\n");
+	// TODO: log something maybe?
+	printf("failure:\n");
+	printf("	mov gc(%%rip), %%rdi\n");
+	printf("	mov $0, %%rsi\n");
+	printf("	mov $0, %%rdx\n");
+	printf("	call GC_collect\n");
+	printf("	mov gc(%%rip), %%rdi\n");
+	printf("	call GC_drop\n");
+	printf("	mov %%rbp, %%rsp\n");
+	printf("	mov $1, %%rax\n");
 	printf("	pop %%rbp\n");
 	printf("	ret\n");
 }

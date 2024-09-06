@@ -7,7 +7,6 @@ This is an interpreter for an ML-like functional programming language with Hindl
 It supports both strict (the default) and lazy (`-l`) evaluation strategies.
 
 There is also a very limited compiler for `amd64`.
-For now it only supports strict evaluation with typing.
 
 This project is purely educational and just-for-fun.
 
@@ -84,5 +83,5 @@ $ ./test
 125.000000
 6.000000
 3628800.000000
-61.000000
+253.000000
 ```

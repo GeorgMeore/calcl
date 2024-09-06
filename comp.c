@@ -14,7 +14,6 @@
 
 #define TMP_ARENA_PAGE_SIZE 4096
 
-// TODO: support for non-typed mode
 // TODO: proper error handling
 
 int main(int argc, char **argv)
@@ -32,9 +31,11 @@ int main(int argc, char **argv)
 		if (!ast) {
 			continue;
 		}
-		Type *type = infer(ast, &tenv, &tmp);
-		if (!type) {
-			break;
+		if (typed) {
+			Type *type = infer(ast, &tenv, &tmp);
+			if (!type) {
+				break;
+			}
 		}
 		compile(ast);
 	}
