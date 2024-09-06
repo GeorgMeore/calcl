@@ -15,13 +15,16 @@ void Object_print(const Object *obj)
 			printf("<fn %s>", FnObj_arg(obj));
 			return;
 		case COMPFN_OBJECT:
-			printf("<compfn %p>", CompfnObj_text(obj));
+			printf("<compfn %p>", CompFnObj_text(obj));
 			return;
 		case ENV_OBJECT:
 			printf("<env-%p>", obj);
 			return;
 		case THUNK_OBJECT:
 			printf("<thunk-%p>", obj);
+			return;
+		case COMPTHUNK_OBJECT:
+			printf("<compthunk-%p>", CompThunkObj_text(obj));
 			return;
 		case STACK_OBJECT:
 			printf("<stack-%p>", obj);

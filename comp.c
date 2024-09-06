@@ -9,16 +9,19 @@
 #include "types.h"
 #include "arena.h"
 #include "codegen.h"
+#include "opts.h"
 
 
 #define TMP_ARENA_PAGE_SIZE 4096
 
-// TODO: support for lazy evaluation
 // TODO: support for non-typed mode
 // TODO: proper error handling
 
-int main(void)
+int main(int argc, char **argv)
 {
+	if (!parse_args(argc, argv)) {
+		return 1;
+	}
 	Scanner scanner = Scanner_make(stdin);
 	Arena tmp = Arena_make(TMP_ARENA_PAGE_SIZE);
 	TypeEnv *tenv = TYPEENV_EMPTY;
