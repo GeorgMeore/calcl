@@ -19,10 +19,10 @@ typedef struct {
 	Object *env;
 	void   *text;
 	Object handle;
-} Compfn;
+} CompFn;
 
-#define CompfnObj_env(objptr) (ObjToVal(objptr, Compfn)->env)
-#define CompfnObj_text(objptr) (ObjToVal(objptr, Compfn)->text)
+#define CompFnObj_env(objptr) (ObjToVal(objptr, CompFn)->env)
+#define CompFnObj_text(objptr) (ObjToVal(objptr, CompFn)->text)
 
 typedef struct {
 	Object *env;
@@ -40,6 +40,17 @@ typedef struct {
 	ObjToVal(objptr, Thunk)->env = NULL;\
 	ObjToVal(objptr, Thunk)->value = (value);\
 })
+
+typedef struct {
+	Object *env;
+	void   *text;
+	Object *value;
+	Object handle;
+} CompThunk;
+
+#define CompThunkObj_env(objptr) (ObjToVal(objptr, CompThunk)->env)
+#define CompThunkObj_text(objptr) (ObjToVal(objptr, CompThunk)->text)
+#define CompThunkObj_value(objptr) (ObjToVal(objptr, CompThunk)->value)
 
 typedef struct {
 	double num;

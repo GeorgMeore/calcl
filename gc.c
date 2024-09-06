@@ -38,12 +38,18 @@ static void GC_mark(GC *self, Object *obj)
 		case FN_OBJECT:
 			return GC_mark(self, FnObj_env(obj));
 		case COMPFN_OBJECT:
-			return GC_mark(self, CompfnObj_env(obj));
+			return GC_mark(self, CompFnObj_env(obj));
 		case THUNK_OBJECT:
 			if (ThunkObj_value(obj)) {
 				return GC_mark(self, ThunkObj_value(obj));
 			} else {
 				return GC_mark(self, ThunkObj_env(obj));
+			}
+		case COMPTHUNK_OBJECT:
+			if (CompThunkObj_value(obj)) {
+				return GC_mark(self, CompThunkObj_value(obj));
+			} else {
+				return GC_mark(self, CompThunkObj_env(obj));
 			}
 		case ENV_OBJECT:
 			if (EnvObj_prev(obj)) {
@@ -87,13 +93,16 @@ static void GC_free_object(Object *obj)
 			free(ObjToVal(obj, Fn));
 			return;
 		case COMPFN_OBJECT:
-			free(ObjToVal(obj, Compfn));
+			free(ObjToVal(obj, CompFn));
 			return;
 		case THUNK_OBJECT:
 			if (ThunkObj_body(obj)) {
 				Node_drop(ThunkObj_body(obj));
 			}
 			free(ObjToVal(obj, Thunk));
+			return;
+		case COMPTHUNK_OBJECT:
+			free(ObjToVal(obj, CompThunk));
 			return;
 		case ENV_OBJECT:
 			return Env_drop(EnvObj_env(obj));
@@ -181,10 +190,10 @@ Object *GC_alloc_fn(GC *self, Object *env, const Node *body, const char *arg)
 
 Object *GC_alloc_compfn(GC *self, Object *env, void *text)
 {
-	Compfn *c = malloc(sizeof(*c));
-	c->env = env;
-	c->text = text;
-	return GC_init_object(self, c, COMPFN_OBJECT);
+	CompFn *cfn = malloc(sizeof(*cfn));
+	cfn->env = env;
+	cfn->text = text;
+	return GC_init_object(self, cfn, COMPFN_OBJECT);
 }
 
 Object *GC_alloc_number(GC *self, double num)
@@ -201,6 +210,15 @@ Object *GC_alloc_thunk(GC *self, Object *env, const Node *body)
 	th->body = Node_copy(body);
 	th->value = NULL;
 	return GC_init_object(self, th, THUNK_OBJECT);
+}
+
+Object *GC_alloc_compthunk(GC *self, Object *env, void *text)
+{
+	CompThunk *cth = malloc(sizeof(*cth));
+	cth->env = env;
+	cth->text = text;
+	cth->value = NULL;
+	return GC_init_object(self, cth, COMPTHUNK_OBJECT);
 }
 
 Object *GC_alloc_stack(GC *self)

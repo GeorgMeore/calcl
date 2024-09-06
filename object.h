@@ -9,6 +9,7 @@ typedef enum {
 	ENV_OBJECT,
 	NUM_OBJECT,
 	THUNK_OBJECT,
+	COMPTHUNK_OBJECT,
 	STACK_OBJECT,
 } ObjectType;
 
