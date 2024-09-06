@@ -1,0 +1,11 @@
+# this only works in untyped mode
+let cons x y = fn f: f x y
+let car p = p (fn x y: x)
+let cdr p = p (fn x y: y)
+let nth n s = if n = 1 then (car s) else nth (n - 1) (cdr s)
+let seq n = cons n (seq (n + 1))
+nth 10 (seq 1)
+let filter f s = if f (car s) then cons (car s) (filter f (cdr s)) else (filter f (cdr s))
+let sieve s = cons (car s) (sieve (filter (fn x: x % (car s)) (cdr s)))
+let primes = sieve (seq 2)
+nth 100 primes
