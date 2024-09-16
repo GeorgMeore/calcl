@@ -47,14 +47,14 @@ static Type *Subst_lookup(const Subst *subs, int var)
 
 static int occurs(Type *var, Type *type, const Subst *subs)
 {
-	if (type->kind == VAR_TYPE) {
+	if (type->kind == VarType) {
 		if (VarType_value(type) == VarType_value(var)) {
 			return 1;
 		}
 		Type *val = Subst_lookup(subs, VarType_value(type));
 		return val && occurs(var, val, subs);
 	}
-	if (type->kind == FN_TYPE) {
+	if (type->kind == FnType) {
 		return (
 			occurs(var, FnType_from(type), subs) ||
 			occurs(var, FnType_to(type), subs)
@@ -71,7 +71,7 @@ static Subst *unify_var(Type *t1, Type *t2, Subst *subs, Arena *a)
 	if (v1) {
 		return unify(v1, t2, subs, a);
 	}
-	if (t2->kind == VAR_TYPE) {
+	if (t2->kind == VarType) {
 		if (VarType_value(t1) == VarType_value(t2)) {
 			return subs;
 		}
@@ -98,12 +98,12 @@ static Subst *unify_fn(Type *f1, Type *f2, Subst *subs, Arena *a)
 
 static Subst *unify(Type *t1, Type *t2, Subst *subs, Arena *a)
 {
-	if (t1->kind == VAR_TYPE) {
+	if (t1->kind == VarType) {
 		return unify_var(t1, t2, subs, a);
-	} else if (t2->kind == VAR_TYPE) {
+	} else if (t2->kind == VarType) {
 		return unify_var(t2, t1, subs, a);
 	} else if (t1->kind == t2->kind) {
-		if (t1->kind == FN_TYPE) {
+		if (t1->kind == FnType) {
 			return unify_fn(t1, t2, subs, a);
 		} else {
 			return subs;
@@ -116,7 +116,7 @@ static Subst *unify(Type *t1, Type *t2, Subst *subs, Arena *a)
 static Type *substitute(Type *mono, const Subst *subs, int recursive, Arena *a)
 {
 	switch (mono->kind) {
-		case VAR_TYPE:
+		case VarType:
 			Type *val = Subst_lookup(subs, VarType_value(mono));
 			if (!val) {
 				return mono;
@@ -125,13 +125,13 @@ static Type *substitute(Type *mono, const Subst *subs, int recursive, Arena *a)
 				return substitute(val, subs, recursive, a);
 			}
 			return val;
-		case NUM_TYPE:
+		case NumType:
 			return NumType_get();
-		case FN_TYPE:
+		case FnType:
 			Type *new_from = substitute(FnType_from(mono), subs, recursive, a);
 			Type *new_to = substitute(FnType_to(mono), subs, recursive, a);
 			return FnType_new(a, new_from, new_to);
-		case GEN_TYPE:
+		case GenType:
 			error("unexpected polytype");
 	}
 	return NULL;
@@ -140,16 +140,16 @@ static Type *substitute(Type *mono, const Subst *subs, int recursive, Arena *a)
 static Subst *refresh(Type *mono, Subst *subs, Arena *a)
 {
 	switch (mono->kind) {
-		case VAR_TYPE:
+		case VarType:
 			if (Subst_lookup(subs, VarType_value(mono))) {
 				return subs;
 			}
 			return Subst_extend(VarType_value(mono), VarType_new(a), subs, a);
-		case FN_TYPE:
+		case FnType:
 			return refresh(FnType_to(mono), refresh(FnType_from(mono), subs, a), a);
-		case NUM_TYPE:
+		case NumType:
 			return subs;
-		case GEN_TYPE:
+		case GenType:
 			error("unexpected polytype");
 	}
 	return NULL;
@@ -157,7 +157,7 @@ static Subst *refresh(Type *mono, Subst *subs, Arena *a)
 
 static Type *instantiate(Type *type, Arena *a)
 {
-	if (type->kind != GEN_TYPE) {
+	if (type->kind != GenType) {
 		return type;
 	}
 	Subst *subs = refresh(GenType_inner(type), SUBST_EMPTY, a);
@@ -249,24 +249,24 @@ static Subst *M_let(const Node *let, TypeEnv *env, Subst *subs, Type *target, Ar
 static Subst *M(const Node *expr, TypeEnv *env, Subst *subs, Type *target, Arena *a)
 {
 	switch (expr->type) {
-		case NUMBER_NODE:
+		case NumberNode:
 			return unify(target, NumType_get(), subs, a);
-		case ID_NODE:
+		case IdNode:
 			return M_id(expr, env, subs, target, a);
-		case IF_NODE:
+		case IfNode:
 			return M_if(expr, env, subs, target, a);
-		case FN_NODE:
+		case FnNode:
 			return M_fn(expr, env, subs, target, a);
-		case SUM_NODE:
-		case PRODUCT_NODE:
-		case EXPT_NODE:
-		case CMP_NODE:
-		case AND_NODE:
-		case OR_NODE:
+		case SumNode:
+		case ProdNode:
+		case ExptNode:
+		case CmpNode:
+		case AndNode:
+		case OrNode:
 			return M_pair(expr, env, subs, target, a);
-		case APPLICATION_NODE:
+		case ApplNode:
 			return M_application(expr, env, subs, target, a);
-		case LET_NODE:
+		case LetNode:
 			return M_let(expr, env, subs, target, a);
 	}
 	return NULL;
@@ -281,7 +281,7 @@ Type *infer(const Node *expr, TypeEnv **tenv, Arena *a)
 	}
 	Type *mono = substitute(target, subs, 1, a);
 	Type *poly = generalize(mono, a);
-	if (expr->type == LET_NODE) {
+	if (expr->type == LetNode) {
 		const char *name = LetNode_name_value(expr);
 		Type *old = TypeEnv_lookup(*tenv, name);
 		if (!old) {

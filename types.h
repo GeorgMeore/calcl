@@ -6,10 +6,10 @@
 typedef struct Type Type;
 
 typedef enum {
-	GEN_TYPE,
-	VAR_TYPE,
-	NUM_TYPE,
-	FN_TYPE,
+	GenType,
+	VarType,
+	NumType,
+	FnType,
 } TypeKind;
 
 typedef struct {

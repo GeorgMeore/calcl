@@ -21,27 +21,27 @@ static Token take_keyword_or_id(Iter *iterator)
 	}
 	long unsigned length = Iter_cursor(iterator) - start;
 	if (kweq(start, "if", length)) {
-		return (Token){IF_TOKEN, start, length};
+		return (Token){IfToken, start, length};
 	}
 	if (kweq(start, "then", length)) {
-		return (Token){THEN_TOKEN, start, length};
+		return (Token){ThenToken, start, length};
 	}
 	if (kweq(start, "else", length)) {
-		return (Token){ELSE_TOKEN, start, length};
+		return (Token){ElseToken, start, length};
 	}
 	if (kweq(start, "or", length)) {
-		return (Token){OR_TOKEN, start, length};
+		return (Token){OrToken, start, length};
 	}
 	if (kweq(start, "and", length)) {
-		return (Token){AND_TOKEN, start, length};
+		return (Token){AndToken, start, length};
 	}
 	if (kweq(start, "fn", length)) {
-		return (Token){FN_TOKEN, start, length};
+		return (Token){FnToken, start, length};
 	}
 	if (kweq(start, "let", length)) {
-		return (Token){LET_TOKEN, start, length};
+		return (Token){LetToken, start, length};
 	}
-	return (Token){ID_TOKEN, start, length};
+	return (Token){IdToken, start, length};
 }
 
 // number <- digit+ ('.' digit*)?
@@ -57,25 +57,25 @@ static Token take_number(Iter *iterator)
 	while (isdigit(Iter_peek(iterator))) {
 		Iter_next(iterator);
 	}
-	return (Token){NUMBER_TOKEN, start, Iter_cursor(iterator) - start};
+	return (Token){NumberToken, start, Iter_cursor(iterator) - start};
 }
 
 TokenType singlet_token_type(char c)
 {
 	switch (c) {
-		case '(':  return LPAREN_TOKEN;
-		case ')':  return RPAREN_TOKEN;
-		case '+':  return PLUS_TOKEN;
-		case '-':  return MINUS_TOKEN;
-		case '*':  return ASTERISK_TOKEN;
-		case '/':  return SLASH_TOKEN;
-		case '%':  return PERCENT_TOKEN;
-		case '^':  return CARET_TOKEN;
-		case '>':  return GT_TOKEN;
-		case '<':  return LT_TOKEN;
-		case '=':  return EQ_TOKEN;
-		case ':':  return COLON_TOKEN;
-		default:   return ERROR_TOKEN;
+		case '(':  return LparenToken;
+		case ')':  return RparenToken;
+		case '+':  return PlusToken;
+		case '-':  return MinusToken;
+		case '*':  return AsteriskToken;
+		case '/':  return SlashToken;
+		case '%':  return PercentToken;
+		case '^':  return CaretToken;
+		case '>':  return GtToken;
+		case '<':  return LtToken;
+		case '=':  return EqToken;
+		case ':':  return ColonToken;
+		default:   return ErrorToken;
 	}
 }
 
@@ -92,7 +92,7 @@ Token take_token(Iter *iterator)
 	}
 	char next = Iter_peek(iterator);
 	if (next == '\0' || next == '\n') {
-		return (Token){END_TOKEN, Iter_cursor(iterator), 0};
+		return (Token){EndToken, Iter_cursor(iterator), 0};
 	} else if (isdigit(next)) {
 		return take_number(iterator);
 	} else if (isalpha(next)) {
@@ -100,7 +100,7 @@ Token take_token(Iter *iterator)
 	} else {
 		Token token = {singlet_token_type(next), Iter_cursor(iterator), 1};
 		Iter_next(iterator);
-		if (token.type == ERROR_TOKEN) {
+		if (token.type == ErrorToken) {
 			while (Iter_peek(iterator) != '\n' && Iter_peek(iterator) != '\0') {
 				Iter_next(iterator);
 			}

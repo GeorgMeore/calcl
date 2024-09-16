@@ -5,6 +5,10 @@
 
 #define ERROR_PREFIX "arguments error"
 
+#define DEBUG_DEFAULT 0
+#define LAZY_DEFAULT  0
+#define TYPED_DEFAULT 0
+
 int debug = DEBUG_DEFAULT;
 int lazy  = LAZY_DEFAULT;
 int typed = TYPED_DEFAULT;

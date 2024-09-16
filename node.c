@@ -10,36 +10,36 @@
 void Node_drop(Node *node)
 {
 	switch (node->type) {
-		case NUMBER_NODE:
+		case NumberNode:
 			free(node);
 			break;
-		case ID_NODE:
+		case IdNode:
 			free(node->as.id);
 			free(node);
 			break;
-		case APPLICATION_NODE:
-		case EXPT_NODE:
-		case PRODUCT_NODE:
-		case SUM_NODE:
-		case CMP_NODE:
-		case AND_NODE:
-		case OR_NODE:
+		case ApplNode:
+		case ExptNode:
+		case ProdNode:
+		case SumNode:
+		case CmpNode:
+		case AndNode:
+		case OrNode:
 			Node_drop(PairNode_left(node));
 			Node_drop(PairNode_right(node));
 			free(node);
 			break;
-		case IF_NODE:
+		case IfNode:
 			Node_drop(IfNode_cond(node));
 			Node_drop(IfNode_true(node));
 			Node_drop(IfNode_false(node));
 			free(node);
 			break;
-		case FN_NODE:
+		case FnNode:
 			Node_drop(FnNode_param(node));
 			Node_drop(FnNode_body(node));
 			free(node);
 			break;
-		case LET_NODE:
+		case LetNode:
 			Node_drop(LetNode_name(node));
 			Node_drop(LetNode_value(node));
 			free(node);
@@ -56,14 +56,14 @@ static Node *Node_alloc(Arena *a, NodeType type)
 
 Node *NumberNode_new(Arena *a, double number)
 {
-	Node *node = Node_alloc(a, NUMBER_NODE);
+	Node *node = Node_alloc(a, NumberNode);
 	node->as.number = number;
 	return node;
 }
 
 Node *IdNode_new(Arena *a, const char *string, int length)
 {
-	Node *node = Node_alloc(a, ID_NODE);
+	Node *node = Node_alloc(a, IdNode);
 	char *id = a ? Arena_alloc(a, length+1) : malloc(length+1);
 	strncpy(id, string, length);
 	id[length] = '\0';
@@ -82,7 +82,7 @@ static Node *PairNode_new(Arena *a, NodeType type, Node *left, Node *right, int 
 
 Node *ApplicationNode_new(Arena *a, Node *left, Node *right)
 {
-	return PairNode_new(a, APPLICATION_NODE, left, right, ' ');
+	return PairNode_new(a, ApplNode, left, right, ' ');
 }
 
 Node *OpNode_new(Arena *a, Node *left, Node *right, NodeType type, int op)
@@ -92,7 +92,7 @@ Node *OpNode_new(Arena *a, Node *left, Node *right, NodeType type, int op)
 
 Node *IfNode_new(Arena *a, Node *cond, Node *true, Node *false)
 {
-	Node *node = Node_alloc(a, IF_NODE);
+	Node *node = Node_alloc(a, IfNode);
 	node->as.ifelse.cond = cond;
 	node->as.ifelse.true = true;
 	node->as.ifelse.false = false;
@@ -101,7 +101,7 @@ Node *IfNode_new(Arena *a, Node *cond, Node *true, Node *false)
 
 Node *FnNode_new(Arena *a, Node *param, Node *body)
 {
-	Node *node = Node_alloc(a, FN_NODE);
+	Node *node = Node_alloc(a, FnNode);
 	node->as.fn.param = param;
 	node->as.fn.body = body;
 	return node;
@@ -109,7 +109,7 @@ Node *FnNode_new(Arena *a, Node *param, Node *body)
 
 Node *LetNode_new(Arena *a, Node *name, Node *value)
 {
-	Node *node = Node_alloc(a, LET_NODE);
+	Node *node = Node_alloc(a, LetNode);
 	node->as.let.name = name;
 	node->as.let.value = value;
 	return node;
@@ -118,35 +118,35 @@ Node *LetNode_new(Arena *a, Node *name, Node *value)
 Node *Node_copy(const Node *node)
 {
 	switch (node->type) {
-		case NUMBER_NODE:
+		case NumberNode:
 			return NumberNode_new(NULL, node->as.number);
-		case ID_NODE:
+		case IdNode:
 			return IdNode_new(NULL, node->as.id, strlen(node->as.id));
-		case APPLICATION_NODE:
-		case EXPT_NODE:
-		case PRODUCT_NODE:
-		case SUM_NODE:
-		case CMP_NODE:
-		case AND_NODE:
-		case OR_NODE:
+		case ApplNode:
+		case ExptNode:
+		case ProdNode:
+		case SumNode:
+		case CmpNode:
+		case AndNode:
+		case OrNode:
 			return PairNode_new(NULL,
 				node->type,
 				Node_copy(node->as.pair.left),
 				Node_copy(node->as.pair.right),
 				node->as.pair.op
 			);
-		case IF_NODE:
+		case IfNode:
 			return IfNode_new(NULL,
 				Node_copy(IfNode_cond(node)),
 				Node_copy(IfNode_true(node)),
 				Node_copy(IfNode_false(node))
 			);
-		case FN_NODE:
+		case FnNode:
 			return FnNode_new(NULL,
 				Node_copy(node->as.fn.param),
 				Node_copy(node->as.fn.body)
 			);
-		case LET_NODE:
+		case LetNode:
 			return LetNode_new(NULL,
 				Node_copy(LetNode_name(node)),
 				Node_copy(LetNode_value(node))
@@ -165,24 +165,24 @@ static void Node_print_parenthesised(const Node *expr)
 void Node_print(const Node *expr)
 {
 	switch (expr->type) {
-		case NUMBER_NODE:
+		case NumberNode:
 			printf("%lf", NumNode_value(expr));
 			break;
-		case ID_NODE:
+		case IdNode:
 			printf("%s", IdNode_value(expr));
 			break;
-		case APPLICATION_NODE:
-		case EXPT_NODE:
-		case PRODUCT_NODE:
-		case SUM_NODE:
-		case CMP_NODE:
-		case AND_NODE:
-		case OR_NODE:
+		case ApplNode:
+		case ExptNode:
+		case ProdNode:
+		case SumNode:
+		case CmpNode:
+		case AndNode:
+		case OrNode:
 			Node_print_parenthesised(PairNode_left(expr));
 			putchar(PairNode_op(expr));
 			Node_print_parenthesised(PairNode_right(expr));
 			break;
-		case IF_NODE:
+		case IfNode:
 			printf("if ");
 			Node_print_parenthesised(IfNode_cond(expr));
 			printf(" then ");
@@ -190,13 +190,13 @@ void Node_print(const Node *expr)
 			printf(" else ");
 			Node_print_parenthesised(IfNode_false(expr));
 			break;
-		case FN_NODE:
+		case FnNode:
 			printf("fn ");
 			Node_print(FnNode_param(expr));
 			printf(": ");
 			Node_print(FnNode_body(expr));
 			break;
-		case LET_NODE:
+		case LetNode:
 			printf("let ");
 			Node_print(LetNode_name(expr));
 			printf("= ");

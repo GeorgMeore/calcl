@@ -23,8 +23,8 @@
 #define REG_TMP  "%r15"
 
 typedef enum {
-	LINK_NEXT,
-	LINK_RETURN
+	LinkNext,
+	LinkReturn
 } Linkage;
 
 static int generate_id(void)
@@ -39,22 +39,22 @@ static int forceable(const Node *expr)
 	if (!lazy)
 		return 0;
 	switch (expr->type) {
-		case ID_NODE:
+		case IdNode:
 			return 1;
-		case APPLICATION_NODE:
+		case ApplNode:
 			return 1;
-		case IF_NODE:
+		case IfNode:
 			return forceable(IfNode_true(expr)) || forceable(IfNode_false(expr));
-		case EXPT_NODE:
-		case PRODUCT_NODE:
-		case SUM_NODE:
-		case CMP_NODE:
-		case AND_NODE:
-		case OR_NODE:
+		case ExptNode:
+		case ProdNode:
+		case SumNode:
+		case CmpNode:
+		case AndNode:
+		case OrNode:
 			return forceable(PairNode_left(expr)) || forceable(PairNode_right(expr));
-		case LET_NODE:
-		case NUMBER_NODE:
-		case FN_NODE:
+		case LetNode:
+		case NumberNode:
+		case FnNode:
 	}
 	return 0;
 }
@@ -91,7 +91,7 @@ static void compile_ret(void)
 static void compile_force_sub(void)
 {
 	printf("force:\n");
-	printf("	cmpl $%d, (%s)\n", COMPTHUNK_OBJECT, REG_VAL);
+	printf("	cmpl $%d, (%s)\n", CompthunkObject, REG_VAL);
 	printf("	jne force_ret\n");
 	printf("	cmpq $0, %d(%s)\n", ObjFldOff(CompThunk, value), REG_VAL);
 	printf("	jne force_get_value\n");
@@ -117,7 +117,7 @@ static void compile_force_sub(void)
 static void compile_force_call(void)
 {
 	int id = generate_id();
-	printf("	cmpl $%d, (%s)\n", COMPTHUNK_OBJECT, REG_VAL);
+	printf("	cmpl $%d, (%s)\n", CompthunkObject, REG_VAL);
 	printf("	jne force_end%d\n", id);
 	compile_stack_push(PTR_OBJ, REG_ENV);
 	printf("	lea force_done%d(%%rip), %s\n", id, REG_LINK);
@@ -160,12 +160,12 @@ static void compile_id(const Node *expr)
 static void compile_if(const Node *expr, Linkage l)
 {
 	int id = generate_id();
-	compile_dispatch(IfNode_cond(expr), LINK_NEXT);
+	compile_dispatch(IfNode_cond(expr), LinkNext);
 	if (forceable(IfNode_cond(expr))) {
 		compile_force_call();
 	}
 	if (!typed) {
-		compile_type_assertion(NUM_OBJECT);
+		compile_type_assertion(NumObject);
 	}
 	printf("	cmpq $0, %d(%s)\n", ObjFldOff(Num, num), REG_VAL);
 	printf("	je false_branch%d\n", id);
@@ -195,7 +195,7 @@ static void compile_fn(const Node *expr)
 	printf("	call Env_add\n");
 	compile_gc_call();
 	compile_stack_push(PTR_ADDR, REG_LINK);
-	compile_dispatch(FnNode_body(expr), LINK_RETURN);
+	compile_dispatch(FnNode_body(expr), LinkReturn);
 	printf("fn_end%d:\n", id);
 	printf("	mov gc(%%rip), %%rdi\n");
 	printf("	mov %s, %%rsi\n", REG_ENV);
@@ -207,12 +207,12 @@ static void compile_fn(const Node *expr)
 static void compile_application(const Node *expr, Linkage l)
 {
 	int id = generate_id();
-	compile_dispatch(PairNode_left(expr), LINK_NEXT);
+	compile_dispatch(PairNode_left(expr), LinkNext);
 	if (forceable(PairNode_left(expr))) {
 		compile_force_call();
 	}
 	if (!typed) {
-		compile_type_assertion(COMPFN_OBJECT);
+		compile_type_assertion(CompfnObject);
 	}
 	compile_stack_push(PTR_OBJ, REG_VAL);
 	if (lazy) {
@@ -220,7 +220,7 @@ static void compile_application(const Node *expr, Linkage l)
 		printf("thunk%d:\n", id);
 		compile_stack_push(PTR_ADDR, REG_LINK);
 		compile_gc_call();
-		compile_dispatch(PairNode_right(expr), LINK_RETURN);
+		compile_dispatch(PairNode_right(expr), LinkReturn);
 		printf("thunk_end%d:\n", id);
 		printf("	mov gc(%%rip), %%rdi\n");
 		printf("	mov %s, %%rsi\n", REG_ENV);
@@ -228,14 +228,14 @@ static void compile_application(const Node *expr, Linkage l)
 		printf("	call GC_alloc_compthunk\n");
 		printf("	mov %%rax, %s\n", REG_VAL);
 	} else {
-		compile_dispatch(PairNode_right(expr), LINK_NEXT);
+		compile_dispatch(PairNode_right(expr), LinkNext);
 	}
 	compile_stack_pop(REG_TMP);
-	if (l == LINK_NEXT) {
+	if (l == LinkNext) {
 		compile_stack_push(PTR_OBJ, REG_ENV);
 	}
 	printf("	mov %d(%s), %s\n", ObjFldOff(CompFn, env), REG_TMP, REG_ENV);
-	if (l == LINK_NEXT) {
+	if (l == LinkNext) {
 		printf("	lea after_call%d(%%rip), %s\n", id, REG_LINK);
 		printf("	jmp *%d(%s)\n", ObjFldOff(CompFn, text), REG_TMP);
 		printf("after_call%d:\n", id);
@@ -252,7 +252,7 @@ static void compile_let(const Node *expr)
 	printf(".data\n");
 	printf("i%d: .asciz \"%s\"\n", id, LetNode_name_value(expr));
 	printf(".text\n");
-	compile_dispatch(LetNode_value(expr), LINK_NEXT);
+	compile_dispatch(LetNode_value(expr), LinkNext);
 	printf("	lea %d(%s), %%rdi\n", ObjValOff(Env), REG_ENV);
 	printf("	lea i%d(%%rip), %%rsi\n", id);
 	printf("	mov %s, %%rdx\n", REG_VAL);
@@ -285,20 +285,20 @@ static void compile_cmp_pair(int op)
 static void compile_pair(const Node *expr)
 {
 	int op = PairNode_op(expr);
-	compile_dispatch(PairNode_left(expr), LINK_NEXT);
+	compile_dispatch(PairNode_left(expr), LinkNext);
 	if (forceable(PairNode_left(expr))) {
 		compile_force_call();
 	}
 	if (!typed) {
-		compile_type_assertion(NUM_OBJECT);
+		compile_type_assertion(NumObject);
 	}
 	compile_stack_push(PTR_OBJ, REG_VAL);
-	compile_dispatch(PairNode_right(expr), LINK_NEXT);
+	compile_dispatch(PairNode_right(expr), LinkNext);
 	if (forceable(PairNode_right(expr))) {
 		compile_force_call();
 	}
 	if (!typed) {
-		compile_type_assertion(NUM_OBJECT);
+		compile_type_assertion(NumObject);
 	}
 	compile_stack_pop(REG_TMP);
 	printf("	movq %d(%s), %%xmm0\n", ObjFldOff(Num, num), REG_TMP);
@@ -339,18 +339,18 @@ static void compile_pair(const Node *expr)
 static void compile_and(const Node *expr, Linkage l)
 {
 	int id = generate_id();
-	compile_dispatch(PairNode_left(expr), LINK_NEXT);
+	compile_dispatch(PairNode_left(expr), LinkNext);
 	if (forceable(PairNode_left(expr))) {
 		compile_force_call();
 	}
 	if (!typed) {
-		compile_type_assertion(NUM_OBJECT);
+		compile_type_assertion(NumObject);
 	}
 	printf("	cmpq $0, %d(%s)\n", ObjFldOff(Num, num), REG_VAL);
 	printf("	je and_false%d\n", id);
 	compile_dispatch(PairNode_right(expr), l);
 	printf("and_false%d:\n", id);
-	if (l == LINK_RETURN) {
+	if (l == LinkReturn) {
 		compile_ret();
 	}
 }
@@ -358,18 +358,18 @@ static void compile_and(const Node *expr, Linkage l)
 static void compile_or(const Node *expr, Linkage l)
 {
 	int id = generate_id();
-	compile_dispatch(PairNode_left(expr), LINK_NEXT);
+	compile_dispatch(PairNode_left(expr), LinkNext);
 	if (forceable(PairNode_left(expr))) {
 		compile_force_call();
 	}
 	if (!typed) {
-		compile_type_assertion(NUM_OBJECT);
+		compile_type_assertion(NumObject);
 	}
 	printf("	cmpq $0, %d(%s)\n", ObjFldOff(Num, num), REG_VAL);
 	printf("	jne or_true%d\n", id); // ????
 	compile_dispatch(PairNode_right(expr), l);
 	printf("or_true%d:\n", id);
-	if (l == LINK_RETURN) {
+	if (l == LinkReturn) {
 		compile_ret();
 	}
 }
@@ -378,47 +378,47 @@ static void compile_dispatch(const Node *expr, Linkage l)
 {
 	printf("// "); Node_println(expr);
 	switch (expr->type) {
-		case NUMBER_NODE:
+		case NumberNode:
 			compile_num(expr);
 			break;
-		case FN_NODE:
+		case FnNode:
 			compile_fn(expr);
 			break;
-		case ID_NODE:
+		case IdNode:
 			compile_id(expr);
 			break;
-		case EXPT_NODE:
-		case PRODUCT_NODE:
-		case SUM_NODE:
-		case CMP_NODE:
+		case ExptNode:
+		case ProdNode:
+		case SumNode:
+		case CmpNode:
 			compile_pair(expr);
 			break;
-		case AND_NODE:
+		case AndNode:
 			return compile_and(expr, l);
-		case OR_NODE:
+		case OrNode:
 			return compile_or(expr, l);
-		case IF_NODE:
+		case IfNode:
 			return compile_if(expr, l);
-		case APPLICATION_NODE:
+		case ApplNode:
 			return compile_application(expr, l);
-		case LET_NODE:
+		case LetNode:
 			compile_let(expr);
 			break;
 	}
-	// NOTE: AND_NODE, OR_NODE, IF_NODE and APPLICATION_NODE
+	// NOTE: AndNode, OrNode, IfNode and ApplNode
 	// must handle linkage themselves
-	if (l == LINK_RETURN) {
+	if (l == LinkReturn) {
 		compile_ret();
 	}
 }
 
 void compile(const Node *expr)
 {
-	compile_dispatch(expr, LINK_NEXT);
+	compile_dispatch(expr, LinkNext);
 	if (forceable(expr)) {
 		compile_force_call();
 	}
-	if (expr->type != LET_NODE) {
+	if (expr->type != LetNode) {
 		printf("	mov %s, %%rdi\n", REG_VAL);
 		printf("	call Object_println\n");
 	}

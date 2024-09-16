@@ -18,7 +18,7 @@ static long long unsigned id = 0;
 
 Type *VarType_new(Arena *a)
 {
-	Type *var = Type_alloc(a, VAR_TYPE);
+	Type *var = Type_alloc(a, VarType);
 	var->as.var = id++;
 	return var;
 }
@@ -30,14 +30,14 @@ void VarType_reset()
 
 static Type *VarType_new_from_value(Arena *a, int value)
 {
-	Type *var = Type_alloc(a, VAR_TYPE);
+	Type *var = Type_alloc(a, VarType);
 	var->as.var = value;
 	return var;
 }
 
 Type *FnType_new(Arena *a, Type *from, Type *to)
 {
-	Type *fn = Type_alloc(a, FN_TYPE);
+	Type *fn = Type_alloc(a, FnType);
 	fn->as.fn.from = from;
 	fn->as.fn.to = to;
 	return fn;
@@ -45,31 +45,31 @@ Type *FnType_new(Arena *a, Type *from, Type *to)
 
 Type *GenType_new(Arena *a, Type *inner)
 {
-	Type *gen = Type_alloc(a, GEN_TYPE);
+	Type *gen = Type_alloc(a, GenType);
 	gen->as.gen = inner;
 	return gen;
 }
 
 Type *NumType_get(void)
 {
-	static Type num = {.kind = NUM_TYPE};
+	static Type num = {.kind = NumType};
 	return &num;
 }
 
 void Type_print(const Type *type)
 {
 	switch (type->kind) {
-		case VAR_TYPE:
+		case VarType:
 			printf("v%d", VarType_value(type));
 			break;
-		case NUM_TYPE:
+		case NumType:
 			printf("num");
 			break;
-		case GEN_TYPE:
+		case GenType:
 			Type_print(GenType_inner(type));
 			break;
-		case FN_TYPE:
-			if (FnType_from(type)->kind == FN_TYPE) {
+		case FnType:
+			if (FnType_from(type)->kind == FnType) {
 				putchar('(');
 				Type_print(FnType_from(type));
 				putchar(')');
@@ -85,19 +85,19 @@ void Type_print(const Type *type)
 void Type_drop(Type *type)
 {
 	switch (type->kind) {
-		case VAR_TYPE:
+		case VarType:
 			free(type);
 			break;
-		case FN_TYPE:
+		case FnType:
 			Type_drop(FnType_from(type));
 			Type_drop(FnType_to(type));
 			free(type);
 			break;
-		case GEN_TYPE:
+		case GenType:
 			Type_drop(GenType_inner(type));
 			free(type);
 			break;
-		case NUM_TYPE:
+		case NumType:
 			return;
 	}
 }
@@ -105,13 +105,13 @@ void Type_drop(Type *type)
 Type *Type_copy(const Type *type)
 {
 	switch (type->kind) {
-		case VAR_TYPE:
+		case VarType:
 			return VarType_new_from_value(NULL, VarType_value(type));
-		case NUM_TYPE:
+		case NumType:
 			return NumType_get();
-		case FN_TYPE:
+		case FnType:
 			return FnType_new(NULL, Type_copy(FnType_from(type)), Type_copy(FnType_to(type)));
-		case GEN_TYPE:
+		case GenType:
 			return GenType_new(NULL, Type_copy(GenType_inner(type)));
 	}
 	return NULL;
@@ -128,16 +128,16 @@ int Type_eq(const Type *t1, const Type *t2)
 	if (t1->kind != t2->kind) {
 		return 0;
 	}
-	if (t1->kind == GEN_TYPE) {
+	if (t1->kind == GenType) {
 		return Type_eq(GenType_inner(t1), GenType_inner(t2));
 	}
-	if (t1->kind == FN_TYPE) {
+	if (t1->kind == FnType) {
 		return (
 			Type_eq(FnType_from(t1), FnType_from(t2)) &&
 			Type_eq(FnType_to(t1), FnType_to(t2))
 		);
 	}
-	if (t1->kind == VAR_TYPE) {
+	if (t1->kind == VarType) {
 		return VarType_value(t1) == VarType_value(t2);
 	}
 	return 1;
