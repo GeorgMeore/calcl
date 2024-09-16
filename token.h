@@ -2,32 +2,32 @@
 #define TOKEN_INCLUDED
 
 typedef enum {
-	NUMBER_TOKEN,
-	ID_TOKEN,
-	LPAREN_TOKEN,
-	RPAREN_TOKEN,
-	CARET_TOKEN,
-	ASTERISK_TOKEN,
-	SLASH_TOKEN,
-	PERCENT_TOKEN,
-	PLUS_TOKEN,
-	MINUS_TOKEN,
-	GT_TOKEN,
-	LT_TOKEN,
-	EQ_TOKEN,
-	AND_TOKEN,
-	OR_TOKEN,
-	IF_TOKEN,
-	THEN_TOKEN,
-	ELSE_TOKEN,
-	FN_TOKEN,
-	COLON_TOKEN,
-	LET_TOKEN,
-	ERROR_TOKEN,
-	END_TOKEN,
+	NumberToken,
+	IdToken,
+	LparenToken,
+	RparenToken,
+	CaretToken,
+	AsteriskToken,
+	SlashToken,
+	PercentToken,
+	PlusToken,
+	MinusToken,
+	GtToken,
+	LtToken,
+	EqToken,
+	AndToken,
+	OrToken,
+	IfToken,
+	ThenToken,
+	ElseToken,
+	FnToken,
+	ColonToken,
+	LetToken,
+	ErrorToken,
+	EndToken,
 } TokenType;
 
-#define TOKEN_COUNT (END_TOKEN + 1)
+#define TOKEN_COUNT (EndToken + 1)
 
 typedef struct {
 	TokenType  type;

@@ -8,25 +8,25 @@
 void Object_print(const Object *obj)
 {
 	switch (obj->type) {
-		case NUM_OBJECT:
+		case NumObject:
 			printf("%lf", NumObj_num(obj));
 			return;
-		case FN_OBJECT:
+		case FnObject:
 			printf("<fn %s>", FnObj_arg(obj));
 			return;
-		case COMPFN_OBJECT:
+		case CompfnObject:
 			printf("<compfn %p>", CompFnObj_text(obj));
 			return;
-		case ENV_OBJECT:
+		case EnvObject:
 			printf("<env-%p>", obj);
 			return;
-		case THUNK_OBJECT:
+		case ThunkObject:
 			printf("<thunk-%p>", obj);
 			return;
-		case COMPTHUNK_OBJECT:
+		case CompthunkObject:
 			printf("<compthunk-%p>", CompThunkObj_text(obj));
 			return;
-		case STACK_OBJECT:
+		case StackObject:
 			printf("<stack-%p>", obj);
 			return;
 	}

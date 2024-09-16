@@ -45,13 +45,13 @@ static Object *eval_pair(const Node *expr, Context *ctx, Object *env)
 {
 	int op = PairNode_op(expr);
 	Context_stack_push(ctx, env);
-	Object *leftv = eval_expect(PairNode_left(expr), ctx, env, NUM_OBJECT);
+	Object *leftv = eval_expect(PairNode_left(expr), ctx, env, NumObject);
 	Context_stack_pop(ctx);
 	if (!leftv) {
 		return NULL;
 	}
 	Context_stack_push(ctx, leftv);
-	Object *rightv = eval_expect(PairNode_right(expr), ctx, env, NUM_OBJECT);
+	Object *rightv = eval_expect(PairNode_right(expr), ctx, env, NumObject);
 	Context_stack_pop(ctx);
 	if (!rightv) {
 		return NULL;
@@ -84,7 +84,7 @@ static Object *eval_pair(const Node *expr, Context *ctx, Object *env)
 static Object *eval_or(const Node *expr, Context *ctx, Object *env)
 {
 	Context_stack_push(ctx, env);
-	Object *leftv = eval_expect(PairNode_left(expr), ctx, env, NUM_OBJECT);
+	Object *leftv = eval_expect(PairNode_left(expr), ctx, env, NumObject);
 	Context_stack_pop(ctx);
 	if (!leftv) {
 		return NULL;
@@ -92,7 +92,7 @@ static Object *eval_or(const Node *expr, Context *ctx, Object *env)
 	if (NumObj_num(leftv)) {
 		return leftv;
 	}
-	Object *rightv = eval_expect(PairNode_right(expr), ctx, env, NUM_OBJECT);
+	Object *rightv = eval_expect(PairNode_right(expr), ctx, env, NumObject);
 	if (!rightv) {
 		return NULL;
 	}
@@ -102,7 +102,7 @@ static Object *eval_or(const Node *expr, Context *ctx, Object *env)
 static Object *eval_and(const Node *expr, Context *ctx, Object *env)
 {
 	Context_stack_push(ctx, env);
-	Object *leftv = eval_expect(PairNode_left(expr), ctx, env, NUM_OBJECT);
+	Object *leftv = eval_expect(PairNode_left(expr), ctx, env, NumObject);
 	Context_stack_pop(ctx);
 	if (!leftv) {
 		return NULL;
@@ -110,7 +110,7 @@ static Object *eval_and(const Node *expr, Context *ctx, Object *env)
 	if (!NumObj_num(leftv)) {
 		return leftv;
 	}
-	Object *rightv = eval_expect(PairNode_right(expr), ctx, env, NUM_OBJECT);
+	Object *rightv = eval_expect(PairNode_right(expr), ctx, env, NumObject);
 	if (!rightv) {
 		return NULL;
 	}
@@ -130,7 +130,7 @@ static Object *eval_let(const Node *expr, Context *ctx, Object *env)
 static Node *eval_if(Context *ctx, Object **env, const Node *expr)
 {
 	Context_stack_push(ctx, *env);
-	Object *condv = eval_expect(IfNode_cond(expr), ctx, *env, NUM_OBJECT);
+	Object *condv = eval_expect(IfNode_cond(expr), ctx, *env, NumObject);
 	Context_stack_pop(ctx);
 	if (!condv) {
 		return NULL;
@@ -145,7 +145,7 @@ static Node *eval_if(Context *ctx, Object **env, const Node *expr)
 static Node *eval_application(Context *ctx, Object **env, const Node *expr)
 {
 	Context_stack_push(ctx, *env);
-	Object *fnv = eval_expect(PairNode_left(expr), ctx, *env, FN_OBJECT);
+	Object *fnv = eval_expect(PairNode_left(expr), ctx, *env, FnObject);
 	Context_stack_pop(ctx);
 	if (!fnv) {
 		return NULL;
@@ -174,34 +174,34 @@ static Object *eval_dispatch(const Node *expr, Context *ctx, Object *env)
 	for (;;) {
 		GC_collect(ctx->gc, env, ctx->stack);
 		switch (expr->type) {
-			case NUMBER_NODE:
+			case NumberNode:
 				return GC_alloc_number(ctx->gc, NumNode_value(expr));
-			case FN_NODE:
+			case FnNode:
 				return GC_alloc_fn(ctx->gc, env, FnNode_body(expr), FnNode_param_value(expr));
-			case ID_NODE:
+			case IdNode:
 				return eval_lookup(expr, env);
-			case EXPT_NODE:
-			case PRODUCT_NODE:
-			case SUM_NODE:
-			case CMP_NODE:
+			case ExptNode:
+			case ProdNode:
+			case SumNode:
+			case CmpNode:
 				return eval_pair(expr, ctx, env);
-			case AND_NODE:
+			case AndNode:
 				return eval_and(expr, ctx, env);
-			case OR_NODE:
+			case OrNode:
 				return eval_or(expr, ctx, env);
-			case IF_NODE:
+			case IfNode:
 				expr = eval_if(ctx, &env, expr);
 				if (!expr) {
 					return NULL;
 				}
 				break;
-			case APPLICATION_NODE:
+			case ApplNode:
 				expr = eval_application(ctx, &env, expr);
 				if (!expr) {
 					return NULL;
 				}
 				break;
-			case LET_NODE:
+			case LetNode:
 				return eval_let(expr, ctx, env);
 		}
 	}
@@ -210,7 +210,7 @@ static Object *eval_dispatch(const Node *expr, Context *ctx, Object *env)
 static Object *actual_value(const Node *expr, Context *ctx, Object *env)
 {
 	Object *result = eval_dispatch(expr, ctx, env);
-	if (!result || result->type != THUNK_OBJECT) {
+	if (!result || result->type != ThunkObject) {
 		return result;
 	}
 	if (ThunkObj_value(result)) {

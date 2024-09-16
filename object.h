@@ -4,13 +4,13 @@
 #include <stddef.h>
 
 typedef enum {
-	FN_OBJECT,
-	COMPFN_OBJECT,
-	ENV_OBJECT,
-	NUM_OBJECT,
-	THUNK_OBJECT,
-	COMPTHUNK_OBJECT,
-	STACK_OBJECT,
+	FnObject,
+	CompfnObject,
+	EnvObject,
+	NumObject,
+	ThunkObject,
+	CompthunkObject,
+	StackObject,
 } ObjectType;
 
 typedef struct Object Object;
