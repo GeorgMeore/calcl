@@ -36,9 +36,16 @@ Token Scanner_peek(Scanner *scanner)
 	return scanner->next;
 }
 
-void Scanner_seek(Scanner *scanner, TokenType type)
+void Scanner_seek_end(Scanner *scanner)
 {
-	while (Scanner_peek(scanner).type != type) {
-		Scanner_next(scanner);
+	while (scanner->next.type != EndToken) {
+		scanner->next = take_token(&scanner->iterator);
+	}
+}
+
+void Scanner_skip_nl(Scanner *scanner)
+{
+	while (scanner->next.type == EndToken && *scanner->next.string == '\n') {
+		scanner->next = take_token(&scanner->iterator);
 	}
 }

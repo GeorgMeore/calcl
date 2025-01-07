@@ -92,7 +92,9 @@ Token take_token(Iter *iterator)
 	}
 	char next = Iter_peek(iterator);
 	if (next == '\0' || next == '\n') {
-		return (Token){EndToken, Iter_cursor(iterator), 0};
+		Token token = (Token){EndToken, Iter_cursor(iterator), 1};
+		Iter_next(iterator);
+		return token;
 	} else if (isdigit(next)) {
 		return take_number(iterator);
 	} else if (isalpha(next)) {

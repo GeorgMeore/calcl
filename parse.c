@@ -10,8 +10,6 @@
 #include "arena.h"
 
 
-// TODO: make the syntax not line-oriented
-
 #define ERROR_PREFIX "parsing error"
 
 static void tokerror(const char *message, Token last)
@@ -42,7 +40,7 @@ static const Oplevel optable[] = {
 	{LeftAssoc,  AndNode,     1, {AndToken}},
 	{NoneAssoc,  CmpNode,     3, {GtToken, LtToken, EqToken}},
 	{LeftAssoc,  SumNode,     2, {PlusToken, MinusToken}},
-	{LeftAssoc,  ProdNode, 3, {AsteriskToken, SlashToken, PercentToken}},
+	{LeftAssoc,  ProdNode,    3, {AsteriskToken, SlashToken, PercentToken}},
 	{RightAssoc, ExptNode,    1, {CaretToken}},
 };
 
@@ -60,7 +58,8 @@ static int is_op_token(const Oplevel *op, Token token)
 }
 
 // TERM_TOKEN <- '(' | 'NUMBER' | 'ID'
-static int is_term_token(Token token) {
+static int is_term_token(Token token)
+{
 	return (
 		token.type == LparenToken ||
 		token.type == NumberToken ||
@@ -91,13 +90,13 @@ Node *parse(Scanner *scanner, Arena *a)
 		expr = parse_expression(scanner, a);
 	}
 	if (!expr) {
-		Scanner_seek(scanner, EndToken);
+		Scanner_seek_end(scanner);
 		return NULL;
 	}
-	next = Scanner_next(scanner);
+	next = Scanner_peek(scanner);
 	if (next.type != EndToken) {
 		tokerror("unexpected token after the expression", next);
-		Scanner_seek(scanner, EndToken);
+		Scanner_seek_end(scanner);
 		return NULL;
 	}
 	return expr;
@@ -108,9 +107,11 @@ static Node *parse_let_value(Scanner *scanner, Arena *a)
 {
 	Token next = Scanner_next(scanner);
 	if (next.type == EqToken) {
+		Scanner_skip_nl(scanner);
 		return parse_expression(scanner, a);
 	} else if (next.type == IdToken) {
 		Node *param = IdNode_new(a, next.string, next.length);
+		Scanner_skip_nl(scanner);
 		Node *body = parse_let_value(scanner, a);
 		if (!body) {
 			return NULL;
@@ -125,13 +126,15 @@ static Node *parse_let_value(Scanner *scanner, Arena *a)
 // LET ::= 'LET' 'ID' LET_VALUE
 static Node *parse_let(Scanner *scanner, Arena *a)
 {
-	Scanner_next(scanner);
+	Scanner_next(scanner); // drop 'LET'
+	Scanner_skip_nl(scanner);
 	Token next = Scanner_next(scanner);
 	if (next.type != IdToken) {
 		tokerror("expected identifier", next);
 		return NULL;
 	}
 	Node *name = IdNode_new(a, next.string, next.length);
+	Scanner_skip_nl(scanner);
 	Node *value = parse_let_value(scanner, a);
 	if (!value) {
 		return NULL;
@@ -157,9 +160,11 @@ static Node *parse_fn_body(Scanner *scanner, Arena *a)
 {
 	Token next = Scanner_next(scanner);
 	if (next.type == ColonToken) {
+		Scanner_skip_nl(scanner);
 		return parse_expression(scanner, a);
 	} else if (next.type == IdToken) {
 		Node *param = IdNode_new(a, next.string, next.length);
+		Scanner_skip_nl(scanner);
 		Node *body = parse_fn_body(scanner, a);
 		if (!body) {
 			return NULL;
@@ -174,13 +179,15 @@ static Node *parse_fn_body(Scanner *scanner, Arena *a)
 // FN ::= 'FN' FN_BODY
 static Node *parse_fn(Scanner *scanner, Arena *a)
 {
-	Scanner_next(scanner);
+	Scanner_next(scanner); // drop 'FN'
+	Scanner_skip_nl(scanner);
 	Token next = Scanner_next(scanner);
 	if (next.type != IdToken) {
 		tokerror("expected identifier", next);
 		return NULL;
 	}
 	Node *param = IdNode_new(a, next.string, next.length);
+	Scanner_skip_nl(scanner);
 	Node *body = parse_fn_body(scanner, a);
 	if (!body) {
 		return NULL;
@@ -194,6 +201,7 @@ static Node *parse_if_tail(Scanner *scanner, Arena *a)
 	Token next = Scanner_peek(scanner);
 	if (next.type == ElseToken) {
 		Scanner_next(scanner);
+		Scanner_skip_nl(scanner);
 		return parse_expression(scanner, a);
 	} else if (next.type == IfToken) {
 		return parse_if(scanner, a);
@@ -206,20 +214,24 @@ static Node *parse_if_tail(Scanner *scanner, Arena *a)
 // IF ::= 'IF OP 'THEN' EXPRESSION IF_TAIL
 static Node *parse_if(Scanner *scanner, Arena *a)
 {
-	Scanner_next(scanner);
+	Scanner_next(scanner); // drop 'IF'
+	Scanner_skip_nl(scanner);
 	Node *cond = parse_op(scanner, 0, a);
 	if (!cond) {
 		return NULL;
 	}
+	Scanner_skip_nl(scanner);
 	Token next = Scanner_next(scanner);
 	if (next.type != ThenToken) {
 		tokerror("expected 'then'", next);
 		return NULL;
 	}
+	Scanner_skip_nl(scanner);
 	Node *true = parse_expression(scanner, a);
 	if (!true) {
 		return NULL;
 	}
+	Scanner_skip_nl(scanner);
 	Node *false = parse_if_tail(scanner, a);
 	if (!false) {
 		return NULL;
@@ -240,6 +252,7 @@ static Node *parse_lassoc(Scanner *scanner, const Oplevel *op, int prec, Arena *
 			return left;
 		}
 		Scanner_next(scanner);
+		Scanner_skip_nl(scanner);
 		Node *right = parse_op(scanner, prec + 1, a);
 		if (!right) {
 			return NULL;
@@ -258,6 +271,7 @@ static Node *parse_rassoc(Scanner *scanner, const Oplevel *op, int prec, Arena *
 	Token next = Scanner_peek(scanner);
 	if (is_op_token(op, next)) {
 		Scanner_next(scanner);
+		Scanner_skip_nl(scanner);
 		Node *right = parse_op(scanner, prec + 1, a);
 		if (!right) {
 			return NULL;
@@ -277,6 +291,7 @@ static Node *parse_nassoc(Scanner *scanner, const Oplevel *op, int prec, Arena *
 	Token next = Scanner_peek(scanner);
 	if (is_op_token(op, next)) {
 		Scanner_next(scanner);
+		Scanner_skip_nl(scanner);
 		Node *right = parse_op(scanner, prec + 1, a);
 		if (!right) {
 			return NULL;
@@ -354,10 +369,12 @@ static Node *parse_term(Scanner *scanner, Arena *a)
 		return OpNode_new(a, term, NumberNode_new(a, -1), ProdNode, '*');
 	}
 	if (next.type == LparenToken) {
+		Scanner_skip_nl(scanner);
 		Node *expr = parse_expression(scanner, a);
 		if (!expr) {
 			return NULL;
 		}
+		Scanner_skip_nl(scanner);
 		next = Scanner_next(scanner);
 		if (next.type != RparenToken) {
 			tokerror("expected ')'", next);
