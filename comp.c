@@ -1,6 +1,4 @@
 #include <stdio.h>
-#include <unistd.h>
-#include <stdarg.h>
 
 #include "scanner.h"
 #include "parse.h"
