@@ -142,7 +142,7 @@ static Node *eval_if(Context *ctx, Object **env, const Node *expr)
 	}
 }
 
-static Node *eval_application(Context *ctx, Object **env, const Node *expr)
+static const Node *eval_application(Context *ctx, Object **env, const Node *expr)
 {
 	Context_stack_push(ctx, *env);
 	Object *fnv = eval_expect(PairNode_left(expr), ctx, *env, FnObject);
@@ -163,10 +163,6 @@ static Node *eval_application(Context *ctx, Object **env, const Node *expr)
 	}
 	*env = GC_alloc_env(ctx->gc, FnObj_env(fnv));
 	Env_add(EnvObj_env(*env), FnObj_arg(fnv), argv);
-	// NOTE: we "pin" the function to the current stack top to
-	// keep it alive while it's body is being evaluated.
-	// TODO: use a global arena for ASTs, managing those is unnecessary.
-	Context_stack_pin(ctx, fnv);
 	return FnObj_body(fnv);
 }
 

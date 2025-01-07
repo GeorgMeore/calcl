@@ -4,7 +4,7 @@
 #include "object.h"
 
 typedef struct {
-	Object *(*objects)[2];
+	Object **objects;
 	int    capacity;
 	int    size;
 	Object handle;
@@ -18,7 +18,6 @@ typedef struct {
 Stack  *Stack_new(void);
 void   Stack_drop(Stack *self);
 void   Stack_push(Stack *self, Object *value);
-void   Stack_pin(Stack *self, Object *value);
 Object *Stack_pop(Stack *self);
 void   Stack_clear(Stack *self);
 void   Stack_for_each(const Stack *self, void (*fn)(void *, Object *), void *param);

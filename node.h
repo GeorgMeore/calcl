@@ -87,8 +87,6 @@ Node *OpNode_new(Arena *a, Node *left, Node *right, NodeType type, int op);
 Node *IfNode_new(Arena *a, Node *cond, Node *true, Node *false);
 Node *FnNode_new(Arena *a, Node *param, Node *body);
 Node *LetNode_new(Arena *a, Node *name, Node *value);
-Node *Node_copy(const Node *node); // NOTE: the return value is malloc'ed, must be Node_drop'ed
-void Node_drop(Node *node);
 void Node_print(const Node *expr);
 void Node_println(const Node *node);
 

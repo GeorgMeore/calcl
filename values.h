@@ -5,10 +5,10 @@
 #include "node.h"
 
 typedef struct {
-	Object *env;
-	Node   *body;
-	char   *arg;
-	Object handle;
+	Object     *env;
+	const Node *body;
+	const char *arg;
+	Object     handle;
 } Fn;
 
 #define FnObj_env(objptr) (ObjToVal(objptr, Fn)->env)
@@ -16,26 +16,25 @@ typedef struct {
 #define FnObj_arg(objptr) (ObjToVal(objptr, Fn)->arg)
 
 typedef struct {
-	Object *env;
-	void   *text;
-	Object handle;
+	Object     *env;
+	const void *text;
+	Object     handle;
 } CompFn;
 
 #define CompFnObj_env(objptr) (ObjToVal(objptr, CompFn)->env)
 #define CompFnObj_text(objptr) (ObjToVal(objptr, CompFn)->text)
 
 typedef struct {
-	Object *env;
-	Node   *body;
-	Object *value;
-	Object handle;
+	Object     *env;
+	const Node *body;
+	Object     *value;
+	Object     handle;
 } Thunk;
 
 #define ThunkObj_env(objptr) (ObjToVal(objptr, Thunk)->env)
 #define ThunkObj_body(objptr) (ObjToVal(objptr, Thunk)->body)
 #define ThunkObj_value(objptr) (ObjToVal(objptr, Thunk)->value)
 #define ThunkObj_set_value(objptr, value) ({\
-	Node_drop(ObjToVal(objptr, Thunk)->body);\
 	ObjToVal(objptr, Thunk)->body = NULL;\
 	ObjToVal(objptr, Thunk)->env = NULL;\
 	ObjToVal(objptr, Thunk)->value = (value);\

@@ -26,14 +26,8 @@ void Stack_push(Stack *self, Object *value)
 		self->capacity *= 2;
 		self->objects = reallocarray(self->objects, self->capacity, sizeof(*self->objects));
 	}
-	self->objects[self->size][0] = value;
-	self->objects[self->size][1] = NULL;
+	self->objects[self->size] = value;
 	self->size += 1;
-}
-
-void Stack_pin(Stack *self, Object *value)
-{
-	self->objects[self->size-1][1] = value;
 }
 
 Object *Stack_pop(Stack *self)
@@ -42,7 +36,7 @@ Object *Stack_pop(Stack *self)
 		return NULL;
 	}
 	self->size -= 1;
-	return self->objects[self->size][0];
+	return self->objects[self->size];
 }
 
 void Stack_clear(Stack *self)
@@ -53,9 +47,6 @@ void Stack_clear(Stack *self)
 void Stack_for_each(const Stack *self, void (*fn)(void *, Object *), void *param)
 {
 	for (int i = 0; i < self->size; i++) {
-		fn(param, self->objects[i][0]);
-		if (self->objects[i][1]) {
-			fn(param, self->objects[i][1]);
-		}
+		fn(param, self->objects[i]);
 	}
 }

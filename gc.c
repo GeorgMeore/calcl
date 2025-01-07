@@ -1,7 +1,6 @@
 #include "gc.h"
 
 #include <stdlib.h>
-#include <string.h>
 
 #include "node.h"
 #include "object.h"
@@ -85,25 +84,15 @@ static void GC_free_object(Object *obj)
 {
 	switch (obj->type) {
 		case NumObject:
-			free(ObjToVal(obj, Num));
-			return;
+			return free(ObjToVal(obj, Num));
 		case FnObject:
-			Node_drop(FnObj_body(obj));
-			free(FnObj_arg(obj));
-			free(ObjToVal(obj, Fn));
-			return;
+			return free(ObjToVal(obj, Fn));
 		case CompfnObject:
-			free(ObjToVal(obj, CompFn));
-			return;
+			return free(ObjToVal(obj, CompFn));
 		case ThunkObject:
-			if (ThunkObj_body(obj)) {
-				Node_drop(ThunkObj_body(obj));
-			}
-			free(ObjToVal(obj, Thunk));
-			return;
+			return free(ObjToVal(obj, Thunk));
 		case CompthunkObject:
-			free(ObjToVal(obj, CompThunk));
-			return;
+			return free(ObjToVal(obj, CompThunk));
 		case EnvObject:
 			return Env_drop(EnvObj_env(obj));
 		case StackObject:
@@ -183,8 +172,8 @@ Object *GC_alloc_fn(GC *self, Object *env, const Node *body, const char *arg)
 {
 	Fn *fn = malloc(sizeof(*fn));
 	fn->env = env;
-	fn->body = Node_copy(body);
-	fn->arg = strdup(arg);
+	fn->body = body;
+	fn->arg = arg;
 	return GC_init_object(self, fn, FnObject);
 }
 
@@ -207,7 +196,7 @@ Object *GC_alloc_thunk(GC *self, Object *env, const Node *body)
 {
 	Thunk *th = malloc(sizeof(*th));
 	th->env = env;
-	th->body = Node_copy(body);
+	th->body = body;
 	th->value = NULL;
 	return GC_init_object(self, th, ThunkObject);
 }

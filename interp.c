@@ -21,14 +21,16 @@ int main(int argc, char **argv)
 	int tty = isatty(0);
 	Scanner scanner = Scanner_make(stdin);
 	Context ctx = Context_make();
+	// TODO: maybe make those parts of the context?
 	TypeEnv *tenv = TYPEENV_EMPTY;
 	Arena tmp = Arena_make(TMP_ARENA_PAGE_SIZE);
+	Arena longtmp = Arena_make(TMP_ARENA_PAGE_SIZE);
 	while (!Scanner_eof(scanner)) {
 		Arena_reset(&tmp);
 		if (tty) {
 			fprintf(stderr, "> ");
 		}
-		Node *ast = parse(&scanner, &tmp);
+		Node *ast = parse(&scanner, &longtmp);
 		if (!ast) {
 			continue;
 		}
@@ -57,5 +59,6 @@ int main(int argc, char **argv)
 	Context_destroy(ctx);
 	TypeEnv_drop(tenv);
 	Arena_destroy(tmp);
+	Arena_destroy(longtmp);
 	return 0;
 }
