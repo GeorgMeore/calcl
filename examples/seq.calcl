@@ -1,4 +1,4 @@
-# this only works in untyped mode
+# this only works in lazy untyped mode
 let cons x y = fn f: f x y
 let car p = p (fn x y: x)
 let cdr p = p (fn x y: y)

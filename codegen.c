@@ -154,6 +154,8 @@ static void compile_id(const Node *expr)
 	printf("	lea %d(%s), %%rdi\n", ObjValOff(Env), REG_ENV);
 	printf("	lea i%d(%%rip), %%rsi\n", id);
 	printf("	call Env_get\n");
+	printf("	cmpq $0, %%rax\n");
+	printf("	je failure\n");
 	printf("	mov %%rax, %s\n", REG_VAL);
 }
 
