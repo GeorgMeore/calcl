@@ -165,6 +165,7 @@ static Node *eval_application(Context *ctx, Object **env, const Node *expr)
 	Env_add(EnvObj_env(*env), FnObj_arg(fnv), argv);
 	// NOTE: we "pin" the function to the current stack top to
 	// keep it alive while it's body is being evaluated.
+	// TODO: use a global arena for ASTs, managing those is unnecessary.
 	Context_stack_pin(ctx, fnv);
 	return FnObj_body(fnv);
 }
@@ -191,18 +192,15 @@ static Object *eval_dispatch(const Node *expr, Context *ctx, Object *env)
 				return eval_or(expr, ctx, env);
 			case IfNode:
 				expr = eval_if(ctx, &env, expr);
-				if (!expr) {
-					return NULL;
-				}
 				break;
 			case ApplNode:
 				expr = eval_application(ctx, &env, expr);
-				if (!expr) {
-					return NULL;
-				}
 				break;
 			case LetNode:
 				return eval_let(expr, ctx, env);
+		}
+		if (!expr) {
+			return NULL;
 		}
 	}
 }
