@@ -14,7 +14,6 @@ typedef struct {
 
 #define INITIAL_STACK_CAPACITY 100
 
-// NOTE: Stack_pin overwrites the existing value!
 Stack  *Stack_new(void);
 void   Stack_drop(Stack *self);
 void   Stack_push(Stack *self, Object *value);

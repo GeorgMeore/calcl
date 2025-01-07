@@ -13,7 +13,6 @@ typedef struct {
 
 #define Context_stack(ctx) (StackObj_stack((ctx)->stack))
 #define Context_stack_push(ctx, v) (Stack_push(Context_stack(ctx), (v)))
-#define Context_stack_pin(ctx, v) (Stack_pin(Context_stack(ctx), (v)))
 #define Context_stack_pop(ctx) (Stack_pop(Context_stack(ctx)))
 
 Context Context_make(void);

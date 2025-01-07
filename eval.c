@@ -220,8 +220,6 @@ static Object *actual_value(const Node *expr, Context *ctx, Object *env)
 Object *eval(const Node *expr, Context *ctx)
 {
 	Stack_clear(Context_stack(ctx));
-	// NOTE: we need to have at least one thing on the stack (for Stack_pin)
-	Context_stack_push(ctx, ctx->root);
 	if (lazy) {
 		return actual_value(expr, ctx, ctx->root);
 	} else {
