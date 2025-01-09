@@ -34,6 +34,7 @@ typedef struct {
 	TokenType types[TOKEN_COUNT];
 } Oplevel;
 
+// TODO: the current operator parser implementation is really suboptimal, need to fix it sometime
 // Binary operators in the order of increasing precedence
 static const Oplevel optable[] = {
 	{LeftAssoc,  OrNode,      1, {OrToken}},
