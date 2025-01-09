@@ -34,7 +34,6 @@ typedef struct {
 	TokenType types[TOKEN_COUNT];
 } Oplevel;
 
-// TODO: the current operator parser implementation is really suboptimal, need to fix it sometime
 // Binary operators in the order of increasing precedence
 static const Oplevel optable[] = {
 	{LeftAssoc,  OrNode,      1, {OrToken}},
@@ -47,15 +46,17 @@ static const Oplevel optable[] = {
 
 #define MAXPREC (int)(sizeof(optable)/sizeof(optable[0]))
 
-// OP_TOKEN <- any token with type from op->types
-static int is_op_token(const Oplevel *op, Token token)
+// OP_TOKEN <- any token from optable
+static const Oplevel *is_op_token(Token token)
 {
-	for (int i = 0; i < op->count; i++) {
-		if (op->types[i] == token.type) {
-			return 1;
+	for (int prec = 0; prec < MAXPREC; prec++) {
+		for (int i = 0; i < optable[prec].count; i++) {
+			if (optable[prec].types[i] == token.type) {
+				return &optable[prec];
+			}
 		}
 	}
-	return 0;
+	return NULL;
 }
 
 // TERM_TOKEN <- '(' | 'NUMBER' | 'ID'
@@ -72,7 +73,7 @@ static Node *parse_let(Scanner *scanner, Arena *a);
 static Node *parse_expression(Scanner *scanner, Arena *a);
 static Node *parse_if(Scanner *s, Arena *a);
 static Node *parse_fn(Scanner *s, Arena *a);
-static Node *parse_op(Scanner *scanner, int prec, Arena *a);
+static Node *parse_opseq(Scanner *scanner, const Oplevel *op, Arena *a);
 static Node *parse_application(Scanner *s, Arena *a);
 static Node *parse_term(Scanner *s, Arena *a);
 
@@ -153,7 +154,7 @@ static Node *parse_expression(Scanner *scanner, Arena *a)
 	if (next.type == FnToken) {
 		return parse_fn(scanner, a);
 	}
-	return parse_op(scanner, 0, a);
+	return parse_opseq(scanner, 0, a);
 }
 
 // FN_BODY ::= ':' EXPRESSION | 'ID' FN_BODY
@@ -212,12 +213,12 @@ static Node *parse_if_tail(Scanner *scanner, Arena *a)
 	}
 }
 
-// IF ::= 'IF OP 'THEN' EXPRESSION IF_TAIL
+// IF ::= 'IF OPSEQ 'THEN' EXPRESSION IF_TAIL
 static Node *parse_if(Scanner *scanner, Arena *a)
 {
 	Scanner_next(scanner); // drop 'IF'
 	Scanner_skip_nl(scanner);
-	Node *cond = parse_op(scanner, 0, a);
+	Node *cond = parse_opseq(scanner, 0, a);
 	if (!cond) {
 		return NULL;
 	}
@@ -240,85 +241,92 @@ static Node *parse_if(Scanner *scanner, Arena *a)
 	return IfNode_new(a, cond, true, false);
 }
 
-// LASSOC ::= OP | LASSOC OP_TOKEN OP
-static Node *parse_lassoc(Scanner *scanner, const Oplevel *op, int prec, Arena *a)
+// LASSOC ::= OP OPSEQ | LASSOC OP OPSEQ
+static Node *parse_lassoc(Scanner *scanner, const Oplevel *op, Node *left, Arena *a)
 {
-	Node *left = parse_op(scanner, prec + 1, a);
+	for (;;) {
+		Token optok = Scanner_next(scanner);
+		Scanner_skip_nl(scanner);
+		Node *right = parse_opseq(scanner, op, a);
+		if (!right) {
+			return NULL;
+		}
+		left = OpNode_new(a, left, right, op->optype, optok.string[0]);
+		Token next = Scanner_peek(scanner);
+		const Oplevel *op2 = is_op_token(next);
+		if (op2 < op) {
+			return left;
+		}
+	}
+}
+
+// RASSOC ::= OP OPSEQ | OP OPSEQ RASSOC
+static Node *parse_rassoc(Scanner *scanner, const Oplevel *op, Node *left, Arena *a)
+{
+	Token optok = Scanner_next(scanner);
+	Scanner_skip_nl(scanner);
+	Node *right = parse_opseq(scanner, op, a);
+	if (!right) {
+		return NULL;
+	}
+	Token next = Scanner_peek(scanner);
+	const Oplevel *op2 = is_op_token(next);
+	if (op2 == op) {
+		right = parse_rassoc(scanner, op, right, a);
+		if (!right) {
+			return NULL;
+		}
+	}
+	return OpNode_new(a, left, right, op->optype, optok.string[0]);
+}
+
+// NASSOC ::= OP OPSEQ
+static Node *parse_nassoc(Scanner *scanner, const Oplevel *op, Node *left, Arena *a)
+{
+	Token optok = Scanner_next(scanner);
+	Scanner_skip_nl(scanner);
+	Node *right = parse_opseq(scanner, op, a);
+	if (!right) {
+		return NULL;
+	}
+	Token next = Scanner_peek(scanner);
+	const Oplevel *op2 = is_op_token(next);
+	if (op2 == op) {
+		tokerror("non-assosiative operator", next);
+		return NULL;
+	}
+	return OpNode_new(a, left, right, op->optype, optok.string[0]);
+}
+
+// OPSEQ ::= APPLICATION | APPLICATION (LASSOC | RASSOC | NASSOC)
+static Node *parse_opseq(Scanner *scanner, const Oplevel *op, Arena *a)
+{
+	Node *left = parse_application(scanner, a);
 	if (!left) {
 		return NULL;
 	}
 	for (;;) {
 		Token next = Scanner_peek(scanner);
-		if (!is_op_token(op, next)) {
+		const Oplevel *op2 = is_op_token(next);
+		if (op2 <= op) {
 			return left;
 		}
-		Scanner_next(scanner);
-		Scanner_skip_nl(scanner);
-		Node *right = parse_op(scanner, prec + 1, a);
-		if (!right) {
+		switch (op2->assoc) {
+			case LeftAssoc:
+				left = parse_lassoc(scanner, op2, left, a);
+				break;
+			case RightAssoc:
+				left = parse_rassoc(scanner, op2, left, a);
+				break;
+			case NoneAssoc:
+				left = parse_nassoc(scanner, op2, left, a);
+				break;
+		}
+		if (!left) {
 			return NULL;
 		}
-		left = OpNode_new(a, left, right, op->optype, next.string[0]);
 	}
-}
-
-// RASSOC ::= OP | OP OP_TOKEN RASSOC
-static Node *parse_rassoc(Scanner *scanner, const Oplevel *op, int prec, Arena *a)
-{
-	Node *left = parse_op(scanner, prec + 1, a);
-	if (!left) {
-		return NULL;
-	}
-	Token next = Scanner_peek(scanner);
-	if (is_op_token(op, next)) {
-		Scanner_next(scanner);
-		Scanner_skip_nl(scanner);
-		Node *right = parse_op(scanner, prec + 1, a);
-		if (!right) {
-			return NULL;
-		}
-		return OpNode_new(a, left, right, op->optype, next.string[0]);
-	}
-	return left;
-}
-
-// NASSOC ::= OP | OP OP_TOKEN OP
-static Node *parse_nassoc(Scanner *scanner, const Oplevel *op, int prec, Arena *a)
-{
-	Node *left = parse_op(scanner, prec + 1, a);
-	if (!left) {
-		return NULL;
-	}
-	Token next = Scanner_peek(scanner);
-	if (is_op_token(op, next)) {
-		Scanner_next(scanner);
-		Scanner_skip_nl(scanner);
-		Node *right = parse_op(scanner, prec + 1, a);
-		if (!right) {
-			return NULL;
-		}
-		return OpNode_new(a, left, right, op->optype, next.string[0]);
-	}
-	return left;
-}
-
-// OP ::= APPLICATION | RASSOC | LASSOC | NASSOC
-static Node *parse_op(Scanner *scanner, int prec, Arena *a)
-{
-	if (prec >= MAXPREC) {
-		return parse_application(scanner, a);
-	}
-	const Oplevel *op = &optable[prec];
-	switch (op->assoc) {
-		case LeftAssoc:
-			return parse_lassoc(scanner, op, prec, a);
-		case RightAssoc:
-			return parse_rassoc(scanner, op, prec, a);
-		case NoneAssoc:
-			return parse_nassoc(scanner, op, prec, a);
-		default: // unreachable
-			return NULL;
-	}
+	return NULL;
 }
 
 // APPLICATION ::= TERM | APPLICATION TERM
