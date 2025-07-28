@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-g -Wall -Wextra # -fsanitize=address,undefined
+CFLAGS=-g -Wall -Wextra -std=gnu99 # -fsanitize=address,undefined
 LDFLAGS=-lm
 SRC=eval.c\
 	codegen.c\
