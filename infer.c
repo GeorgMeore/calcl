@@ -71,14 +71,15 @@ static Subst *unify_var(Type *t1, Type *t2, Subst *subs, Arena *a)
 	if (v1) {
 		return unify(v1, t2, subs, a);
 	}
-	if (t2->kind == VarType) {
+	while (t2->kind == VarType) {
 		if (VarType_value(t1) == VarType_value(t2)) {
 			return subs;
 		}
 		Type *v2 = Subst_lookup(subs, VarType_value(t2));
-		if (v2) {
-			return unify(t1, v2, subs, a);
+		if (!v2) {
+			return Subst_extend(VarType_value(t1), t2, subs, a);
 		}
+		t2 = v2;
 	}
 	if (occurs(t1, t2, subs)) {
 		error("recursive type");
