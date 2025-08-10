@@ -5,6 +5,7 @@
 
 typedef struct Type Type;
 
+// TODO: polymorphic inductive types
 typedef enum {
 	GenType,
 	VarType,
