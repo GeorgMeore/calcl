@@ -1,0 +1,12 @@
+let zero = fn s z: z
+let succ n = fn s z: s (n s z)
+
+let add a b = fn s z: a s (b s z)
+let mul a b = fn s z: a (fn x: b s x) z
+let exp a b = fn s z: (b (fn f: fn x: a f x) s) z
+
+let integer c = c (fn x: x + 1) 0
+let church n = if n < 1 then zero else succ (church (n - 1))
+
+integer (mul (church 22) (church 3))
+integer (exp (church 11) (church 5))
