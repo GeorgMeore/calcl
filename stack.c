@@ -24,7 +24,7 @@ void Stack_push(Stack *self, Object *value)
 {
 	if (self->size >= self->capacity) {
 		self->capacity *= 2;
-		self->objects = reallocarray(self->objects, self->capacity, sizeof(*self->objects));
+		self->objects = realloc(self->objects, self->capacity*sizeof(*self->objects));
 	}
 	self->objects[self->size] = value;
 	self->size += 1;
