@@ -15,8 +15,6 @@
 // TODO: only save registers when they need to be saved
 // TODO: lexical addressing
 
-#define ERROR_PREFIX "compillation error"
-
 #define REG_VAL  "%r12"
 #define REG_ENV  "%r13"
 #define REG_LINK "%r14"
@@ -330,7 +328,7 @@ static void compile_pair(const Node *expr)
 			compile_cmp_pair(op);
 			break;
 		default:
-			errorf("unknown binary operation: '%c'", op);
+			errorf("compillation error: unknown binary operation: '%c'", op);
 			return;
 	}
 	printf("	mov gc(%%rip), %%rdi\n");

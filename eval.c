@@ -13,8 +13,6 @@
 #include "error.h"
 
 
-#define ERROR_PREFIX "evaluation error"
-
 static Object *eval_dispatch(const Node *expr, Context *ctx, Object *env);
 static Object *actual_value(const Node *expr, Context *ctx, Object *env);
 
@@ -25,7 +23,7 @@ static inline Object *eval_expect(const Node *expr, Context *ctx, Object *env, O
 		return NULL;
 	}
 	if (obj->type != type) {
-		error("type mismatch");
+		error("evaluation error: type mismatch");
 		return NULL;
 	}
 	return obj;
@@ -35,7 +33,7 @@ static Object *eval_lookup(const Node *expr, Object *env)
 {
 	Object *value = Env_get(EnvObj_env(env), IdNode_value(expr));
 	if (!value) {
-		errorf("unbound variable: %s", IdNode_value(expr));
+		errorf("evaluation error: unbound variable: %s", IdNode_value(expr));
 		return NULL;
 	}
 	return value;
@@ -76,7 +74,7 @@ static Object *eval_pair(const Node *expr, Context *ctx, Object *env)
 		case '=':
 			return GC_alloc_number(ctx->gc, NumObj_num(leftv) == NumObj_num(rightv));
 		default:
-			errorf("unknown binary operation: '%c'", op);
+			errorf("evaluation error: unknown binary operation: '%c'", op);
 			return NULL;
 	}
 }

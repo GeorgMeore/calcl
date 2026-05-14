@@ -12,8 +12,6 @@
 
 // TODO: better error messages
 
-#define ERROR_PREFIX "inference error"
-
 typedef struct Subst Subst;
 
 struct Subst {
@@ -82,7 +80,7 @@ static Subst *unify_var(Type *t1, Type *t2, Subst *subs, Arena *a)
 		t2 = v2;
 	}
 	if (occurs(t1, t2, subs)) {
-		error("recursive type");
+		error("inference error: recursive type");
 		return NULL;
 	}
 	return Subst_extend(VarType_value(t1), t2, subs, a);
@@ -110,7 +108,7 @@ static Subst *unify(Type *t1, Type *t2, Subst *subs, Arena *a)
 			return subs;
 		}
 	}
-	error("ununifiable types");
+	error("inference error: ununifiable types");
 	return NULL;
 }
 
@@ -133,7 +131,7 @@ static Type *substitute(Type *mono, const Subst *subs, int recursive, Arena *a)
 			Type *new_to = substitute(FnType_to(mono), subs, recursive, a);
 			return FnType_new(a, new_from, new_to);
 		case GenType:
-			error("unexpected polytype");
+			error("inference error: unexpected polytype");
 	}
 	return NULL;
 }
@@ -151,7 +149,7 @@ static Subst *refresh(Type *mono, Subst *subs, Arena *a)
 		case NumType:
 			return subs;
 		case GenType:
-			error("unexpected polytype");
+			error("inference error: unexpected polytype");
 	}
 	return NULL;
 }
@@ -288,7 +286,7 @@ Type *infer(const Node *expr, TypeEnv **tenv, Arena *a)
 		if (!old) {
 			TypeEnv_push(tenv, name, poly);
 		} else if (!Type_eq(old, poly)) {
-			error("symbol type cannot change");
+			error("inference error: symbol type cannot change");
 			return NULL;
 		}
 	}

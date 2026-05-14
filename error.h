@@ -3,12 +3,10 @@
 
 #include <stdio.h>
 
-// ERROR_PREFIX is supposed to be defined by the includer
-
 #define error(message) \
-	(fprintf(stderr, ERROR_PREFIX ": " message "\n"))
+	(fprintf(stderr, message "\n"))
 
 #define errorf(fmt, args...) \
-	(fprintf(stderr, ERROR_PREFIX ": " fmt "\n", args))
+	(fprintf(stderr, fmt "\n", args))
 
 #endif // ERROR_INCLUDED

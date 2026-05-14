@@ -12,12 +12,12 @@ This project is purely educational and just-for-fun.
 
 ## Building.
 
-To build this thing you will need `gcc`, `libc` and plan9's `mk`.
+To build this thing you will need `gcc` or `clang`, `libc` `sh`.
 
 ```
 $ git clone REPO calcl
 $ cd calcl
-$ mk
+$ ./build.sh
 ```
 
 ## Example repl session.

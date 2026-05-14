@@ -10,14 +10,12 @@
 #include "arena.h"
 
 
-#define ERROR_PREFIX "parsing error"
-
 static void tokerror(const char *message, Token last)
 {
 	if (last.type == EndToken) {
-		errorf("%s (while parsing 'END')", message);
+		errorf("parsing error: %s (while parsing 'END')", message);
 	} else {
-		errorf("%s (while parsing '%.*s')", message, last.length, last.string);
+		errorf("parsing error: %s (while parsing '%.*s')", message, last.length, last.string);
 	}
 }
 
